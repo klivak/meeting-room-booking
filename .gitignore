@@ -43,6 +43,8 @@ next-env.d.ts
 
 /src/generated/prisma
 
-# local working notes, not part of the deliverable
+# local working notes and agent tooling, not part of the deliverable
+/.claude
+/skills-lock.json
 /CLAUDE.md
 /docs/prompt-plan-bronyuvannya-peregovornykh.md
