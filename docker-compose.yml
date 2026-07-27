@@ -1,0 +1,22 @@
+services:
+  db:
+    image: postgres:16
+    container_name: meeting-room-booking-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: meeting_room_booking
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      # Migrations must not start before the server accepts connections.
+      test: ["CMD-SHELL", "pg_isready -U postgres -d meeting_room_booking"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  db-data:

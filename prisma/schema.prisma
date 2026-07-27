@@ -1,0 +1,68 @@
+// Prisma schema for the meeting room booking app.
+// All DateTime values are stored in UTC; conversion to the office timezone
+// (Europe/Kyiv) or to the user's browser timezone happens in application code.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String    @id @default(cuid())
+  // Stored already normalized (trim + lowercase), so the unique index
+  // rejects "Ivan@X.com" when "ivan@x.com" is taken.
+  email        String    @unique
+  name         String
+  passwordHash String
+  createdAt    DateTime  @default(now())
+
+  sessions Session[]
+  bookings Booking[]
+}
+
+// Server-side session: the cookie only carries this row's id, so logout
+// is a row delete and a session survives a page reload.
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Room {
+  id       String @id @default(cuid())
+  name     String @unique
+  floor    Int
+  capacity Int
+
+  bookings Booking[]
+}
+
+model Booking {
+  id       String @id @default(cuid())
+  roomId   String
+  userId   String
+  title    String
+  // Half-open interval [startsAt, endsAt) in UTC.
+  startsAt DateTime
+  endsAt   DateTime
+  // Soft delete: a canceled booking is hidden everywhere and is skipped
+  // by overlap checks, so it stops blocking its slot.
+  canceledAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  room Room @relation(fields: [roomId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  // Week view of a room and the "my bookings" list are the only read paths.
+  @@index([roomId, startsAt])
+  @@index([userId, startsAt])
+}
