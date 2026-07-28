@@ -3,7 +3,7 @@
 import { DateTime } from "luxon";
 import { useSyncExternalStore } from "react";
 
-import { OFFICE_TZ } from "@/lib/domain/constants";
+import { OFFICE_TZ, WORK_DAY_END, WORK_DAY_START } from "@/lib/domain/constants";
 import {
   DAYS_IN_WEEK,
   SLOT_COUNT,
@@ -77,6 +77,13 @@ export function WeekGrid({ weekStart, bookings }: WeekGridProps) {
 
   return (
     <div className="flex flex-col gap-3">
+      {timeZone === OFFICE_TZ ? null : (
+        <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          Час показано у вашому поясі ({timeZone}). Офіс працює {WORK_DAY_START}–
+          {WORK_DAY_END} за {OFFICE_TZ}.
+        </p>
+      )}
+
       <div className="overflow-x-auto">
         <div
           className="grid min-w-[48rem]"
