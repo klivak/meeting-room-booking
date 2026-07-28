@@ -71,9 +71,11 @@ async function seedBookings() {
       title: demo.title,
       startsAt: startsAt.toUTC().toJSDate(),
       endsAt: endsAt.toUTC().toJSDate(),
-      canceledAt: null,
     };
 
+    // canceledAt is deliberately left out of the update: a demo booking the
+    // reviewer cancelled stays cancelled, the same way a changed password is
+    // left alone. Re-running the seed refreshes the dates, not the decisions.
     await prisma.booking.upsert({
       where: { id: demo.id },
       update: data,

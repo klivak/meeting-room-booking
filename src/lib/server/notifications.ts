@@ -45,17 +45,29 @@ export async function getDueNotifications(userId: string): Promise<NotificationV
     },
   });
 
+  // The bookings that take the room next are fetched in one query rather than
+  // one per candidate: the polling runs every 30 seconds for every open tab.
+  const followUps = await prisma.booking.findMany({
+    where: {
+      canceledAt: null,
+      roomId: { in: ending.map((booking) => booking.roomId) },
+      startsAt: { in: ending.map((booking) => booking.endsAt) },
+    },
+    select: { roomId: true, startsAt: true, canceledAt: true },
+  });
+
+  const followUpKey = (roomId: string, startsAt: Date) =>
+    `${roomId}@${startsAt.getTime()}`;
+  const followUpByKey = new Map(
+    followUps.map((booking) => [followUpKey(booking.roomId, booking.startsAt), booking]),
+  );
+
   const dueBookingIds: string[] = [];
 
   for (const booking of ending) {
-    const nextBooking = await prisma.booking.findFirst({
-      where: { roomId: booking.roomId, canceledAt: null, startsAt: booking.endsAt },
-      select: { startsAt: true, canceledAt: true },
-    });
-
     const due = isEndingNotificationDue({
       booking,
-      nextBooking,
+      nextBooking: followUpByKey.get(followUpKey(booking.roomId, booking.endsAt)) ?? null,
       now,
       minutesBefore: env.NOTIFY_BEFORE_MINUTES,
     });

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { unauthorizedError, validationError } from "@/lib/server/apiError";
+import { apiError, unauthorizedError, validationError } from "@/lib/server/apiError";
 import { prisma } from "@/lib/server/db";
 import { getCurrentUser } from "@/lib/server/session";
 
@@ -30,6 +30,20 @@ export async function GET(request: Request) {
 
   const { scope, cursor } = parsed.data;
   const now = new Date();
+
+  // A cursor pointing at someone else's booking, or at nothing, would silently
+  // produce an empty page. Saying so is more honest than pretending the list
+  // ended.
+  if (cursor) {
+    const owned = await prisma.booking.findFirst({
+      where: { id: cursor, userId: user.id },
+      select: { id: true },
+    });
+
+    if (!owned) {
+      return apiError(400, "VALIDATION_ERROR", "Некоректний курсор", "cursor");
+    }
+  }
 
   // Upcoming counts a running booking as upcoming: it is over only once it ends.
   const timeFilter =
