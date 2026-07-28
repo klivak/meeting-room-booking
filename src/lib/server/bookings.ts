@@ -15,6 +15,7 @@ type BookingWrite = {
 const BOOKING_FIELDS = {
   id: true,
   roomId: true,
+  seriesId: true,
   title: true,
   startsAt: true,
   endsAt: true,
@@ -75,6 +76,61 @@ export async function createBooking(input: BookingWrite & { userId: string }) {
       },
       select: BOOKING_FIELDS,
     });
+  });
+}
+
+export type SeriesResult =
+  | { created: Awaited<ReturnType<typeof createBooking>>[]; conflicts: [] }
+  | { created: null; conflicts: Date[] };
+
+/**
+ * Creates every occurrence of a weekly series, or none of them.
+ *
+ * All the occurrences are checked before anything is written, and the whole
+ * thing runs in one transaction: a series that is half booked would be worse
+ * than one that was refused, because the user cannot see which weeks made it.
+ */
+export async function createBookingSeries(
+  input: { roomId: string; userId: string; title: string },
+  occurrences: { startsAt: Date; endsAt: Date }[],
+): Promise<SeriesResult> {
+  return prisma.$transaction(async (tx) => {
+    await lockRoom(tx, input.roomId);
+
+    const conflicts: Date[] = [];
+    for (const occurrence of occurrences) {
+      if (await findClash(tx, { ...input, ...occurrence })) {
+        conflicts.push(occurrence.startsAt);
+      }
+    }
+
+    if (conflicts.length > 0) {
+      return { created: null, conflicts };
+    }
+
+    const series = await tx.bookingSeries.create({
+      data: { userId: input.userId },
+      select: { id: true },
+    });
+
+    const created = [];
+    for (const occurrence of occurrences) {
+      created.push(
+        await tx.booking.create({
+          data: {
+            roomId: input.roomId,
+            userId: input.userId,
+            seriesId: series.id,
+            title: input.title,
+            startsAt: occurrence.startsAt,
+            endsAt: occurrence.endsAt,
+          },
+          select: BOOKING_FIELDS,
+        }),
+      );
+    }
+
+    return { created, conflicts: [] };
   });
 }
 

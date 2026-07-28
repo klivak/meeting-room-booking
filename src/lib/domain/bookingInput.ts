@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { MAX_OCCURRENCES, MIN_OCCURRENCES } from "./recurrence";
+
 // Shape of the booking payload, shared by the API routes and the form. The
 // timestamps arrive as ISO strings; an explicit offset is accepted because it
 // still names exactly one instant, which is all the server stores.
@@ -12,6 +14,14 @@ export const createBookingSchema = z.object({
   title: z.string(),
   startsAt: isoInstant,
   endsAt: isoInstant,
+  // Total number of weekly occurrences, the first one included. Absent means a
+  // single booking.
+  repeatWeeks: z.coerce
+    .number()
+    .int()
+    .min(MIN_OCCURRENCES, `Мінімум ${MIN_OCCURRENCES} повторення`)
+    .max(MAX_OCCURRENCES, `Максимум ${MAX_OCCURRENCES} повторень`)
+    .optional(),
 });
 
 // Editing may touch any subset of the fields; whatever is omitted keeps its

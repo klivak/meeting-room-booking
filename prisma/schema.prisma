@@ -24,6 +24,7 @@ model User {
 
   sessions           Session[]
   bookings           Booking[]
+  bookingSeries      BookingSeries[]
   notifications      Notification[]
   verificationTokens VerificationToken[]
 }
@@ -82,10 +83,23 @@ model Notification {
   @@index([userId, readAt])
 }
 
+// Groups the occurrences of a weekly repetition. It carries no rule of its own:
+// the occurrences hold their own times, and the series only says they belong
+// together so one of them can be cancelled without the rest.
+model BookingSeries {
+  id        String   @id @default(cuid())
+  userId    String
+  createdAt DateTime @default(now())
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookings Booking[]
+}
+
 model Booking {
-  id       String @id @default(cuid())
+  id       String  @id @default(cuid())
   roomId   String
   userId   String
+  seriesId String?
   title    String
   // Half-open interval [startsAt, endsAt) in UTC.
   startsAt DateTime
@@ -97,6 +111,7 @@ model Booking {
 
   room          Room           @relation(fields: [roomId], references: [id])
   user          User           @relation(fields: [userId], references: [id])
+  series        BookingSeries? @relation(fields: [seriesId], references: [id], onDelete: SetNull)
   notifications Notification[]
 
   // Week view of a room and the "my bookings" list are the only read paths.
