@@ -95,9 +95,17 @@ async function main() {
     const email = normalizeEmail(user.email);
 
     // The hash is only computed for a new user: re-running the seed must not
-    // invalidate a password the tester may have already changed.
+    // invalidate a password the tester may have already changed. The demo
+    // accounts do get their address confirmed, including on an older database
+    // created before verification existed.
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
+      if (existing.emailVerifiedAt === null) {
+        await prisma.user.update({
+          where: { id: existing.id },
+          data: { emailVerifiedAt: new Date() },
+        });
+      }
       continue;
     }
 
@@ -106,6 +114,9 @@ async function main() {
         name: user.name,
         email,
         passwordHash: await hashPassword(user.password),
+        // Demo accounts are ready to book: nobody should have to dig a
+        // confirmation link out of the log to try the application.
+        emailVerifiedAt: new Date(),
       },
     });
   }

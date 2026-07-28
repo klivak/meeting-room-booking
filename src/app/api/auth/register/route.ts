@@ -5,6 +5,7 @@ import { apiError, validationError } from "@/lib/server/apiError";
 import { prisma } from "@/lib/server/db";
 import { hashPassword } from "@/lib/server/password";
 import { createSession } from "@/lib/server/session";
+import { sendVerificationLink } from "@/lib/server/verification";
 
 const EMAIL_TAKEN_MESSAGE = "Ця електронна пошта вже зареєстрована";
 
@@ -38,7 +39,9 @@ export async function POST(request: Request) {
     throw error;
   }
 
-  // Registration signs the user in right away.
+  // Registration signs the user in right away, but booking stays closed until
+  // the address is confirmed through the link printed to the server log.
+  await sendVerificationLink(user.id, new URL(request.url).origin);
   await createSession(user.id);
 
   return NextResponse.json(

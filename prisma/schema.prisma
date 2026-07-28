@@ -19,10 +19,26 @@ model User {
   name         String
   passwordHash String
   createdAt    DateTime  @default(now())
+  // Null until the address is confirmed; booking is closed until then.
+  emailVerifiedAt DateTime?
 
-  sessions      Session[]
-  bookings      Booking[]
-  notifications Notification[]
+  sessions           Session[]
+  bookings           Booking[]
+  notifications      Notification[]
+  verificationTokens VerificationToken[]
+}
+
+// Single-use secret from the confirmation link. In development the link is
+// printed to the server log instead of being emailed.
+model VerificationToken {
+  token     String   @id
+  userId    String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 // Server-side session: the cookie only carries this row's id, so logout
