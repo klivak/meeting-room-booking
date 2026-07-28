@@ -98,6 +98,7 @@ async function Schedule({
     orderBy: { startsAt: "asc" },
     select: {
       id: true,
+      seriesId: true,
       title: true,
       startsAt: true,
       endsAt: true,
@@ -122,6 +123,7 @@ async function Schedule({
         endsAt: booking.endsAt.toISOString(),
         user: booking.user,
         isMine: booking.user.id === user?.id,
+        isRecurring: booking.seriesId !== null,
       }))}
     />
   );
@@ -172,7 +174,14 @@ export default async function RoomPage({
             canceledAt: null,
             endsAt: { gt: now },
           },
-          select: { id: true, roomId: true, title: true, startsAt: true, endsAt: true },
+          select: {
+            id: true,
+            roomId: true,
+            seriesId: true,
+            title: true,
+            startsAt: true,
+            endsAt: true,
+          },
         })
       : null;
 

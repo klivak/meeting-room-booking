@@ -45,6 +45,7 @@ export async function GET(request: Request) {
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     select: {
       id: true,
+      seriesId: true,
       title: true,
       startsAt: true,
       endsAt: true,
@@ -57,7 +58,12 @@ export async function GET(request: Request) {
   const items = hasMore ? bookings.slice(0, PAGE_SIZE) : bookings;
 
   return NextResponse.json({
-    items,
+    // The series id itself is of no use to the client; whether the booking
+    // repeats is, and it is the same shape the page renders on the server.
+    items: items.map(({ seriesId, ...booking }) => ({
+      ...booking,
+      isRecurring: seriesId !== null,
+    })),
     nextCursor: hasMore ? items[items.length - 1].id : null,
   });
 }

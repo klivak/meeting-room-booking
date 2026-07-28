@@ -9,6 +9,8 @@ export type BookingView = {
   endsAt: string;
   user: { id: string; name: string };
   isMine: boolean;
+  /** One occurrence of a weekly series; marked so it is not mistaken for a one-off. */
+  isRecurring: boolean;
 };
 
 type BookingBlockProps = {
@@ -43,11 +45,16 @@ export function BookingBlock({
   };
 
   // Short bookings clip their text, so the full details live in the tooltip.
-  const tooltip = `${booking.title} · ${booking.user.name} · ${range}`;
+  const tooltip = `${booking.title} · ${booking.user.name} · ${range}${
+    booking.isRecurring ? " · щотижня" : ""
+  }`;
 
   const content = (
     <>
-      <div className="truncate font-medium">{booking.title}</div>
+      <div className="truncate font-medium">
+        {booking.isRecurring ? <span aria-hidden="true">↻ </span> : null}
+        {booking.title}
+      </div>
       <div className="truncate opacity-80">{booking.user.name}</div>
     </>
   );

@@ -20,6 +20,7 @@ export type MyBooking = {
   startsAt: string;
   endsAt: string;
   room: { id: string; name: string };
+  isRecurring: boolean;
 };
 
 type BookingRowProps = {
@@ -59,6 +60,7 @@ export function BookingRow({ booking, now, actions }: BookingRowProps) {
         <span className="flex flex-wrap items-center gap-2">
           <span className="font-medium text-slate-900">{booking.title}</span>
           {isRunning ? <Badge tone="success">зараз</Badge> : null}
+          {booking.isRecurring ? <Badge>щотижня</Badge> : null}
         </span>
         <span className="mt-1 block text-sm text-slate-600">
           {start.toFormat("ccc, d MMMM")} · {start.toFormat("HH:mm")}–

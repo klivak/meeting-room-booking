@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/Button";
 type CancelBookingButtonProps = {
   bookingId: string;
   title: string;
+  /** True when the booking is one occurrence of a weekly series. */
+  isRecurring?: boolean;
   /** Where to go after cancelling; by default the current page is refreshed. */
   redirectTo?: string;
 };
@@ -21,6 +23,7 @@ type CancelBookingButtonProps = {
 export function CancelBookingButton({
   bookingId,
   title,
+  isRecurring = false,
   redirectTo,
 }: CancelBookingButtonProps) {
   const router = useRouter();
@@ -28,13 +31,16 @@ export function CancelBookingButton({
   const [pending, setPending] = useState(false);
   const [failed, setFailed] = useState(false);
 
-  async function cancel() {
+  async function cancel(scope: "occurrence" | "series") {
     setPending(true);
     setFailed(false);
 
-    const response = await fetch(`/api/bookings/${bookingId}`, {
-      method: "DELETE",
-    }).catch(() => null);
+    const response = await fetch(
+      scope === "series"
+        ? `/api/bookings/${bookingId}?scope=series`
+        : `/api/bookings/${bookingId}`,
+      { method: "DELETE" },
+    ).catch(() => null);
 
     // An expired session is not a failure to report, it is a reason to sign in again.
     if (response?.status === 401) {
@@ -48,7 +54,7 @@ export function CancelBookingButton({
       return;
     }
 
-    showToast("Бронювання скасовано");
+    showToast(scope === "series" ? "Серію скасовано" : "Бронювання скасовано");
 
     if (redirectTo) {
       router.replace(redirectTo);
@@ -81,7 +87,9 @@ export function CancelBookingButton({
               Скасувати бронювання «{title}»?
             </h2>
             <p className="mt-2 text-sm text-slate-600">
-              Бронювання зникне з розкладу, а час стане вільним для інших.
+              {isRecurring
+                ? "Це частина щотижневої серії. Оберіть, що саме скасувати — час стане вільним для інших."
+                : "Бронювання зникне з розкладу, а час стане вільним для інших."}
             </p>
 
             {failed ? (
@@ -90,7 +98,7 @@ export function CancelBookingButton({
               </p>
             ) : null}
 
-            <div className="mt-4 flex justify-end gap-2">
+            <div className="mt-4 flex flex-wrap justify-end gap-2">
               <Button
                 variant="ghost"
                 onClick={() => setConfirming(false)}
@@ -98,9 +106,22 @@ export function CancelBookingButton({
               >
                 Ні
               </Button>
-              <Button variant="danger" onClick={cancel} disabled={pending}>
-                {pending ? "Скасовуємо…" : "Так, скасувати"}
+              <Button
+                variant="danger"
+                onClick={() => cancel("occurrence")}
+                disabled={pending}
+              >
+                {pending ? "Скасовуємо…" : isRecurring ? "Лише це" : "Так, скасувати"}
               </Button>
+              {isRecurring ? (
+                <Button
+                  variant="danger"
+                  onClick={() => cancel("series")}
+                  disabled={pending}
+                >
+                  Всю серію
+                </Button>
+              ) : null}
             </div>
           </div>
         </div>

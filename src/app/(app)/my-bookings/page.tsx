@@ -58,6 +58,7 @@ async function BookingList({ tab }: { tab: Tab }) {
     take: PAGE_SIZE + 1,
     select: {
       id: true,
+      seriesId: true,
       title: true,
       startsAt: true,
       endsAt: true,
@@ -99,6 +100,7 @@ async function BookingList({ tab }: { tab: Tab }) {
               startsAt: booking.startsAt.toISOString(),
               endsAt: booking.endsAt.toISOString(),
               room: booking.room,
+              isRecurring: booking.seriesId !== null,
             }}
             // A finished booking can no longer be changed, so the past tab
             // carries no actions at all.
@@ -110,7 +112,11 @@ async function BookingList({ tab }: { tab: Tab }) {
                   >
                     Редагувати
                   </LinkButton>
-                  <CancelBookingButton bookingId={booking.id} title={booking.title} />
+                  <CancelBookingButton
+                    bookingId={booking.id}
+                    title={booking.title}
+                    isRecurring={booking.seriesId !== null}
+                  />
                 </>
               ) : null
             }

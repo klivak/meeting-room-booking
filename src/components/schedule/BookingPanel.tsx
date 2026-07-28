@@ -16,6 +16,7 @@ import {
 import { createBookingSchema } from "@/lib/domain/bookingInput";
 import { MAX_TITLE_LENGTH, validateTitle } from "@/lib/domain/bookingRules";
 import { OFFICE_TZ } from "@/lib/domain/constants";
+import { MAX_OCCURRENCES, MIN_OCCURRENCES } from "@/lib/domain/recurrence";
 import {
   SLOT_COUNT,
   getEndSlotBounds,
@@ -31,6 +32,7 @@ type ApiError = { code: string; message: string; field?: string };
 export type EditableBooking = {
   id: string;
   roomId: string;
+  seriesId: string | null;
   title: string;
   startsAt: string;
   endsAt: string;
@@ -102,6 +104,9 @@ function BookingForm({
   const [startIndex, setStartIndex] = useState(initialStart);
   const [endIndex, setEndIndex] = useState(initialEnd);
   const [title, setTitle] = useState(booking?.title ?? "");
+  // Repetition is offered only when creating: editing changes one occurrence.
+  const [repeat, setRepeat] = useState(false);
+  const [repeatWeeks, setRepeatWeeks] = useState(MIN_OCCURRENCES);
   const [error, setError] = useState<ApiError | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -134,6 +139,7 @@ function BookingForm({
       title: title.trim(),
       startsAt: getSlotStart(day, startIndex).toUTC().toISO() ?? "",
       endsAt: getSlotStart(day, endIndex).toUTC().toISO() ?? "",
+      ...(booking || !repeat ? {} : { repeatWeeks }),
     };
 
     // Same schema the route uses; the server still has the final word.
@@ -310,12 +316,53 @@ function BookingForm({
             </p>
           </div>
 
+          {booking ? (
+            booking.seriesId ? (
+              <p className="rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-600">
+                Це входження щотижневої серії. Зміни торкнуться лише його.
+              </p>
+            ) : null
+          ) : (
+            <div className="flex flex-col gap-2">
+              <label className="flex items-center gap-2 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={repeat}
+                  onChange={(event) => setRepeat(event.target.checked)}
+                  className="h-4 w-4"
+                />
+                Повторювати щотижня
+              </label>
+
+              {repeat ? (
+                <label className="flex items-center gap-2 text-sm text-slate-700">
+                  Кількість
+                  <select
+                    value={repeatWeeks}
+                    onChange={(event) => setRepeatWeeks(Number(event.target.value))}
+                    className="min-h-11 rounded-lg border border-slate-300 px-3 py-2 text-slate-900 sm:min-h-0"
+                  >
+                    {Array.from(
+                      { length: MAX_OCCURRENCES - MIN_OCCURRENCES + 1 },
+                      (_, offset) => MIN_OCCURRENCES + offset,
+                    ).map((count) => (
+                      <option key={count} value={count}>
+                        {count}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
+            </div>
+          )}
+
           <div className="flex flex-wrap items-center justify-end gap-2">
             {booking ? (
               <div className="mr-auto">
                 <CancelBookingButton
                   bookingId={booking.id}
                   title={booking.title}
+                  isRecurring={booking.seriesId !== null}
                   redirectTo={`/rooms/${roomId}?week=${weekParam}`}
                 />
               </div>
