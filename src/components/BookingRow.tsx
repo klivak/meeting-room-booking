@@ -4,6 +4,7 @@ import { DateTime } from "luxon";
 import Link from "next/link";
 import { useSyncExternalStore } from "react";
 
+import { Badge } from "@/components/ui/Badge";
 import {
   noopSubscribe,
   readOfficeTimeZone,
@@ -53,15 +54,11 @@ export function BookingRow({ booking, now, actions }: BookingRowProps) {
     <li className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4">
       <Link
         href={`/rooms/${booking.room.id}?week=${week}`}
-        className="min-w-0 flex-1"
+        className="min-w-0 flex-1 rounded focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 focus-visible:outline-none"
       >
         <span className="flex flex-wrap items-center gap-2">
           <span className="font-medium text-slate-900">{booking.title}</span>
-          {isRunning ? (
-            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">
-              зараз
-            </span>
-          ) : null}
+          {isRunning ? <Badge tone="success">зараз</Badge> : null}
         </span>
         <span className="mt-1 block text-sm text-slate-600">
           {start.toFormat("ccc, d MMMM")} · {start.toFormat("HH:mm")}–

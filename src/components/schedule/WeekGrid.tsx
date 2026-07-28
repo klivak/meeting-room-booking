@@ -157,7 +157,7 @@ export function WeekGrid({
                   aria-label={`Забронювати ${day.setLocale("uk").toFormat("ccc dd.MM")}, ${
                     labels[rowIndex]
                   }`}
-                  className={`border-l border-slate-200 transition hover:bg-indigo-100/60 ${
+                  className={`border-l border-slate-200 transition hover:bg-indigo-100/60 focus-visible:z-20 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-inset focus-visible:outline-none ${
                     // A lighter line inside the hour, a full one between hours.
                     rowIndex % 2 === 0
                       ? "border-t border-t-slate-200"
@@ -217,7 +217,7 @@ export function WeekGrid({
                 key={booking.id}
                 href={`/rooms/${roomId}?week=${weekParam}&booking=${booking.id}`}
                 scroll={false}
-                className={`${className} transition hover:brightness-110`}
+                className={`${className} transition hover:brightness-110 focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-1 focus-visible:outline-none`}
                 style={style}
                 title={tooltip}
               >

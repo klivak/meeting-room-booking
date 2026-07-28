@@ -1,10 +1,11 @@
 import { DateTime } from "luxon";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { BookingPanel } from "@/components/schedule/BookingPanel";
 import { WeekGrid } from "@/components/schedule/WeekGrid";
+import { LinkButton } from "@/components/ui/LinkButton";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { WEEK_START_DAY } from "@/lib/config";
 import { OFFICE_TZ } from "@/lib/domain/constants";
 import { DAYS_IN_WEEK, SLOT_COUNT } from "@/lib/domain/grid";
@@ -96,12 +97,9 @@ async function Schedule({
 
 function ScheduleSkeleton() {
   return (
-    <div className="animate-pulse rounded-xl border border-slate-200 bg-white p-4">
-      <div className="h-6 w-full rounded bg-slate-100" />
-      <div
-        className="mt-2 w-full rounded bg-slate-50"
-        style={{ height: `${SLOT_COUNT * 2.25}rem` }}
-      />
+    <div className="flex flex-col gap-2">
+      <Skeleton className="h-10 w-full" />
+      <Skeleton className="w-full" style={{ height: `${SLOT_COUNT * 2.25}rem` }} />
     </div>
   );
 }
@@ -158,31 +156,21 @@ export default async function RoomPage({
         <h1 className="text-xl font-semibold text-slate-900">{room.name}</h1>
 
         <div className="flex items-center gap-2">
-          <Link
+          <LinkButton
             href={`/rooms/${room.id}?week=${previousWeek}`}
             aria-label="Попередній тиждень"
-            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 transition hover:bg-slate-100"
           >
             ←
-          </Link>
-          <Link
-            href={`/rooms/${room.id}`}
-            aria-current={isCurrentWeek ? "page" : undefined}
-            className={`rounded-lg border px-3 py-1.5 text-sm transition ${
-              isCurrentWeek
-                ? "border-slate-900 bg-slate-900 text-white"
-                : "border-slate-300 text-slate-700 hover:bg-slate-100"
-            }`}
-          >
+          </LinkButton>
+          <LinkButton href={`/rooms/${room.id}`} active={isCurrentWeek}>
             Сьогодні
-          </Link>
-          <Link
+          </LinkButton>
+          <LinkButton
             href={`/rooms/${room.id}?week=${nextWeek}`}
             aria-label="Наступний тиждень"
-            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 transition hover:bg-slate-100"
           >
             →
-          </Link>
+          </LinkButton>
         </div>
       </div>
 
@@ -192,18 +180,13 @@ export default async function RoomPage({
           needs no client-side JavaScript. */}
       <nav className="flex flex-wrap gap-2">
         {rooms.map((option) => (
-          <Link
+          <LinkButton
             key={option.id}
             href={`/rooms/${option.id}?week=${weekStart.toISODate()}`}
-            aria-current={option.id === room.id ? "page" : undefined}
-            className={`rounded-lg border px-3 py-1.5 text-sm transition ${
-              option.id === room.id
-                ? "border-slate-900 bg-slate-900 text-white"
-                : "border-slate-300 text-slate-700 hover:bg-slate-100"
-            }`}
+            active={option.id === room.id}
           >
             {option.name}
-          </Link>
+          </LinkButton>
         ))}
       </nav>
 

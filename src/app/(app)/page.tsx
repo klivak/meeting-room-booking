@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Suspense } from "react";
 
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { prisma } from "@/lib/server/db";
 
 /** Ukrainian plural for "місце": 1 місце, 2-4 місця, 5+ місць (11-14 are the exception). */
@@ -18,10 +20,9 @@ function RoomsSkeleton() {
   return (
     <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {[0, 1, 2, 3, 4, 5].map((index) => (
-        <li
-          key={index}
-          className="h-20 animate-pulse rounded-xl border border-slate-200 bg-white"
-        />
+        <li key={index}>
+          <Skeleton className="h-20 rounded-xl" />
+        </li>
       ))}
     </ul>
   );
@@ -36,11 +37,7 @@ async function RoomsList() {
   });
 
   if (rooms.length === 0) {
-    return (
-      <p className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
-        Кімнат поки немає.
-      </p>
-    );
+    return <EmptyState title="Кімнат поки немає." />;
   }
 
   return (
@@ -49,7 +46,7 @@ async function RoomsList() {
         <li key={room.id}>
           <Link
             href={`/rooms/${room.id}`}
-            className="block rounded-xl border border-slate-200 bg-white p-4 transition hover:border-slate-300 hover:shadow-sm"
+            className="block rounded-xl border border-slate-200 bg-white p-4 transition hover:border-slate-300 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 focus-visible:outline-none"
           >
             <span className="font-medium text-slate-900">{room.name}</span>
             <span className="mt-1 block text-sm text-slate-600">

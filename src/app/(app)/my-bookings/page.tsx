@@ -1,12 +1,13 @@
-import Link from "next/link";
+import { DateTime } from "luxon";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-
-import { DateTime } from "luxon";
 
 import { BookingRow } from "@/components/BookingRow";
 import { CancelBookingButton } from "@/components/CancelBookingButton";
 import { MoreBookings } from "@/components/MoreBookings";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { LinkButton } from "@/components/ui/LinkButton";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { WEEK_START_DAY } from "@/lib/config";
 import { OFFICE_TZ } from "@/lib/domain/constants";
 import { getWeekStart } from "@/lib/domain/week";
@@ -67,19 +68,18 @@ async function BookingList({ tab }: { tab: Tab }) {
 
   if (bookings.length === 0) {
     return (
-      <div className="flex flex-col items-start gap-3 rounded-xl border border-slate-200 bg-white p-6">
-        <p className="text-sm text-slate-600">
-          {tab === "upcoming"
+      <EmptyState
+        title={
+          tab === "upcoming"
             ? "У вас поки немає майбутніх бронювань."
-            : "Минулих бронювань поки немає."}
-        </p>
-        <Link
-          href="/"
-          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
-        >
-          Відкрити розклад
-        </Link>
-      </div>
+            : "Минулих бронювань поки немає."
+        }
+        action={
+          <LinkButton href="/" variant="primary">
+            Відкрити розклад
+          </LinkButton>
+        }
+      />
     );
   }
 
@@ -102,12 +102,11 @@ async function BookingList({ tab }: { tab: Tab }) {
             actions={
               tab === "upcoming" ? (
                 <>
-                  <Link
+                  <LinkButton
                     href={`/rooms/${booking.room.id}?week=${weekOf(booking.startsAt)}&booking=${booking.id}`}
-                    className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
                   >
                     Редагувати
-                  </Link>
+                  </LinkButton>
                   <CancelBookingButton bookingId={booking.id} title={booking.title} />
                 </>
               ) : null
@@ -131,10 +130,9 @@ function ListSkeleton() {
   return (
     <ul className="flex flex-col gap-2">
       {[0, 1, 2].map((index) => (
-        <li
-          key={index}
-          className="h-20 animate-pulse rounded-xl border border-slate-200 bg-white"
-        />
+        <li key={index}>
+          <Skeleton className="h-20 rounded-xl" />
+        </li>
       ))}
     </ul>
   );
@@ -155,18 +153,13 @@ export default async function MyBookingsPage({
       {/* The active tab lives in the URL, so the page can be linked and reloaded. */}
       <nav className="flex gap-2">
         {TABS.map((option) => (
-          <Link
+          <LinkButton
             key={option.value}
             href={option.value === "upcoming" ? "/my-bookings" : "/my-bookings?tab=past"}
-            aria-current={option.value === tab ? "page" : undefined}
-            className={`rounded-lg border px-3 py-1.5 text-sm transition ${
-              option.value === tab
-                ? "border-slate-900 bg-slate-900 text-white"
-                : "border-slate-300 text-slate-700 hover:bg-slate-100"
-            }`}
+            active={option.value === tab}
           >
             {option.label}
-          </Link>
+          </LinkButton>
         ))}
       </nav>
 
