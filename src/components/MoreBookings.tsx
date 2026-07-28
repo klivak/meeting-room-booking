@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { BookingRow, type MyBooking } from "@/components/BookingRow";
@@ -18,6 +19,7 @@ type MoreBookingsProps = {
  * skipped when two bookings share a start time.
  */
 export function MoreBookings({ initialCursor, now, scope }: MoreBookingsProps) {
+  const router = useRouter();
   const [items, setItems] = useState<MyBooking[]>([]);
   const [cursor, setCursor] = useState<string | null>(initialCursor);
   const [pending, setPending] = useState(false);
@@ -30,6 +32,12 @@ export function MoreBookings({ initialCursor, now, scope }: MoreBookingsProps) {
     const response = await fetch(
       `/api/my-bookings?scope=${scope}&cursor=${encodeURIComponent(cursor ?? "")}`,
     ).catch(() => null);
+
+    // An expired session is not a failure to report, it is a reason to sign in again.
+    if (response?.status === 401) {
+      router.replace("/login");
+      return;
+    }
 
     if (!response?.ok) {
       setFailed(true);

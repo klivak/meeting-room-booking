@@ -168,6 +168,12 @@ function BookingForm({
       return;
     }
 
+    // An expired session is not a failure to report, it is a reason to sign in again.
+    if (response?.status === 401) {
+      router.replace("/login");
+      return;
+    }
+
     const body = await response?.json().catch(() => null);
     setError(
       body?.error ?? {

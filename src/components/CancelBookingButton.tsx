@@ -36,6 +36,12 @@ export function CancelBookingButton({
       method: "DELETE",
     }).catch(() => null);
 
+    // An expired session is not a failure to report, it is a reason to sign in again.
+    if (response?.status === 401) {
+      router.replace("/login");
+      return;
+    }
+
     if (!response?.ok) {
       setFailed(true);
       setPending(false);
