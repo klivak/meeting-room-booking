@@ -1,14 +1,21 @@
 "use client";
 
 import { DateTime } from "luxon";
+import Link from "next/link";
 import { useSyncExternalStore } from "react";
 
-import { OFFICE_TZ, WORK_DAY_END, WORK_DAY_START } from "@/lib/domain/constants";
+import {
+  OFFICE_TZ,
+  SLOT_MINUTES,
+  WORK_DAY_END,
+  WORK_DAY_START,
+} from "@/lib/domain/constants";
 import {
   DAYS_IN_WEEK,
   SLOT_COUNT,
   getNowMarker,
   getSlotLabels,
+  getSlotStart,
   getWeekDays,
   placeBooking,
 } from "@/lib/domain/grid";
@@ -23,9 +30,14 @@ export type BookingView = {
 };
 
 type WeekGridProps = {
+  roomId: string;
   /** Office-time midnight of the first day of the week, as an ISO string. */
   weekStart: string;
   bookings: BookingView[];
+  /** Start of the free slot picked in the URL, if any. */
+  selectedSlot?: string;
+  /** Id of the own booking picked in the URL, if any. */
+  selectedBookingId?: string;
 };
 
 const ROW_HEIGHT_REM = 2.25;
@@ -54,7 +66,13 @@ function subscribeToMinuteTick(onChange: () => void) {
 const readNow = () => nowSnapshot;
 const readNoNow = () => null;
 
-export function WeekGrid({ weekStart, bookings }: WeekGridProps) {
+export function WeekGrid({
+  roomId,
+  weekStart,
+  bookings,
+  selectedSlot,
+  selectedBookingId,
+}: WeekGridProps) {
   const timeZone = useSyncExternalStore(
     noopSubscribe,
     readTimeZone,
@@ -75,6 +93,17 @@ export function WeekGrid({ weekStart, bookings }: WeekGridProps) {
     return `${start.toFormat("HH:mm")}–${end.toFormat("HH:mm")}`;
   };
 
+  const weekParam = weekStartDateTime.toISODate();
+
+  const selected = selectedSlot ? DateTime.fromISO(selectedSlot) : null;
+  const selectedLabel =
+    selected?.isValid === true
+      ? `${selected.setZone(timeZone).setLocale("uk").toFormat("ccc dd.MM, HH:mm")}–${selected
+          .plus({ minutes: SLOT_MINUTES })
+          .setZone(timeZone)
+          .toFormat("HH:mm")}`
+      : null;
+
   return (
     <div className="flex flex-col gap-3">
       {timeZone === OFFICE_TZ ? null : (
@@ -83,6 +112,12 @@ export function WeekGrid({ weekStart, bookings }: WeekGridProps) {
           {WORK_DAY_END} за {OFFICE_TZ}.
         </p>
       )}
+
+      {selectedLabel ? (
+        <p className="rounded-lg bg-indigo-50 px-3 py-2 text-sm text-indigo-900">
+          Обрано слот: {selectedLabel}
+        </p>
+      ) : null}
 
       <div className="overflow-x-auto">
         <div
@@ -121,19 +156,36 @@ export function WeekGrid({ weekStart, bookings }: WeekGridProps) {
             </div>
           ))}
 
+          {/* Empty cells are links: clicking one picks that slot as the start of
+              a new booking. Booked areas are covered by the block above them. */}
           {days.map((day, dayIndex) => {
             const isToday = day.toISODate() === todayIso;
 
-            return Array.from({ length: SLOT_COUNT }, (_, rowIndex) => (
-              <div
-                key={`${day.toISODate()}-${rowIndex}`}
-                className={`border-l border-slate-200 ${
-                  // A lighter line inside the hour, a full one between hours.
-                  rowIndex % 2 === 0 ? "border-t border-t-slate-200" : "border-t border-t-slate-100"
-                } ${isToday ? "bg-indigo-50/40" : ""}`}
-                style={{ gridColumn: dayIndex + 2, gridRow: rowIndex + 2 }}
-              />
-            ));
+            return Array.from({ length: SLOT_COUNT }, (_, rowIndex) => {
+              const start = getSlotStart(day, rowIndex);
+              const startIso = start.toUTC().toISO() ?? "";
+              const isSelected = selected?.isValid === true && +selected === +start;
+
+              return (
+                <Link
+                  key={`${day.toISODate()}-${rowIndex}`}
+                  href={`/rooms/${roomId}?week=${weekParam}&slot=${encodeURIComponent(startIso)}`}
+                  scroll={false}
+                  aria-label={`Забронювати ${day.setLocale("uk").toFormat("ccc dd.MM")}, ${
+                    labels[rowIndex]
+                  }`}
+                  className={`border-l border-slate-200 transition hover:bg-indigo-100/60 ${
+                    // A lighter line inside the hour, a full one between hours.
+                    rowIndex % 2 === 0
+                      ? "border-t border-t-slate-200"
+                      : "border-t border-t-slate-100"
+                  } ${isToday ? "bg-indigo-50/40" : ""} ${
+                    isSelected ? "z-10 bg-indigo-100 ring-2 ring-indigo-500 ring-inset" : ""
+                  }`}
+                  style={{ gridColumn: dayIndex + 2, gridRow: rowIndex + 2 }}
+                />
+              );
+            });
           })}
 
           {bookings.map((booking) => {
@@ -149,22 +201,45 @@ export function WeekGrid({ weekStart, bookings }: WeekGridProps) {
             }
 
             const range = formatBookingRange(booking);
+            const isSelected = booking.id === selectedBookingId;
 
-            return (
-              <div
-                key={booking.id}
-                className="z-10 m-0.5 overflow-hidden rounded-md px-1.5 py-1 text-xs leading-tight"
-                style={{
-                  gridColumn: placement.dayIndex + 2,
-                  gridRow: `${placement.rowStart + 2} / span ${placement.rowSpan}`,
-                  backgroundColor: booking.isMine ? "var(--color-indigo-600)" : "var(--color-slate-200)",
-                  color: booking.isMine ? "white" : "var(--color-slate-700)",
-                }}
-                // Short bookings clip their text, so the full details live in the tooltip.
-                title={`${booking.title} · ${booking.user.name} · ${range}`}
-              >
+            const style = {
+              gridColumn: placement.dayIndex + 2,
+              gridRow: `${placement.rowStart + 2} / span ${placement.rowSpan}`,
+              backgroundColor: booking.isMine
+                ? "var(--color-indigo-600)"
+                : "var(--color-slate-200)",
+              color: booking.isMine ? "white" : "var(--color-slate-700)",
+            };
+            // Short bookings clip their text, so the full details live in the tooltip.
+            const tooltip = `${booking.title} · ${booking.user.name} · ${range}`;
+            const className = `z-10 m-0.5 overflow-hidden rounded-md px-1.5 py-1 text-xs leading-tight ${
+              isSelected ? "ring-2 ring-slate-900 ring-offset-1" : ""
+            }`;
+
+            const content = (
+              <>
                 <div className="truncate font-medium">{booking.title}</div>
                 <div className="truncate opacity-80">{booking.user.name}</div>
+              </>
+            );
+
+            // Someone else's booking is visible but offers no action at all,
+            // which is the UI half of the ownership rule.
+            return booking.isMine ? (
+              <Link
+                key={booking.id}
+                href={`/rooms/${roomId}?week=${weekParam}&booking=${booking.id}`}
+                scroll={false}
+                className={`${className} transition hover:brightness-110`}
+                style={style}
+                title={tooltip}
+              >
+                {content}
+              </Link>
+            ) : (
+              <div key={booking.id} className={className} style={style} title={tooltip}>
+                {content}
               </div>
             );
           })}

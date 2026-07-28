@@ -39,7 +39,17 @@ function formatWeekRange(weekStart: DateTime): string {
     : `${from.toFormat("d MMMM")} – ${to.toFormat("d MMMM yyyy")}`;
 }
 
-async function Schedule({ roomId, weekStart }: { roomId: string; weekStart: DateTime }) {
+async function Schedule({
+  roomId,
+  weekStart,
+  selectedSlot,
+  selectedBookingId,
+}: {
+  roomId: string;
+  weekStart: DateTime;
+  selectedSlot?: string;
+  selectedBookingId?: string;
+}) {
   const user = await getCurrentUser();
   const weekStartDate = weekStart.toUTC().toJSDate();
   const weekEndDate = new Date(weekStartDate.getTime() + WEEK_MS);
@@ -64,6 +74,16 @@ async function Schedule({ roomId, weekStart }: { roomId: string; weekStart: Date
 
   return (
     <WeekGrid
+      roomId={roomId}
+      selectedSlot={selectedSlot}
+      // Only an own booking can be acted on, so a foreign id is simply ignored.
+      selectedBookingId={
+        bookings.some(
+          (booking) => booking.id === selectedBookingId && booking.user.id === user?.id,
+        )
+          ? selectedBookingId
+          : undefined
+      }
       weekStart={weekStart.toISO() ?? ""}
       bookings={bookings.map((booking) => ({
         id: booking.id,
@@ -94,10 +114,10 @@ export default async function RoomPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ week?: string }>;
+  searchParams: Promise<{ week?: string; slot?: string; booking?: string }>;
 }) {
   const { id } = await params;
-  const { week } = await searchParams;
+  const { week, slot, booking } = await searchParams;
 
   const room = await prisma.room.findUnique({ where: { id } });
   if (!room) {
@@ -171,7 +191,12 @@ export default async function RoomPage({
       </nav>
 
       <Suspense key={weekStart.toISODate()} fallback={<ScheduleSkeleton />}>
-        <Schedule roomId={room.id} weekStart={weekStart} />
+        <Schedule
+          roomId={room.id}
+          weekStart={weekStart}
+          selectedSlot={slot}
+          selectedBookingId={booking}
+        />
       </Suspense>
     </div>
   );

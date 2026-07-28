@@ -6,6 +6,7 @@ import {
   SLOT_COUNT,
   getNowMarker,
   getSlotLabels,
+  getSlotStart,
   getWeekDays,
   placeBooking,
 } from "./grid";
@@ -106,6 +107,30 @@ describe("placeBooking across the DST switch", () => {
   it("really is a different UTC hour on those two days", () => {
     expect(at("2026-03-27T09:00").toISOString()).toBe("2026-03-27T07:00:00.000Z");
     expect(at("2026-03-30T09:00").toISOString()).toBe("2026-03-30T06:00:00.000Z");
+  });
+});
+
+describe("getSlotStart", () => {
+  it("turns a row into the instant the cell stands for", () => {
+    expect(getSlotStart(kyiv("2026-08-24T00:00"), 0).toISO()).toBe(
+      kyiv("2026-08-24T09:00").toISO(),
+    );
+    expect(getSlotStart(kyiv("2026-08-24T00:00"), 3).toISO()).toBe(
+      kyiv("2026-08-24T10:30").toISO(),
+    );
+    expect(getSlotStart(kyiv("2026-08-24T00:00"), SLOT_COUNT - 1).toISO()).toBe(
+      kyiv("2026-08-24T18:30").toISO(),
+    );
+  });
+
+  it("round-trips with placeBooking", () => {
+    const start = getSlotStart(kyiv("2026-08-26T00:00"), 5);
+    const placement = placeBooking(
+      { startsAt: start.toJSDate(), endsAt: start.plus({ minutes: 30 }).toJSDate() },
+      WEEK_START,
+    );
+
+    expect(placement).toEqual({ dayIndex: 2, rowStart: 5, rowSpan: 1 });
   });
 });
 

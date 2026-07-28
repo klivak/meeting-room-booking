@@ -84,6 +84,17 @@ export function placeBooking(
 }
 
 /**
+ * The instant a grid cell stands for: the office day plus the row offset.
+ * Used to turn a click on an empty cell into a concrete booking start.
+ */
+export function getSlotStart(day: DateTime, rowIndex: number): DateTime {
+  return day
+    .setZone(OFFICE_TZ)
+    .startOf("day")
+    .plus({ minutes: OPEN_MINUTES + rowIndex * SLOT_MINUTES });
+}
+
+/**
  * Time axis labels for one day of the week, rendered in the viewer's timezone.
  *
  * They are computed per day rather than once for the week because a DST switch
