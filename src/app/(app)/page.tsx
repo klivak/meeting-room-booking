@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { EmptyState } from "@/components/ui/EmptyState";
+import { LinkButton } from "@/components/ui/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { prisma } from "@/lib/server/db";
 
@@ -31,16 +32,24 @@ function RoomsSkeleton() {
   );
 }
 
-async function RoomsList() {
+async function RoomsList({ capacityMin }: { capacityMin?: number }) {
   // The layout above already guarantees a session, so this reads straight from
   // the database instead of going through /api/rooms over HTTP.
   const rooms = await prisma.room.findMany({
+    where: capacityMin ? { capacity: { gte: capacityMin } } : {},
     select: { id: true, name: true, floor: true, capacity: true },
     orderBy: [{ floor: "asc" }, { name: "asc" }],
   });
 
   if (rooms.length === 0) {
-    return <EmptyState title="Кімнат поки немає." />;
+    return capacityMin ? (
+      <EmptyState
+        title={`Кімнат на ${capacityMin} і більше місць немає.`}
+        action={<LinkButton href="/">Скинути фільтр</LinkButton>}
+      />
+    ) : (
+      <EmptyState title="Кімнат поки немає." />
+    );
   }
 
   return (
@@ -62,15 +71,53 @@ async function RoomsList() {
   );
 }
 
+/** Options for the capacity filter; undefined means no filter. */
+const CAPACITY_OPTIONS: { value?: number; label: string }[] = [
+  { label: "Будь-яка" },
+  { value: 2, label: "2+" },
+  { value: 4, label: "4+" },
+  { value: 6, label: "6+" },
+  { value: 8, label: "8+" },
+  { value: 12, label: "12+" },
+];
+
 // The skeleton is scoped to this page instead of living in a group-level
 // loading.tsx: a Suspense boundary above /rooms/[id] would flush the response
 // before notFound() runs, turning a missing room into a 200.
-export default function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ capacityMin?: string }>;
+}) {
+  const { capacityMin: capacityParam } = await searchParams;
+
+  // An unusable value is ignored rather than refused: the list is still the
+  // right thing to show.
+  const parsed = Number(capacityParam);
+  const capacityMin =
+    Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
+
   return (
     <div className="flex flex-col gap-4">
       <h1 className="text-xl font-semibold text-slate-900">Переговорні</h1>
-      <Suspense fallback={<RoomsSkeleton />}>
-        <RoomsList />
+
+      {/* Links rather than a select: the filter stays in the URL, is shareable
+          and needs no client-side JavaScript. */}
+      <nav aria-label="Фільтр за місткістю" className="flex flex-wrap items-center gap-2">
+        <span className="text-sm text-slate-600">Місткість:</span>
+        {CAPACITY_OPTIONS.map((option) => (
+          <LinkButton
+            key={option.label}
+            href={option.value ? `/?capacityMin=${option.value}` : "/"}
+            active={option.value === capacityMin}
+          >
+            {option.label}
+          </LinkButton>
+        ))}
+      </nav>
+
+      <Suspense key={capacityMin ?? "all"} fallback={<RoomsSkeleton />}>
+        <RoomsList capacityMin={capacityMin} />
       </Suspense>
     </div>
   );
