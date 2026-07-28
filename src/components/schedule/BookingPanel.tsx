@@ -2,7 +2,7 @@
 
 import { DateTime } from "luxon";
 import { useRouter } from "next/navigation";
-import { useState, useSyncExternalStore } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
 
 import { CancelBookingButton } from "@/components/CancelBookingButton";
 import { showToast } from "@/components/toast";
@@ -28,6 +28,21 @@ import {
 type RoomOption = { id: string; name: string };
 
 type ApiError = { code: string; message: string; field?: string };
+
+// The panel floats beside the grid from the sm breakpoint up and covers the
+// screen below it. The server cannot know which, so it renders the phone layout
+// and the browser corrects it after hydration.
+const WIDE_SCREEN = "(min-width: 640px)";
+
+function subscribeToWideScreen(onChange: () => void) {
+  const query = window.matchMedia(WIDE_SCREEN);
+  query.addEventListener("change", onChange);
+
+  return () => query.removeEventListener("change", onChange);
+}
+
+const readWide = () => window.matchMedia(WIDE_SCREEN).matches;
+const readNotWide = () => false;
 
 export type EditableBooking = {
   id: string;
@@ -119,6 +134,11 @@ function BookingForm({
   const [error, setError] = useState<ApiError | null>(null);
   const [pending, setPending] = useState(false);
 
+  // Where the panel was dragged to; null means it sits where CSS put it.
+  const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
+  const dragOffset = useRef<{ x: number; y: number } | null>(null);
+  const isWide = useSyncExternalStore(subscribeToWideScreen, readWide, readNotWide);
+
   const day = DateTime.fromISO(date, { zone: OFFICE_TZ });
   const endBounds = getEndSlotBounds(startIndex);
 
@@ -204,21 +224,87 @@ function BookingForm({
   // SLOT_TAKEN, OUTSIDE_WORKING_HOURS and TIME_IN_PAST belong to no single field.
   const generalError = error && !error.field ? error.message : null;
 
+  // Only the floating panel can be moved; on a phone it fills the screen and
+  // there is nowhere to move it to.
+  const panelStyle =
+    isWide && position
+      ? { left: `${position.x}px`, top: `${position.y}px`, right: "auto" }
+      : undefined;
+
+  function startDragging(event: React.PointerEvent<HTMLDivElement>) {
+    const panel = event.currentTarget.parentElement;
+    if (!isWide || !panel) {
+      return;
+    }
+
+    const rect = panel.getBoundingClientRect();
+    dragOffset.current = {
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
+    };
+    // Capture keeps the moves coming even when the pointer outruns the header.
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  function keepDragging(event: React.PointerEvent<HTMLDivElement>) {
+    const offset = dragOffset.current;
+    const panel = event.currentTarget.parentElement;
+    if (!offset || !panel) {
+      return;
+    }
+
+    const rect = panel.getBoundingClientRect();
+
+    // Kept inside the window, so the panel cannot be dragged out of reach.
+    setPosition({
+      x: Math.min(
+        Math.max(event.clientX - offset.x, 0),
+        Math.max(window.innerWidth - rect.width, 0),
+      ),
+      y: Math.min(
+        Math.max(event.clientY - offset.y, 0),
+        Math.max(window.innerHeight - rect.height, 0),
+      ),
+    });
+  }
+
+  function stopDragging(event: React.PointerEvent<HTMLDivElement>) {
+    dragOffset.current = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  }
+
   return (
     <div
-      // Full screen on a phone, a centred dialog from the sm breakpoint up.
-      className="fixed inset-0 z-40 flex items-stretch justify-center bg-slate-900/40 sm:items-center sm:p-4"
-      onClick={() => close(roomId)}
+      // No backdrop above the sm breakpoint: the point of the panel is that the
+      // schedule stays readable while it is open. On a phone there is no room
+      // for both, so it covers the screen as before.
+      className="fixed inset-0 z-40 flex items-stretch justify-center bg-slate-900/40 sm:pointer-events-none sm:inset-auto sm:top-20 sm:right-6 sm:block sm:bg-transparent"
+      style={panelStyle}
+      onClick={(event) => {
+        // Only the phone overlay closes on a tap outside it.
+        if (event.currentTarget === event.target) {
+          close(roomId);
+        }
+      }}
     >
       <div
         role="dialog"
-        aria-modal="true"
+        aria-modal="false"
         aria-labelledby="booking-form-title"
         // The sheet scrolls instead of pushing its buttons out of reach.
-        className="w-full overflow-y-auto bg-white p-5 shadow-xl sm:max-h-[90vh] sm:max-w-md sm:rounded-xl"
-        onClick={(event) => event.stopPropagation()}
+        className="w-full overflow-y-auto bg-white p-5 shadow-xl sm:pointer-events-auto sm:max-h-[85vh] sm:w-96 sm:rounded-xl sm:border sm:border-slate-200"
       >
-        <div className="mb-4 flex items-center justify-between gap-4">
+        <div
+          // The header is the handle: dragging it moves the panel off whatever
+          // part of the grid the user wants to look at.
+          onPointerDown={startDragging}
+          onPointerMove={keepDragging}
+          onPointerUp={stopDragging}
+          onPointerCancel={stopDragging}
+          className="mb-4 flex touch-none items-center justify-between gap-4 sm:cursor-grab sm:active:cursor-grabbing"
+        >
           <h2 id="booking-form-title" className="text-lg font-semibold text-slate-900">
             {booking ? "Редагувати бронювання" : "Нове бронювання"}
           </h2>
