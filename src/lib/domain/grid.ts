@@ -1,6 +1,13 @@
 import { DateTime } from "luxon";
 
-import { OFFICE_TZ, SLOT_MINUTES, WORK_DAY_END, WORK_DAY_START } from "./constants";
+import {
+  MAX_DURATION_MINUTES,
+  MIN_DURATION_MINUTES,
+  OFFICE_TZ,
+  SLOT_MINUTES,
+  WORK_DAY_END,
+  WORK_DAY_START,
+} from "./constants";
 
 // Geometry of the weekly grid.
 //
@@ -106,6 +113,28 @@ export function getSlotLabels(day: DateTime, timeZone: string): string[] {
   return Array.from({ length: SLOT_COUNT }, (_, index) =>
     dayStart.plus({ minutes: index * SLOT_MINUTES }).setZone(timeZone).toFormat("HH:mm"),
   );
+}
+
+/**
+ * Label for one slot boundary, rendered in the viewer's timezone.
+ *
+ * Index 0 is opening time and index SLOT_COUNT is closing time, which is a
+ * valid end but never a valid start.
+ */
+export function getSlotLabel(day: DateTime, index: number, timeZone: string): string {
+  return getSlotStart(day, index).setZone(timeZone).toFormat("HH:mm");
+}
+
+/**
+ * Which end slots are offered for a given start: at least the minimum duration,
+ * at most the maximum, and never past closing time. Encoding the duration rule
+ * in the options means an invalid pair cannot be built in the form at all.
+ */
+export function getEndSlotBounds(startIndex: number): { min: number; max: number } {
+  const min = startIndex + MIN_DURATION_MINUTES / SLOT_MINUTES;
+  const max = Math.min(startIndex + MAX_DURATION_MINUTES / SLOT_MINUTES, SLOT_COUNT);
+
+  return { min, max };
 }
 
 /**

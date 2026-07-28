@@ -1,10 +1,13 @@
 import { DateTime } from "luxon";
 import { describe, expect, it } from "vitest";
 
+import { validateBookingTime } from "./bookingRules";
 import { OFFICE_TZ } from "./constants";
 import {
   SLOT_COUNT,
+  getEndSlotBounds,
   getNowMarker,
+  getSlotLabel,
   getSlotLabels,
   getSlotStart,
   getWeekDays,
@@ -16,6 +19,20 @@ const at = (iso: string) => kyiv(iso).toJSDate();
 
 // Monday of a plain summer week.
 const WEEK_START = kyiv("2026-08-24T00:00");
+
+/**
+ * Runs a pair of slot indexes through the real booking rules, so the options the
+ * form offers are checked against the validation the server actually applies.
+ * "Future only" is left out: these dates are fixed in the past of the test.
+ */
+const codesForRange = (day: DateTime, startIndex: number, endIndex: number) =>
+  validateBookingTime({
+    startsAt: getSlotStart(day, startIndex).toJSDate(),
+    endsAt: getSlotStart(day, endIndex).toJSDate(),
+    now: kyiv("2020-01-01T00:00").toJSDate(),
+  })
+    .map((error) => error.code)
+    .filter((code) => code !== "TIME_IN_PAST");
 
 describe("grid shape", () => {
   it("covers the office day in 30-minute rows", () => {
@@ -166,6 +183,43 @@ describe("getSlotLabels", () => {
 
     expect(beforeSwitch[0]).toBe("16:00");
     expect(afterSwitch[0]).toBe("15:00");
+  });
+});
+
+describe("getSlotLabel", () => {
+  it("labels opening and closing time in the viewer's zone", () => {
+    const day = kyiv("2026-08-24T00:00");
+
+    expect(getSlotLabel(day, 0, OFFICE_TZ)).toBe("09:00");
+    expect(getSlotLabel(day, SLOT_COUNT, OFFICE_TZ)).toBe("19:00");
+    expect(getSlotLabel(day, 0, "Europe/Berlin")).toBe("08:00");
+    expect(getSlotLabel(day, SLOT_COUNT, "Europe/Berlin")).toBe("18:00");
+  });
+});
+
+describe("getEndSlotBounds", () => {
+  it("offers from 30 minutes up to 4 hours after the start", () => {
+    expect(getEndSlotBounds(0)).toEqual({ min: 1, max: 8 });
+  });
+
+  it("never offers an end past closing time", () => {
+    expect(getEndSlotBounds(SLOT_COUNT - 1)).toEqual({ min: 20, max: 20 });
+    expect(getEndSlotBounds(SLOT_COUNT - 4)).toEqual({ min: 17, max: 20 });
+  });
+
+  it("agrees with the duration rule at both edges", () => {
+    const day = kyiv("2026-08-24T00:00");
+    const { min, max } = getEndSlotBounds(4);
+
+    const shortest = codesForRange(day, 4, min);
+    const longest = codesForRange(day, 4, max);
+    const tooShort = codesForRange(day, 4, min - 1);
+    const tooLong = codesForRange(day, 4, max + 1);
+
+    expect(shortest).toEqual([]);
+    expect(longest).toEqual([]);
+    expect(tooShort).toContain("VALIDATION_ERROR");
+    expect(tooLong).toContain("DURATION_INVALID");
   });
 });
 
