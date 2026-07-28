@@ -77,14 +77,10 @@ async function Schedule({
     <WeekGrid
       roomId={roomId}
       selectedSlot={selectedSlot}
-      // Only an own booking can be acted on, so a foreign id is simply ignored.
-      selectedBookingId={
-        bookings.some(
-          (booking) => booking.id === selectedBookingId && booking.user.id === user?.id,
-        )
-          ? selectedBookingId
-          : undefined
-      }
+      selectedBookingId={selectedBookingId}
+      // Rendered on the server so the client agrees on which bookings are still
+      // editable and hydration matches.
+      now={new Date().toISOString()}
       weekStart={weekStart.toISO() ?? ""}
       bookings={bookings.map((booking) => ({
         id: booking.id,
@@ -124,6 +120,26 @@ export default async function RoomPage({
   if (!room) {
     notFound();
   }
+
+  const user = await getCurrentUser();
+
+  const now = new Date();
+
+  // The filters live in the query, so a foreign, canceled or already finished id
+  // in the URL simply yields nothing instead of being trusted. They mirror
+  // checkBookingAccess, which the API applies to the request itself.
+  const selectedBooking =
+    booking && user
+      ? await prisma.booking.findFirst({
+          where: {
+            id: booking,
+            userId: user.id,
+            canceledAt: null,
+            endsAt: { gt: now },
+          },
+          select: { id: true, roomId: true, title: true, startsAt: true, endsAt: true },
+        })
+      : null;
 
   const rooms = await prisma.room.findMany({
     select: { id: true, name: true },
@@ -196,7 +212,7 @@ export default async function RoomPage({
           roomId={room.id}
           weekStart={weekStart}
           selectedSlot={slot}
-          selectedBookingId={booking}
+          selectedBookingId={selectedBooking?.id}
         />
       </Suspense>
 
@@ -207,6 +223,15 @@ export default async function RoomPage({
         roomId={room.id}
         weekParam={weekStart.toISODate() ?? ""}
         slot={slot}
+        booking={
+          selectedBooking
+            ? {
+                ...selectedBooking,
+                startsAt: selectedBooking.startsAt.toISOString(),
+                endsAt: selectedBooking.endsAt.toISOString(),
+              }
+            : undefined
+        }
       />
     </div>
   );

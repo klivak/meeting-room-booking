@@ -29,6 +29,8 @@ type WeekGridProps = {
   /** Office-time midnight of the first day of the week, as an ISO string. */
   weekStart: string;
   bookings: BookingView[];
+  /** Server time, so both renders agree on which bookings are still editable. */
+  now: string;
   /** Start of the free slot picked in the URL, if any. */
   selectedSlot?: string;
   /** Id of the own booking picked in the URL, if any. */
@@ -65,6 +67,7 @@ export function WeekGrid({
   roomId,
   weekStart,
   bookings,
+  now: serverNow,
   selectedSlot,
   selectedBookingId,
 }: WeekGridProps) {
@@ -184,6 +187,9 @@ export function WeekGrid({
 
             const range = formatBookingRange(booking);
             const isSelected = booking.id === selectedBookingId;
+            // A finished booking can no longer be edited or canceled, so it
+            // offers no action even to its author.
+            const isEditable = booking.isMine && booking.endsAt > serverNow;
 
             const style = {
               gridColumn: placement.dayIndex + 2,
@@ -208,7 +214,7 @@ export function WeekGrid({
 
             // Someone else's booking is visible but offers no action at all,
             // which is the UI half of the ownership rule.
-            return booking.isMine ? (
+            return isEditable ? (
               <Link
                 key={booking.id}
                 href={`/rooms/${roomId}?week=${weekParam}&booking=${booking.id}`}

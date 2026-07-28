@@ -21,12 +21,22 @@ type RoomOption = { id: string; name: string };
 
 type ApiError = { code: string; message: string; field?: string };
 
+export type EditableBooking = {
+  id: string;
+  roomId: string;
+  title: string;
+  startsAt: string;
+  endsAt: string;
+};
+
 type BookingPanelProps = {
   rooms: RoomOption[];
   roomId: string;
   weekParam: string;
   /** Start of the slot picked in the grid; its presence opens the form. */
   slot?: string;
+  /** Own booking picked in the grid; opens the same form in edit mode. */
+  booking?: EditableBooking;
 };
 
 // Same browser-only value the grid reads, resolved here too so the form shows
@@ -40,7 +50,13 @@ const readOfficeTimeZone = () => OFFICE_TZ;
  * than inside the form because the form is keyed by the picked slot and is
  * unmounted the moment the booking is saved.
  */
-export function BookingPanel({ rooms, roomId, weekParam, slot }: BookingPanelProps) {
+export function BookingPanel({
+  rooms,
+  roomId,
+  weekParam,
+  slot,
+  booking,
+}: BookingPanelProps) {
   const [toast, setToast] = useState<string | null>(null);
 
   const showToast = (message: string) => {
@@ -50,13 +66,15 @@ export function BookingPanel({ rooms, roomId, weekParam, slot }: BookingPanelPro
 
   return (
     <>
-      {slot ? (
+      {slot || booking ? (
+        // The key resets the form when a different slot or booking is picked.
         <BookingForm
-          key={slot}
+          key={booking?.id ?? slot}
           rooms={rooms}
           roomId={roomId}
           weekParam={weekParam}
           slot={slot}
+          booking={booking}
           onSaved={showToast}
         />
       ) : null}
@@ -78,8 +96,9 @@ function BookingForm({
   roomId,
   weekParam,
   slot,
+  booking,
   onSaved,
-}: BookingPanelProps & { slot: string; onSaved: (message: string) => void }) {
+}: BookingPanelProps & { onSaved: (message: string) => void }) {
   const router = useRouter();
   const timeZone = useSyncExternalStore(
     noopSubscribe,
@@ -87,15 +106,19 @@ function BookingForm({
     readOfficeTimeZone,
   );
 
-  const slotStart = DateTime.fromISO(slot, { zone: OFFICE_TZ });
-  const initialIndex = Math.min(getSlotIndex(slotStart.toJSDate()), SLOT_COUNT - 1);
+  // Editing prefills from the booking; creating starts at the clicked cell and
+  // a click means "this half hour", so the end is one slot later.
+  const start = DateTime.fromISO(booking?.startsAt ?? slot ?? "", { zone: OFFICE_TZ });
+  const initialStart = Math.min(getSlotIndex(start.toJSDate()), SLOT_COUNT - 1);
+  const initialEnd = booking
+    ? getSlotIndex(new Date(booking.endsAt))
+    : initialStart + 1;
 
-  const [selectedRoomId, setSelectedRoomId] = useState(roomId);
-  const [date, setDate] = useState(slotStart.toISODate() ?? "");
-  const [startIndex, setStartIndex] = useState(initialIndex);
-  // A click on a free cell means "this half hour", so the end starts one slot later.
-  const [endIndex, setEndIndex] = useState(initialIndex + 1);
-  const [title, setTitle] = useState("");
+  const [selectedRoomId, setSelectedRoomId] = useState(booking?.roomId ?? roomId);
+  const [date, setDate] = useState(start.toISODate() ?? "");
+  const [startIndex, setStartIndex] = useState(initialStart);
+  const [endIndex, setEndIndex] = useState(initialEnd);
+  const [title, setTitle] = useState(booking?.title ?? "");
   const [error, setError] = useState<ApiError | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -145,14 +168,19 @@ function BookingForm({
     setPending(true);
     setError(null);
 
-    const response = await fetch("/api/bookings", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    }).catch(() => null);
+    // Editing sends the full set of fields, so the server re-runs every rule it
+    // applies on creation.
+    const response = await fetch(
+      booking ? `/api/bookings/${booking.id}` : "/api/bookings",
+      {
+        method: booking ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      },
+    ).catch(() => null);
 
     if (response?.ok) {
-      onSaved("Бронювання створено");
+      onSaved(booking ? "Зміни збережено" : "Бронювання створено");
       close(selectedRoomId);
       return;
     }
@@ -186,7 +214,7 @@ function BookingForm({
       >
         <div className="mb-4 flex items-center justify-between gap-4">
           <h2 id="booking-form-title" className="text-lg font-semibold text-slate-900">
-            Нове бронювання
+            {booking ? "Редагувати бронювання" : "Нове бронювання"}
           </h2>
           <button
             type="button"
@@ -296,7 +324,7 @@ function BookingForm({
               Скасувати
             </Button>
             <Button type="submit" disabled={pending}>
-              {pending ? "Зберігаємо…" : "Забронювати"}
+              {pending ? "Зберігаємо…" : booking ? "Зберегти" : "Забронювати"}
             </Button>
           </div>
         </form>
