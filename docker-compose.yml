@@ -18,5 +18,26 @@ services:
       timeout: 5s
       retries: 10
 
+  app:
+    build:
+      context: .
+      args:
+        # Inlined into the client bundle while building, so it belongs here and
+        # not in the environment below.
+        NEXT_PUBLIC_WEEK_START_DAY: ${NEXT_PUBLIC_WEEK_START_DAY:-1}
+    container_name: meeting-room-booking-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Inside the compose network the database answers on its service name, not
+      # on localhost, which is what the .env file uses for the npm workflow.
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/meeting_room_booking?schema=public
+      SESSION_SECRET: ${SESSION_SECRET:-dev-secret-change-me-in-production}
+      NOTIFY_BEFORE_MINUTES: ${NOTIFY_BEFORE_MINUTES:-10}
+    ports:
+      - "3000:3000"
+
 volumes:
   db-data:

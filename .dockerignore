@@ -1,0 +1,16 @@
+node_modules
+.next
+.git
+.gitignore
+
+# Secrets never enter the image; compose passes the values in.
+.env
+.env.*
+!.env.example
+
+# Local working notes and generated artifacts.
+docs
+*.md
+.claude
+skills-lock.json
+src/generated
