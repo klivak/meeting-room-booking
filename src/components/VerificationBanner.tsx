@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { showToast } from "@/components/toast";
@@ -11,6 +12,7 @@ import { Button } from "@/components/ui/Button";
  * an inbox.
  */
 export function VerificationBanner() {
+  const t = useTranslations("auth");
   const [pending, setPending] = useState(false);
 
   async function resend() {
@@ -21,9 +23,7 @@ export function VerificationBanner() {
     );
 
     showToast(
-      response?.ok
-        ? "Нове посилання у лозі сервера"
-        : "Не вдалося надіслати. Спробуйте ще раз",
+      response?.ok ? t("resendDone") : t("resendFailed"),
     );
     setPending(false);
   }
@@ -32,11 +32,10 @@ export function VerificationBanner() {
     <div className="border-b border-amber-200 bg-amber-50">
       <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3">
         <p className="text-sm text-amber-900">
-          Підтвердьте електронну пошту, щоб бронювати. Посилання надруковане в лозі
-          сервера.
+          {t("verifyBanner")}
         </p>
         <Button variant="ghost" onClick={resend} disabled={pending}>
-          {pending ? "Надсилаємо…" : "Надіслати ще раз"}
+          {pending ? t("resending") : t("resend")}
         </Button>
       </div>
     </div>

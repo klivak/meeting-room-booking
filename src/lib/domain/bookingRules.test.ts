@@ -100,10 +100,10 @@ describe("duration", () => {
 describe("interval sanity", () => {
   it("rejects an end that is not after the start", () => {
     expect(codesFor(kyiv("2026-03-10T11:00"), kyiv("2026-03-10T10:00"))).toEqual([
-      "VALIDATION_ERROR",
+      "END_BEFORE_START",
     ]);
     expect(codesFor(kyiv("2026-03-10T10:00"), kyiv("2026-03-10T10:00"))).toEqual([
-      "VALIDATION_ERROR",
+      "END_BEFORE_START",
     ]);
   });
 });
@@ -182,11 +182,11 @@ describe("validateTitle", () => {
   });
 
   it("rejects a title made of spaces", () => {
-    expect(validateTitle("   ")?.code).toBe("TITLE_INVALID");
+    expect(validateTitle("   ")?.code).toBe("TITLE_REQUIRED");
   });
 
   it("counts length after trimming", () => {
     expect(validateTitle(`  ${"я".repeat(100)}  `)).toBeNull();
-    expect(validateTitle("я".repeat(101))?.code).toBe("TITLE_INVALID");
+    expect(validateTitle("я".repeat(101))?.code).toBe("TITLE_TOO_LONG");
   });
 });

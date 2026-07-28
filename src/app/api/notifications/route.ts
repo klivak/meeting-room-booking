@@ -8,7 +8,7 @@ import { getCurrentUser } from "@/lib/server/session";
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) {
-    return unauthorizedError();
+    return await unauthorizedError();
   }
 
   return NextResponse.json({ items: await getDueNotifications(user.id) });
@@ -18,7 +18,7 @@ export async function GET() {
 export async function POST() {
   const user = await getCurrentUser();
   if (!user) {
-    return unauthorizedError();
+    return await unauthorizedError();
   }
 
   await markNotificationsRead(user.id);

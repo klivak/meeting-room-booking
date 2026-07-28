@@ -20,10 +20,10 @@ export default function GlobalError({ reset }: { error: Error; reset: () => void
         }}
       >
         <h1 style={{ fontSize: "1.25rem", fontWeight: 600, margin: 0 }}>
-          Застосунок не вдалося завантажити
+          Застосунок не вдалося завантажити · The application could not start
         </h1>
         <p style={{ fontSize: "0.875rem", color: "#475569", margin: 0 }}>
-          Спробуйте оновити сторінку. Якщо не допомогло, перевірте, чи запущена база даних.
+          Спробуйте оновити сторінку і перевірте базу даних · Try reloading the page and check the database
         </p>
         <button
           type="button"
@@ -38,7 +38,7 @@ export default function GlobalError({ reset }: { error: Error; reset: () => void
             cursor: "pointer",
           }}
         >
-          Спробувати ще раз
+          Спробувати ще раз · Try again
         </button>
       </body>
     </html>

@@ -14,16 +14,25 @@ import {
 // the other.
 
 export type BookingRuleErrorCode =
-  | "VALIDATION_ERROR"
-  | "TITLE_INVALID"
+  | "END_BEFORE_START"
+  | "TITLE_REQUIRED"
+  | "TITLE_TOO_LONG"
   | "TIME_NOT_ALIGNED"
   | "DURATION_INVALID"
   | "OUTSIDE_WORKING_HOURS"
   | "TIME_IN_PAST";
 
+/**
+ * A broken rule, named but not worded.
+ *
+ * The domain says what is wrong; the wording lives in the dictionaries and is
+ * chosen at the edge, where the language of the request is known. Values the
+ * sentence needs — the limits, the working hours — travel with the code, so the
+ * dictionary never has to repeat a constant.
+ */
 export type BookingRuleError = {
   code: BookingRuleErrorCode;
-  message: string;
+  values?: Record<string, string | number>;
 };
 
 export const MAX_TITLE_LENGTH = 100;
@@ -64,18 +73,13 @@ export function validateBookingTime(input: {
 
   // Everything below assumes a forward interval, so this one stops the check.
   if (input.startsAt >= input.endsAt) {
-    return [
-      {
-        code: "VALIDATION_ERROR",
-        message: "Час завершення має бути пізнішим за час початку",
-      },
-    ];
+    return [{ code: "END_BEFORE_START" }];
   }
 
   if (!isAligned(start) || !isAligned(end)) {
     errors.push({
       code: "TIME_NOT_ALIGNED",
-      message: `Час має бути кратним ${SLOT_MINUTES} хвилинам`,
+      values: { minutes: SLOT_MINUTES },
     });
   }
 
@@ -86,9 +90,7 @@ export function validateBookingTime(input: {
   ) {
     errors.push({
       code: "DURATION_INVALID",
-      message: `Тривалість бронювання — від ${MIN_DURATION_MINUTES} хвилин до ${
-        MAX_DURATION_MINUTES / 60
-      } годин`,
+      values: { min: MIN_DURATION_MINUTES, max: MAX_DURATION_MINUTES / 60 },
     });
   }
 
@@ -100,16 +102,13 @@ export function validateBookingTime(input: {
   if (startsBeforeOpening || endsAfterClosing || spansTwoDays) {
     errors.push({
       code: "OUTSIDE_WORKING_HOURS",
-      message: `Бронювати можна лише з ${WORK_DAY_START} до ${WORK_DAY_END} за київським часом`,
+      values: { from: WORK_DAY_START, to: WORK_DAY_END },
     });
   }
 
   // "Future only" means strictly later: a booking starting exactly now is late.
   if (input.startsAt <= input.now) {
-    errors.push({
-      code: "TIME_IN_PAST",
-      message: "Час бронювання вже минув",
-    });
+    errors.push({ code: "TIME_IN_PAST" });
   }
 
   return errors;
@@ -149,14 +148,11 @@ export function validateTitle(title: string): BookingRuleError | null {
   const trimmed = title.trim();
 
   if (trimmed.length === 0) {
-    return { code: "TITLE_INVALID", message: "Вкажіть назву бронювання" };
+    return { code: "TITLE_REQUIRED" };
   }
 
   if (trimmed.length > MAX_TITLE_LENGTH) {
-    return {
-      code: "TITLE_INVALID",
-      message: `Назва не може бути довшою за ${MAX_TITLE_LENGTH} символів`,
-    };
+    return { code: "TITLE_TOO_LONG", values: { max: MAX_TITLE_LENGTH } };
   }
 
   return null;

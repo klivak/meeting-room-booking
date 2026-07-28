@@ -1,6 +1,7 @@
 "use client";
 
 import { DateTime } from "luxon";
+import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
@@ -22,7 +23,7 @@ import {
 import {
   DAYS_IN_WEEK,
   SLOT_COUNT,
-  formatDuration,
+  splitDuration,
   getNowMarker,
   getSelectionRows,
   getSlotLabels,
@@ -72,6 +73,20 @@ function subscribeToMinuteTick(onChange: () => void) {
 const readNow = () => nowSnapshot;
 const readNoNow = () => null;
 
+/** Picks the phrasing the duration needs: minutes only, whole hours, or both. */
+function durationLabel(
+  totalMinutes: number,
+  t: (key: string, values?: Record<string, number>) => string,
+) {
+  const { hours, minutes } = splitDuration(totalMinutes);
+
+  if (hours === 0) return t("minutes", { count: minutes });
+  if (minutes === 0) return t("hours", { count: hours });
+
+  return t("hoursMinutes", { hours, minutes });
+}
+
+
 /**
  * The room schedule. A week of columns on a wide screen and a single day on a
  * narrow one: seven columns on a phone would be unreadable, and the two views
@@ -88,6 +103,10 @@ export function Schedule({
   selectedBookingId,
 }: ScheduleProps) {
   const router = useRouter();
+  const t = useTranslations("schedule");
+  const tDuration = useTranslations("duration");
+  // Weekday and month names follow the chosen language.
+  const locale = useLocale();
   const timeZone = useSyncExternalStore(
     noopSubscribe,
     readViewerTimeZone,
@@ -200,9 +219,10 @@ export function Schedule({
           }
           openForm(cellDay, rowIndex, rowIndex + 1);
         }}
-        aria-label={`Забронювати ${cellDay.setLocale("uk").toFormat("ccc dd.MM")}, ${
-          labels[rowIndex]
-        }`}
+        aria-label={t("book", {
+          day: cellDay.setLocale(locale).toFormat("ccc dd.MM"),
+          time: labels[rowIndex],
+        })}
         className={`group relative border-l border-slate-200 transition hover:bg-indigo-100/60 focus-visible:z-20 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-inset focus-visible:outline-none ${
           // A lighter line inside the hour, a full one between hours.
           rowIndex % 2 === 0 ? "border-t border-t-slate-200" : "border-t border-t-slate-100"
@@ -258,7 +278,8 @@ export function Schedule({
           gridRow: `${rowStart + 2} / span ${rowEnd - rowStart}`,
         }}
       >
-        {from}–{to} · {formatDuration((rowEnd - rowStart) * SLOT_MINUTES)}
+        {from}–{to} ·{" "}
+        {durationLabel((rowEnd - rowStart) * SLOT_MINUTES, tDuration)}
       </div>
     );
   };
@@ -353,8 +374,12 @@ export function Schedule({
     <div className="flex flex-col gap-3">
       {timeZone === OFFICE_TZ ? null : (
         <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
-          Час показано у вашому поясі ({timeZone}). Офіс працює {WORK_DAY_START}–
-          {WORK_DAY_END} за {OFFICE_TZ}.
+          {t("timezoneNotice", {
+            timeZone,
+            from: WORK_DAY_START,
+            to: WORK_DAY_END,
+            officeZone: OFFICE_TZ,
+          })}
         </p>
       )}
 
@@ -363,17 +388,17 @@ export function Schedule({
         <div className="flex items-center justify-between gap-2">
           <Link
             href={dayHref(day.minus({ days: 1 }))}
-            aria-label="Попередній день"
+            aria-label={t("previousDay")}
             className="flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-slate-300 text-slate-700 focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-none"
           >
             ←
           </Link>
           <span className="text-sm font-medium text-slate-900">
-            {day.setLocale("uk").toFormat("cccc, d MMMM")}
+            {day.setLocale(locale).toFormat("cccc, d MMMM")}
           </span>
           <Link
             href={dayHref(day.plus({ days: 1 }))}
-            aria-label="Наступний день"
+            aria-label={t("nextDay")}
             className="flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-slate-300 text-slate-700 focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-none"
           >
             →
@@ -397,7 +422,7 @@ export function Schedule({
                       : "border-slate-300 text-slate-700"
                 }`}
               >
-                {option.setLocale("uk").toFormat("ccc dd.MM")}
+                {option.setLocale(locale).toFormat("ccc dd.MM")}
               </Link>
             );
           })}
@@ -434,7 +459,7 @@ export function Schedule({
           via position: sticky, so the rows never lose their labels. */}
       <div
         role="group"
-        aria-label="Тижневий розклад кімнати"
+        aria-label={t("weekGrid")}
         className="hidden overflow-x-auto sm:block"
       >
         <div
@@ -462,7 +487,7 @@ export function Schedule({
                     : "bg-white text-slate-600"
                 }`}
               >
-                <div>{option.setLocale("uk").toFormat("ccc")}</div>
+                <div>{option.setLocale(locale).toFormat("ccc")}</div>
                 <div className="text-xs text-slate-500">{option.toFormat("dd.MM")}</div>
               </div>
             );
@@ -489,19 +514,18 @@ export function Schedule({
       {/* Says what to do with the grid: without it the cells look like a table
           rather than something to press. */}
       <p className="text-xs text-slate-500">
-        Натисніть на вільний час, щоб забронювати, або протягніть, щоб обрати
-        кілька півгодин одразу.
+        {t("hint")}
       </p>
 
       <div className="flex flex-wrap items-center gap-4 text-xs text-slate-600">
         <span className="flex items-center gap-1.5">
-          <span className="h-3 w-3 rounded bg-indigo-600" /> Ваші бронювання
+          <span className="h-3 w-3 rounded bg-indigo-600" /> {t("mine")}
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="h-3 w-3 rounded bg-slate-200" /> Бронювання колег
+          <span className="h-3 w-3 rounded bg-slate-200" /> {t("others")}
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="h-3 w-0.5 bg-red-500" /> Зараз
+          <span className="h-3 w-0.5 bg-red-600" /> {t("now")}
         </span>
       </div>
     </div>

@@ -5,7 +5,7 @@ import { validateBookingTime } from "./bookingRules";
 import { OFFICE_TZ } from "./constants";
 import {
   SLOT_COUNT,
-  formatDuration,
+  splitDuration,
   getEndSlotBounds,
   getNowMarker,
   getSelectionRows,
@@ -236,7 +236,7 @@ describe("getEndSlotBounds", () => {
 
     expect(shortest).toEqual([]);
     expect(longest).toEqual([]);
-    expect(tooShort).toContain("VALIDATION_ERROR");
+    expect(tooShort).toContain("END_BEFORE_START");
     expect(tooLong).toContain("DURATION_INVALID");
   });
 });
@@ -271,12 +271,12 @@ describe("getSelectionRows", () => {
   });
 });
 
-describe("formatDuration", () => {
-  it("says minutes, hours and both", () => {
-    expect(formatDuration(30)).toBe("30 хв");
-    expect(formatDuration(60)).toBe("1 год");
-    expect(formatDuration(90)).toBe("1 год 30 хв");
-    expect(formatDuration(240)).toBe("4 год");
+describe("splitDuration", () => {
+  it("splits minutes into hours and minutes, leaving the words to the dictionary", () => {
+    expect(splitDuration(30)).toEqual({ hours: 0, minutes: 30 });
+    expect(splitDuration(60)).toEqual({ hours: 1, minutes: 0 });
+    expect(splitDuration(90)).toEqual({ hours: 1, minutes: 30 });
+    expect(splitDuration(240)).toEqual({ hours: 4, minutes: 0 });
   });
 });
 

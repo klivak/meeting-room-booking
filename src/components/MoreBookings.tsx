@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -20,6 +21,7 @@ type MoreBookingsProps = {
  */
 export function MoreBookings({ initialCursor, now, scope }: MoreBookingsProps) {
   const router = useRouter();
+  const t = useTranslations("myBookings");
   const [items, setItems] = useState<MyBooking[]>([]);
   const [cursor, setCursor] = useState<string | null>(initialCursor);
   const [pending, setPending] = useState(false);
@@ -65,11 +67,11 @@ export function MoreBookings({ initialCursor, now, scope }: MoreBookingsProps) {
         <div className="flex flex-col items-start gap-2">
           {failed ? (
             <p role="alert" className="text-sm text-red-600">
-              Не вдалося завантажити. Спробуйте ще раз.
+              {t("loadFailed")}
             </p>
           ) : null}
           <Button variant="ghost" onClick={loadMore} disabled={pending}>
-            {pending ? "Завантажуємо…" : "Показати ще"}
+            {pending ? t("loadingMore") : t("showMore")}
           </Button>
         </div>
       ) : null}

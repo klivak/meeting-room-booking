@@ -1,4 +1,5 @@
 import { DateTime } from "luxon";
+import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -15,16 +16,17 @@ import { getWeekStart } from "@/lib/domain/week";
 import { prisma } from "@/lib/server/db";
 import { getCurrentUser } from "@/lib/server/session";
 
-export const metadata: Metadata = { title: "Мої бронювання" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("myBookings");
+
+  return { title: t("title") };
+}
 
 const PAGE_SIZE = 20;
 
 type Tab = "upcoming" | "past";
 
-const TABS: { value: Tab; label: string }[] = [
-  { value: "upcoming", label: "Майбутні" },
-  { value: "past", label: "Минулі" },
-];
+const TABS: Tab[] = ["upcoming", "past"];
 
 /** Office week that contains the booking, which is the week the grid opens. */
 function weekOf(startsAt: Date): string {
@@ -35,6 +37,7 @@ function weekOf(startsAt: Date): string {
 }
 
 async function BookingList({ tab }: { tab: Tab }) {
+  const t = await getTranslations("myBookings");
   const user = await getCurrentUser();
   if (!user) {
     redirect("/login");
@@ -73,14 +76,10 @@ async function BookingList({ tab }: { tab: Tab }) {
   if (bookings.length === 0) {
     return (
       <EmptyState
-        title={
-          tab === "upcoming"
-            ? "У вас поки немає майбутніх бронювань."
-            : "Минулих бронювань поки немає."
-        }
+        title={tab === "upcoming" ? t("emptyUpcoming") : t("emptyPast")}
         action={
           <LinkButton href="/" variant="primary">
-            Відкрити розклад
+            {t("openSchedule")}
           </LinkButton>
         }
       />
@@ -110,7 +109,7 @@ async function BookingList({ tab }: { tab: Tab }) {
                   <LinkButton
                     href={`/rooms/${booking.room.id}?week=${weekOf(booking.startsAt)}&booking=${booking.id}`}
                   >
-                    Редагувати
+                    {t("edit")}
                   </LinkButton>
                   <CancelBookingButton
                     bookingId={booking.id}
@@ -137,11 +136,13 @@ async function BookingList({ tab }: { tab: Tab }) {
 
 // Same shape as a loaded row (title, time line, action on the right) with a per
 // row delay, so the shimmer runs down the list instead of blinking as one block.
-function ListSkeleton() {
+async function ListSkeleton() {
+  const t = await getTranslations("myBookings");
+
   return (
     <>
       <p role="status" className="sr-only">
-        Завантажуємо бронювання…
+        {t("loading")}
       </p>
       <ul aria-hidden className="flex flex-col gap-2">
         {[0, 1, 2].map((index) => (
@@ -178,25 +179,26 @@ export default async function MyBookingsPage({
 }) {
   const { tab: tabParam } = await searchParams;
   const tab: Tab = tabParam === "past" ? "past" : "upcoming";
+  const t = await getTranslations("myBookings");
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold text-slate-900">Мої бронювання</h1>
+      <h1 className="text-xl font-semibold text-slate-900">{t("title")}</h1>
 
       {/* The active tab lives in the URL, so the page can be linked and reloaded. */}
       <nav className="flex gap-2">
         {TABS.map((option) => (
           <LinkButton
-            key={option.value}
-            href={option.value === "upcoming" ? "/my-bookings" : "/my-bookings?tab=past"}
-            active={option.value === tab}
+            key={option}
+            href={option === "upcoming" ? "/my-bookings" : "/my-bookings?tab=past"}
+            active={option === tab}
           >
-            {option.label}
+            {t(option)}
           </LinkButton>
         ))}
       </nav>
 
-      <Suspense key={tab} fallback={<ListSkeleton />}>
+      <Suspense key={tab} fallback={await ListSkeleton()}>
         <BookingList tab={tab} />
       </Suspense>
     </div>

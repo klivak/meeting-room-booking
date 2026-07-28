@@ -147,14 +147,14 @@
     "TOO_MANY_ATTEMPTS": "Забагато спроб. Зачекайте кілька хвилин і спробуйте ще раз",
     "INVALID_CURSOR": "Некоректний курсор",
     "NAME_REQUIRED": "Вкажіть ім'я",
-    "NAME_TOO_LONG": "Ім'я не може бути довшим за {max} символів",
+    "NAME_TOO_LONG": "Ім'я не може бути довшим за {maxName} символів",
     "EMAIL_INVALID": "Введіть коректну електронну пошту",
-    "PASSWORD_TOO_SHORT": "Пароль має містити щонайменше {min} символів",
-    "PASSWORD_TOO_LONG": "Пароль не може бути довшим за {max} символів",
+    "PASSWORD_TOO_SHORT": "Пароль має містити щонайменше {minPassword} символів",
+    "PASSWORD_TOO_LONG": "Пароль не може бути довшим за {maxPassword} символів",
     "PASSWORD_REQUIRED": "Введіть пароль",
     "ROOM_REQUIRED": "Оберіть кімнату",
-    "REPEAT_TOO_FEW": "Мінімум {min} повторення",
-    "REPEAT_TOO_MANY": "Максимум {max} повторень"
+    "REPEAT_TOO_FEW": "Мінімум {minRepeat} повторення",
+    "REPEAT_TOO_MANY": "Максимум {maxRepeat} повторень"
   },
   "duration": {
     "minutes": "{count} хв",

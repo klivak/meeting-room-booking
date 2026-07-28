@@ -15,7 +15,7 @@ const querySchema = z.object({
 export async function GET(request: Request) {
   const user = await getCurrentUser();
   if (!user) {
-    return unauthorizedError();
+    return await unauthorizedError();
   }
 
   const url = new URL(request.url);
@@ -23,7 +23,7 @@ export async function GET(request: Request) {
     capacityMin: url.searchParams.get("capacityMin") ?? undefined,
   });
   if (!parsed.success) {
-    return validationError(parsed.error);
+    return await validationError(parsed.error);
   }
 
   const { capacityMin } = parsed.data;

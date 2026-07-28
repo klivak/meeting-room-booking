@@ -6,6 +6,7 @@ import { validateBookingTime, validateTitle } from "@/lib/domain/bookingRules";
 import { OFFICE_TZ } from "@/lib/domain/constants";
 import { getWeeklyOccurrences } from "@/lib/domain/recurrence";
 import {
+  apiCodeFor,
   apiError,
   emailNotVerifiedError,
   unauthorizedError,
@@ -18,29 +19,32 @@ import { getCurrentUser } from "@/lib/server/session";
 export async function POST(request: Request) {
   const user = await getCurrentUser();
   if (!user) {
-    return unauthorizedError();
+    return await unauthorizedError();
   }
 
   if (!user.emailVerified) {
-    return emailNotVerifiedError();
+    return await emailNotVerifiedError();
   }
 
   const body = await request.json().catch(() => null);
   const parsed = createBookingSchema.safeParse(body);
   if (!parsed.success) {
-    return validationError(parsed.error);
+    return await validationError(parsed.error);
   }
 
   const { roomId, title, startsAt, endsAt } = parsed.data;
 
   const room = await prisma.room.findUnique({ where: { id: roomId } });
   if (!room) {
-    return apiError(404, "NOT_FOUND", "Кімнату не знайдено", "roomId");
+    return await apiError(404, "NOT_FOUND", "ROOM_NOT_FOUND", { field: "roomId" });
   }
 
   const titleError = validateTitle(title);
   if (titleError) {
-    return apiError(400, titleError.code, titleError.message, "title");
+    return await apiError(400, "TITLE_INVALID", titleError.code, {
+      field: "title",
+      values: titleError.values,
+    });
   }
 
   const now = new Date();
@@ -55,7 +59,9 @@ export async function POST(request: Request) {
   for (const occurrence of occurrences) {
     const [timeError] = validateBookingTime({ ...occurrence, now });
     if (timeError) {
-      return apiError(400, timeError.code, timeError.message);
+      return await apiError(400, apiCodeFor(timeError.code), timeError.code, {
+      values: timeError.values,
+    });
     }
   }
 
@@ -66,7 +72,7 @@ export async function POST(request: Request) {
 
     return booking
       ? NextResponse.json(booking, { status: 201 })
-      : apiError(409, "SLOT_TAKEN", "Цей час уже зайнятий");
+      : await apiError(409, "SLOT_TAKEN", "SLOT_TAKEN");
   }
 
   const series = await createBookingSeries(write, occurrences);
@@ -78,7 +84,9 @@ export async function POST(request: Request) {
       .map((date) => DateTime.fromJSDate(date).setZone(OFFICE_TZ).toFormat("dd.MM"))
       .join(", ");
 
-    return apiError(409, "SLOT_TAKEN", `Цей час уже зайнятий: ${dates}`);
+    return await apiError(409, "SLOT_TAKEN", "SLOT_TAKEN_DATES", {
+      values: { dates },
+    });
   }
 
   return NextResponse.json(series.created[0], { status: 201 });

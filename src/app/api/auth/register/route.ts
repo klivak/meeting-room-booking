@@ -7,22 +7,20 @@ import { hashPassword } from "@/lib/server/password";
 import { createSession } from "@/lib/server/session";
 import { sendVerificationLink } from "@/lib/server/verification";
 
-const EMAIL_TAKEN_MESSAGE = "Ця електронна пошта вже зареєстрована";
-
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
 
   // The schema normalizes the email, so everything below works with the stored form.
   const parsed = registerSchema.safeParse(body);
   if (!parsed.success) {
-    return validationError(parsed.error);
+    return await validationError(parsed.error);
   }
 
   const { name, email, password } = parsed.data;
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
-    return apiError(400, "EMAIL_TAKEN", EMAIL_TAKEN_MESSAGE, "email");
+    return await apiError(400, "EMAIL_TAKEN", "EMAIL_TAKEN", { field: "email" });
   }
 
   const passwordHash = await hashPassword(password);
@@ -34,7 +32,7 @@ export async function POST(request: Request) {
     // Two simultaneous registrations pass the check above; the unique index is
     // what actually decides, and P2002 means this request lost the race.
     if (isUniqueConstraintError(error)) {
-      return apiError(400, "EMAIL_TAKEN", EMAIL_TAKEN_MESSAGE, "email");
+      return await apiError(400, "EMAIL_TAKEN", "EMAIL_TAKEN", { field: "email" });
     }
     throw error;
   }

@@ -1,4 +1,5 @@
 import { DateTime } from "luxon";
+import { getLocale, getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -31,7 +32,9 @@ export async function generateMetadata({
     select: { name: true },
   });
 
-  return { title: room ? `${room.name} — розклад` : "Кімнату не знайдено" };
+  const t = await getTranslations("errors");
+
+  return { title: room ? room.name : t("appNotFoundTitle") };
 }
 
 /**
@@ -68,10 +71,11 @@ function resolveSelectedDay(
   return today && days.includes(today) ? today : (days[0] ?? "");
 }
 
-function formatWeekRange(weekStart: DateTime): string {
+/** Month names follow the chosen language, the dates themselves the office. */
+function formatWeekRange(weekStart: DateTime, locale: string): string {
   const weekEnd = weekStart.plus({ days: DAYS_IN_WEEK - 1 });
-  const from = weekStart.setLocale("uk");
-  const to = weekEnd.setLocale("uk");
+  const from = weekStart.setLocale(locale);
+  const to = weekEnd.setLocale(locale);
 
   const sameMonth = from.month === to.month && from.year === to.year;
 
@@ -147,11 +151,13 @@ async function Schedule({
 // The grid placeholder is split into the seven day columns of the real week view
 // (plus the time gutter), so the sweep reads left to right across the week the
 // way the loaded grid is read.
-function ScheduleSkeleton() {
+async function ScheduleSkeleton() {
+  const t = await getTranslations("rooms");
+
   return (
     <div className="flex flex-col gap-2">
       <p role="status" className="sr-only">
-        Завантажуємо розклад…
+        {t("loading")}
       </p>
       <div aria-hidden className="flex flex-col gap-2">
         <Skeleton className="h-10 w-full" />
@@ -189,6 +195,7 @@ export default async function RoomPage({
 }) {
   const { id } = await params;
   const { week, day, slot, slotEnd, booking } = await searchParams;
+  const [t, locale] = await Promise.all([getTranslations("schedule"), getLocale()]);
 
   // Independent of each other, so they travel together rather than in a queue.
   const [room, user, rooms] = await Promise.all([
@@ -251,23 +258,23 @@ export default async function RoomPage({
         <div className="flex items-center gap-2">
           <LinkButton
             href={`/rooms/${room.id}?week=${previousWeek}`}
-            aria-label="Попередній тиждень"
+            aria-label={t("previousWeek")}
           >
             ←
           </LinkButton>
           <LinkButton href={`/rooms/${room.id}`} active={isCurrentWeek}>
-            Сьогодні
+            {t("today")}
           </LinkButton>
           <LinkButton
             href={`/rooms/${room.id}?week=${nextWeek}`}
-            aria-label="Наступний тиждень"
+            aria-label={t("nextWeek")}
           >
             →
           </LinkButton>
         </div>
       </div>
 
-      <p className="text-sm text-slate-600">{formatWeekRange(weekStart)}</p>
+      <p className="text-sm text-slate-600">{formatWeekRange(weekStart, locale)}</p>
 
       {/* Plain links instead of a select: switching rooms keeps the week and
           needs no client-side JavaScript. */}
@@ -284,7 +291,7 @@ export default async function RoomPage({
       </nav>
 
       <div id={SCHEDULE_ANCHOR_ID}>
-        <Suspense key={weekStart.toISODate()} fallback={<ScheduleSkeleton />}>
+        <Suspense key={weekStart.toISODate()} fallback={await ScheduleSkeleton()}>
           <Schedule
             roomId={room.id}
             userId={user?.id}

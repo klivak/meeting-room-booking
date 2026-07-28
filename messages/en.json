@@ -147,14 +147,14 @@
     "TOO_MANY_ATTEMPTS": "Too many attempts. Wait a few minutes and try again",
     "INVALID_CURSOR": "Invalid cursor",
     "NAME_REQUIRED": "Enter a name",
-    "NAME_TOO_LONG": "The name cannot be longer than {max} characters",
+    "NAME_TOO_LONG": "The name cannot be longer than {maxName} characters",
     "EMAIL_INVALID": "Enter a valid email address",
-    "PASSWORD_TOO_SHORT": "The password needs at least {min} characters",
-    "PASSWORD_TOO_LONG": "The password cannot be longer than {max} characters",
+    "PASSWORD_TOO_SHORT": "The password needs at least {minPassword} characters",
+    "PASSWORD_TOO_LONG": "The password cannot be longer than {maxPassword} characters",
     "PASSWORD_REQUIRED": "Enter the password",
     "ROOM_REQUIRED": "Choose a room",
-    "REPEAT_TOO_FEW": "At least {min} occurrences",
-    "REPEAT_TOO_MANY": "At most {max} occurrences"
+    "REPEAT_TOO_FEW": "At least {minRepeat} occurrences",
+    "REPEAT_TOO_MANY": "At most {maxRepeat} occurrences"
   },
   "duration": {
     "minutes": "{count} min",

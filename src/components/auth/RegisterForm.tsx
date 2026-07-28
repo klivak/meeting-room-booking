@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -15,6 +16,7 @@ type ApiError = {
 
 export function RegisterForm() {
   const router = useRouter();
+  const t = useTranslations("auth");
   const [error, setError] = useState<ApiError | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -43,10 +45,7 @@ export function RegisterForm() {
 
     const body = await response?.json().catch(() => null);
     setError(
-      body?.error ?? {
-        code: "UNKNOWN",
-        message: "Не вдалося зареєструватися. Спробуйте ще раз",
-      },
+      body?.error ?? { code: "UNKNOWN", message: t("registerFailed") },
     );
     setPending(false);
   }
@@ -66,7 +65,7 @@ export function RegisterForm() {
       <Input
         id="name"
         name="name"
-        label="Ім'я"
+        label={t("name")}
         autoComplete="name"
         maxLength={MAX_NAME_LENGTH}
         required
@@ -76,7 +75,7 @@ export function RegisterForm() {
         id="email"
         name="email"
         type="email"
-        label="Електронна пошта"
+        label={t("email")}
         autoComplete="email"
         required
         error={fieldError("email")}
@@ -85,7 +84,7 @@ export function RegisterForm() {
         id="password"
         name="password"
         type="password"
-        label="Пароль"
+        label={t("password")}
         autoComplete="new-password"
         maxLength={MAX_PASSWORD_LENGTH}
         required
@@ -93,7 +92,7 @@ export function RegisterForm() {
       />
 
       <Button type="submit" disabled={pending}>
-        {pending ? "Створюємо акаунт…" : "Зареєструватися"}
+        {pending ? t("signingUp") : t("signUp")}
       </Button>
     </form>
   );

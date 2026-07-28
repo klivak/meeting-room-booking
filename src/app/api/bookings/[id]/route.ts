@@ -8,6 +8,7 @@ import {
   type BookingAccess,
 } from "@/lib/domain/bookingRules";
 import {
+  apiCodeFor,
   apiError,
   emailNotVerifiedError,
   unauthorizedError,
@@ -20,14 +21,14 @@ import { getCurrentUser } from "@/lib/server/session";
 /** Maps a refused access reason to the response both handlers return. */
 function accessError(access: Exclude<BookingAccess, "allowed">) {
   if (access === "not-owner") {
-    return apiError(403, "FORBIDDEN", "Можна змінювати лише власні бронювання");
+    return apiError(403, "FORBIDDEN", "FORBIDDEN");
   }
 
   if (access === "canceled") {
-    return apiError(404, "NOT_FOUND", "Бронювання не знайдено");
+    return apiError(404, "NOT_FOUND", "NOT_FOUND");
   }
 
-  return apiError(400, "VALIDATION_ERROR", "Бронювання вже завершилося");
+  return apiError(400, "VALIDATION_ERROR", "BOOKING_FINISHED");
 }
 
 export async function PATCH(
@@ -36,23 +37,23 @@ export async function PATCH(
 ) {
   const user = await getCurrentUser();
   if (!user) {
-    return unauthorizedError();
+    return await unauthorizedError();
   }
 
   if (!user.emailVerified) {
-    return emailNotVerifiedError();
+    return await emailNotVerifiedError();
   }
 
   const { id } = await params;
   const body = await request.json().catch(() => null);
   const parsed = updateBookingSchema.safeParse(body);
   if (!parsed.success) {
-    return validationError(parsed.error);
+    return await validationError(parsed.error);
   }
 
   const booking = await prisma.booking.findUnique({ where: { id } });
   if (!booking) {
-    return apiError(404, "NOT_FOUND", "Бронювання не знайдено");
+    return await apiError(404, "NOT_FOUND", "NOT_FOUND");
   }
 
   const now = new Date();
@@ -71,13 +72,16 @@ export async function PATCH(
   if (nextRoomId !== booking.roomId) {
     const room = await prisma.room.findUnique({ where: { id: nextRoomId } });
     if (!room) {
-      return apiError(404, "NOT_FOUND", "Кімнату не знайдено", "roomId");
+      return await apiError(404, "NOT_FOUND", "ROOM_NOT_FOUND", { field: "roomId" });
     }
   }
 
   const titleError = validateTitle(nextTitle);
   if (titleError) {
-    return apiError(400, titleError.code, titleError.message, "title");
+    return await apiError(400, "TITLE_INVALID", titleError.code, {
+      field: "title",
+      values: titleError.values,
+    });
   }
 
   const errors = validateBookingTime({ startsAt: nextStart, endsAt: nextEnd, now });
@@ -90,7 +94,9 @@ export async function PATCH(
     : errors.filter((error) => error.code !== "TIME_IN_PAST");
 
   if (timeError) {
-    return apiError(400, timeError.code, timeError.message);
+    return await apiError(400, apiCodeFor(timeError.code), timeError.code, {
+      values: timeError.values,
+    });
   }
 
   const updated = await updateBooking(id, {
@@ -101,7 +107,7 @@ export async function PATCH(
   });
 
   if (!updated) {
-    return apiError(409, "SLOT_TAKEN", "Цей час уже зайнятий");
+    return await apiError(409, "SLOT_TAKEN", "SLOT_TAKEN");
   }
 
   return NextResponse.json(updated);
@@ -114,13 +120,13 @@ export async function DELETE(
 ) {
   const user = await getCurrentUser();
   if (!user) {
-    return unauthorizedError();
+    return await unauthorizedError();
   }
 
   const { id } = await params;
   const booking = await prisma.booking.findUnique({ where: { id } });
   if (!booking) {
-    return apiError(404, "NOT_FOUND", "Бронювання не знайдено");
+    return await apiError(404, "NOT_FOUND", "NOT_FOUND");
   }
 
   const now = new Date();

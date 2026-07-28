@@ -169,16 +169,12 @@ export function getSelectionRows(
   return { rowStart, rowEnd };
 }
 
-/** Duration in words: "30 хв", "1 год", "1 год 30 хв". */
-export function formatDuration(minutes: number): string {
-  const hours = Math.floor(minutes / 60);
-  const rest = minutes % 60;
-
-  if (hours === 0) {
-    return `${rest} хв`;
-  }
-
-  return rest === 0 ? `${hours} год` : `${hours} год ${rest} хв`;
+/**
+ * Splits a duration into hours and minutes. Deliberately no words: how a
+ * duration is said differs per language, so that belongs to the dictionary.
+ */
+export function splitDuration(minutes: number): { hours: number; minutes: number } {
+  return { hours: Math.floor(minutes / 60), minutes: minutes % 60 };
 }
 
 /**

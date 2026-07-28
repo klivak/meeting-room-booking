@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -14,6 +15,7 @@ type ApiError = {
 
 export function LoginForm() {
   const router = useRouter();
+  const t = useTranslations("auth");
   const [error, setError] = useState<ApiError | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -41,10 +43,7 @@ export function LoginForm() {
 
     const body = await response?.json().catch(() => null);
     setError(
-      body?.error ?? {
-        code: "UNKNOWN",
-        message: "Не вдалося увійти. Спробуйте ще раз",
-      },
+      body?.error ?? { code: "UNKNOWN", message: t("loginFailed") },
     );
     setPending(false);
   }
@@ -66,7 +65,7 @@ export function LoginForm() {
         id="email"
         name="email"
         type="email"
-        label="Електронна пошта"
+        label={t("email")}
         autoComplete="email"
         required
         error={fieldError("email")}
@@ -75,14 +74,14 @@ export function LoginForm() {
         id="password"
         name="password"
         type="password"
-        label="Пароль"
+        label={t("password")}
         autoComplete="current-password"
         required
         error={fieldError("password")}
       />
 
       <Button type="submit" disabled={pending}>
-        {pending ? "Входимо…" : "Увійти"}
+        {pending ? t("signingIn") : t("signIn")}
       </Button>
     </form>
   );

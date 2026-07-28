@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 
 import { Header } from "@/components/Header";
@@ -12,7 +13,7 @@ export default async function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const user = await getCurrentUser();
+  const [user, t] = await Promise.all([getCurrentUser(), getTranslations("app")]);
   if (!user) {
     redirect("/login");
   }
@@ -24,7 +25,7 @@ export default async function AppLayout({
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-lg focus:bg-slate-900 focus:px-4 focus:py-2 focus:text-sm focus:text-white"
       >
-        Перейти до вмісту
+        {t("skipToContent")}
       </a>
       <Header user={user} />
       {user.emailVerified ? null : <VerificationBanner />}

@@ -11,10 +11,6 @@ import { prisma } from "@/lib/server/db";
 import { verifyPassword } from "@/lib/server/password";
 import { createSession } from "@/lib/server/session";
 
-// Same answer for an unknown email and a wrong password: telling them apart
-// would reveal which addresses are registered.
-const INVALID_CREDENTIALS_MESSAGE = "Невірна пошта або пароль";
-
 const MAX_FAILED_LOGINS = 10;
 const LOGIN_WINDOW_MS = 5 * 60 * 1000;
 
@@ -23,7 +19,7 @@ export async function POST(request: Request) {
 
   const parsed = loginSchema.safeParse(body);
   if (!parsed.success) {
-    return validationError(parsed.error);
+    return await validationError(parsed.error);
   }
 
   const { email, password } = parsed.data;
@@ -33,7 +29,7 @@ export async function POST(request: Request) {
   // attempt slow; this puts a ceiling on how many can be tried.
   const key = `login:${email}:${clientAddress(request)}`;
   if (isRateLimited(key, MAX_FAILED_LOGINS, LOGIN_WINDOW_MS)) {
-    return tooManyAttemptsError();
+    return await tooManyAttemptsError();
   }
 
   const user = await prisma.user.findUnique({ where: { email } });
@@ -43,10 +39,10 @@ export async function POST(request: Request) {
   if (!user || !passwordMatches) {
     // Only failures count, so ordinary use never meets the limit.
     if (registerFailedAttempt(key, MAX_FAILED_LOGINS, LOGIN_WINDOW_MS)) {
-      return tooManyAttemptsError();
+      return await tooManyAttemptsError();
     }
 
-    return apiError(401, "INVALID_CREDENTIALS", INVALID_CREDENTIALS_MESSAGE);
+    return await apiError(401, "INVALID_CREDENTIALS", "INVALID_CREDENTIALS");
   }
 
   await createSession(user.id);

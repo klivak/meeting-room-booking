@@ -20,19 +20,19 @@ export async function GET(
 ) {
   const user = await getCurrentUser();
   if (!user) {
-    return unauthorizedError();
+    return await unauthorizedError();
   }
 
   const { id } = await params;
   const url = new URL(request.url);
   const parsed = querySchema.safeParse({ weekStart: url.searchParams.get("weekStart") });
   if (!parsed.success) {
-    return validationError(parsed.error);
+    return await validationError(parsed.error);
   }
 
   const room = await prisma.room.findUnique({ where: { id } });
   if (!room) {
-    return apiError(404, "NOT_FOUND", "Кімнату не знайдено");
+    return await apiError(404, "NOT_FOUND", "ROOM_NOT_FOUND");
   }
 
   const weekStart = new Date(parsed.data.weekStart);

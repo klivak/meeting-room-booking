@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -7,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 
 export function LogoutButton() {
   const router = useRouter();
+  const t = useTranslations("app");
   const [pending, setPending] = useState(false);
 
   async function handleLogout() {
@@ -20,7 +22,7 @@ export function LogoutButton() {
 
   return (
     <Button variant="ghost" onClick={handleLogout} disabled={pending}>
-      {pending ? "Виходимо…" : "Вийти"}
+      {pending ? t("loggingOut") : t("logout")}
     </Button>
   );
 }

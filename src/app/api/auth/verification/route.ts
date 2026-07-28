@@ -12,14 +12,14 @@ const RESEND_WINDOW_MS = 60 * 60 * 1000;
 export async function POST(request: Request) {
   const user = await getCurrentUser();
   if (!user) {
-    return unauthorizedError();
+    return await unauthorizedError();
   }
 
   // Each request invalidates the previous link, so an unlimited button would be
   // a way to keep anyone from ever confirming.
   const key = `verification:${user.id}`;
   if (registerFailedAttempt(key, MAX_RESENDS, RESEND_WINDOW_MS)) {
-    return tooManyAttemptsError();
+    return await tooManyAttemptsError();
   }
 
   // Nothing to do for a confirmed address, and saying so is not worth an error.

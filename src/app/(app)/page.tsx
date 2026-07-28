@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -7,17 +8,10 @@ import { LinkButton } from "@/components/ui/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { prisma } from "@/lib/server/db";
 
-export const metadata: Metadata = { title: "Переговорні" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("rooms");
 
-/** Ukrainian plural for "місце": 1 місце, 2-4 місця, 5+ місць (11-14 are the exception). */
-function seatsLabel(count: number): string {
-  const lastTwo = count % 100;
-  const last = count % 10;
-
-  if (lastTwo >= 11 && lastTwo <= 14) return `${count} місць`;
-  if (last === 1) return `${count} місце`;
-  if (last >= 2 && last <= 4) return `${count} місця`;
-  return `${count} місць`;
+  return { title: t("title") };
 }
 
 // Widths differ per card so the placeholder grid looks like a list of names of
@@ -34,11 +28,13 @@ const SKELETON_CARDS = [
 // The placeholder repeats the real card (border, padding, two text lines) so the
 // switch to loaded content shifts nothing. The delay per card makes the shimmer
 // run across the grid as a wave instead of all six blinking in lockstep.
-function RoomsSkeleton() {
+async function RoomsSkeleton() {
+  const t = await getTranslations("rooms");
+
   return (
     <>
       <p role="status" className="sr-only">
-        Завантажуємо переговорні…
+        {t("loading")}
       </p>
       <ul aria-hidden className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {SKELETON_CARDS.map((card, index) => (
@@ -63,6 +59,8 @@ function RoomsSkeleton() {
 }
 
 async function RoomsList({ capacityMin }: { capacityMin?: number }) {
+  const t = await getTranslations("rooms");
+
   // The layout above already guarantees a session, so this reads straight from
   // the database instead of going through /api/rooms over HTTP.
   const rooms = await prisma.room.findMany({
@@ -74,11 +72,11 @@ async function RoomsList({ capacityMin }: { capacityMin?: number }) {
   if (rooms.length === 0) {
     return capacityMin ? (
       <EmptyState
-        title={`Кімнат на ${capacityMin} і більше місць немає.`}
-        action={<LinkButton href="/">Скинути фільтр</LinkButton>}
+        title={t("emptyFiltered", { capacity: capacityMin })}
+        action={<LinkButton href="/">{t("resetFilter")}</LinkButton>}
       />
     ) : (
-      <EmptyState title="Кімнат поки немає." />
+      <EmptyState title={t("empty")} />
     );
   }
 
@@ -98,7 +96,8 @@ async function RoomsList({ capacityMin }: { capacityMin?: number }) {
           >
             <span className="font-medium text-slate-900">{room.name}</span>
             <span className="mt-1 block text-sm text-slate-600">
-              {room.floor} поверх · {seatsLabel(room.capacity)}
+              {t("floor", { floor: room.floor })} ·{" "}
+              {t("seats", { count: room.capacity })}
             </span>
           </Link>
         </li>
@@ -109,7 +108,7 @@ async function RoomsList({ capacityMin }: { capacityMin?: number }) {
 
 /** Options for the capacity filter; undefined means no filter. */
 const CAPACITY_OPTIONS: { value?: number; label: string }[] = [
-  { label: "Будь-яка" },
+  { label: "any" },
   { value: 2, label: "2+" },
   { value: 4, label: "4+" },
   { value: 6, label: "6+" },
@@ -126,6 +125,7 @@ export default async function HomePage({
   searchParams: Promise<{ capacityMin?: string }>;
 }) {
   const { capacityMin: capacityParam } = await searchParams;
+  const t = await getTranslations("rooms");
 
   // An unusable value is ignored rather than refused: the list is still the
   // right thing to show.
@@ -135,24 +135,24 @@ export default async function HomePage({
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold text-slate-900">Переговорні</h1>
+      <h1 className="text-xl font-semibold text-slate-900">{t("title")}</h1>
 
       {/* Links rather than a select: the filter stays in the URL, is shareable
           and needs no client-side JavaScript. */}
-      <nav aria-label="Фільтр за місткістю" className="flex flex-wrap items-center gap-2">
-        <span className="text-sm text-slate-600">Місткість:</span>
+      <nav aria-label={t("capacity")} className="flex flex-wrap items-center gap-2">
+        <span className="text-sm text-slate-600">{t("capacity")}</span>
         {CAPACITY_OPTIONS.map((option) => (
           <LinkButton
             key={option.label}
             href={option.value ? `/?capacityMin=${option.value}` : "/"}
             active={option.value === capacityMin}
           >
-            {option.label}
+            {option.value ? option.label : t("any")}
           </LinkButton>
         ))}
       </nav>
 
-      <Suspense key={capacityMin ?? "all"} fallback={<RoomsSkeleton />}>
+      <Suspense key={capacityMin ?? "all"} fallback={await RoomsSkeleton()}>
         <RoomsList capacityMin={capacityMin} />
       </Suspense>
     </div>

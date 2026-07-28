@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 
 export type BookingView = {
@@ -32,6 +33,7 @@ export function BookingBlock({
   isSelected,
   style,
 }: BookingBlockProps) {
+  const t = useTranslations("schedule");
   const className = `z-10 m-0.5 overflow-hidden rounded-md px-1.5 py-1 text-xs leading-tight ${
     isSelected ? "ring-2 ring-slate-900 ring-offset-1" : ""
   }`;
@@ -46,7 +48,7 @@ export function BookingBlock({
 
   // Short bookings clip their text, so the full details live in the tooltip.
   const tooltip = `${booking.title} · ${booking.user.name} · ${range}${
-    booking.isRecurring ? " · щотижня" : ""
+    booking.isRecurring ? ` · ${t("recurring")}` : ""
   }`;
 
   const content = (

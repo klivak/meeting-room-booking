@@ -20,18 +20,18 @@ export const MAX_NAME_LENGTH = 100;
 const nameSchema = z
   .string()
   .trim()
-  .min(1, "Вкажіть ім'я")
-  .max(MAX_NAME_LENGTH, `Ім'я не може бути довшим за ${MAX_NAME_LENGTH} символів`);
+  .min(1, "NAME_REQUIRED")
+  .max(MAX_NAME_LENGTH, "NAME_TOO_LONG");
 
 const emailSchema = z
   .string()
   .transform(normalizeEmail)
-  .pipe(z.email("Введіть коректну електронну пошту"));
+  .pipe(z.email("EMAIL_INVALID"));
 
 const passwordSchema = z
   .string()
-  .min(MIN_PASSWORD_LENGTH, `Пароль має містити щонайменше ${MIN_PASSWORD_LENGTH} символів`)
-  .max(MAX_PASSWORD_LENGTH, `Пароль не може бути довшим за ${MAX_PASSWORD_LENGTH} символів`);
+  .min(MIN_PASSWORD_LENGTH, "PASSWORD_TOO_SHORT")
+  .max(MAX_PASSWORD_LENGTH, "PASSWORD_TOO_LONG");
 
 export const registerSchema = z.object({
   name: nameSchema,
@@ -43,5 +43,5 @@ export const registerSchema = z.object({
 // usable even if the length rules change later.
 export const loginSchema = z.object({
   email: emailSchema,
-  password: z.string().min(1, "Введіть пароль"),
+  password: z.string().min(1, "PASSWORD_REQUIRED"),
 });

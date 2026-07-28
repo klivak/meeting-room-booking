@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -27,6 +28,7 @@ export function CancelBookingButton({
   redirectTo,
 }: CancelBookingButtonProps) {
   const router = useRouter();
+  const t = useTranslations("cancel");
   const [confirming, setConfirming] = useState(false);
   const [pending, setPending] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -54,7 +56,7 @@ export function CancelBookingButton({
       return;
     }
 
-    showToast(scope === "series" ? "Серію скасовано" : "Бронювання скасовано");
+    showToast(scope === "series" ? t("seriesDone") : t("done"));
 
     if (redirectTo) {
       router.replace(redirectTo);
@@ -65,7 +67,7 @@ export function CancelBookingButton({
   return (
     <>
       <Button variant="ghost" onClick={() => setConfirming(true)}>
-        Скасувати
+        {t("cancel")}
       </Button>
 
       {confirming ? (
@@ -84,17 +86,15 @@ export function CancelBookingButton({
               id="cancel-booking-title"
               className="text-base font-semibold text-slate-900"
             >
-              Скасувати бронювання «{title}»?
+              {t("question", { title })}
             </h2>
             <p className="mt-2 text-sm text-slate-600">
-              {isRecurring
-                ? "Це частина щотижневої серії. Оберіть, що саме скасувати — час стане вільним для інших."
-                : "Бронювання зникне з розкладу, а час стане вільним для інших."}
+              {isRecurring ? t("seriesExplanation") : t("explanation")}
             </p>
 
             {failed ? (
               <p role="alert" className="mt-3 text-sm text-red-600">
-                Не вдалося скасувати. Спробуйте ще раз.
+                {t("failed")}
               </p>
             ) : null}
 
@@ -104,14 +104,14 @@ export function CancelBookingButton({
                 onClick={() => setConfirming(false)}
                 disabled={pending}
               >
-                Ні
+                {t("no")}
               </Button>
               <Button
                 variant="danger"
                 onClick={() => cancel("occurrence")}
                 disabled={pending}
               >
-                {pending ? "Скасовуємо…" : isRecurring ? "Лише це" : "Так, скасувати"}
+                {pending ? t("canceling") : isRecurring ? t("onlyThis") : t("yes")}
               </Button>
               {isRecurring ? (
                 <Button
@@ -119,7 +119,7 @@ export function CancelBookingButton({
                   onClick={() => cancel("series")}
                   disabled={pending}
                 >
-                  Всю серію
+                  {t("wholeSeries")}
                 </Button>
               ) : null}
             </div>

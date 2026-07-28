@@ -9,7 +9,7 @@ import { MAX_OCCURRENCES, MIN_OCCURRENCES } from "./recurrence";
 const isoInstant = z.iso.datetime({ offset: true });
 
 export const createBookingSchema = z.object({
-  roomId: z.string().min(1, "Оберіть кімнату"),
+  roomId: z.string().min(1, "ROOM_REQUIRED"),
   // Length and emptiness are checked by validateTitle, so the code stays TITLE_INVALID.
   title: z.string(),
   startsAt: isoInstant,
@@ -19,15 +19,15 @@ export const createBookingSchema = z.object({
   repeatWeeks: z.coerce
     .number()
     .int()
-    .min(MIN_OCCURRENCES, `Мінімум ${MIN_OCCURRENCES} повторення`)
-    .max(MAX_OCCURRENCES, `Максимум ${MAX_OCCURRENCES} повторень`)
+    .min(MIN_OCCURRENCES, "REPEAT_TOO_FEW")
+    .max(MAX_OCCURRENCES, "REPEAT_TOO_MANY")
     .optional(),
 });
 
 // Editing may touch any subset of the fields; whatever is omitted keeps its
 // current value and is still re-validated together with the rest.
 export const updateBookingSchema = z.object({
-  roomId: z.string().min(1, "Оберіть кімнату").optional(),
+  roomId: z.string().min(1, "ROOM_REQUIRED").optional(),
   title: z.string().optional(),
   startsAt: isoInstant.optional(),
   endsAt: isoInstant.optional(),

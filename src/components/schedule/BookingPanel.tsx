@@ -2,6 +2,7 @@
 
 import { DateTime } from "luxon";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useRef, useState, useSyncExternalStore } from "react";
 
 import { CancelBookingButton } from "@/components/CancelBookingButton";
@@ -19,7 +20,7 @@ import { OFFICE_TZ, SLOT_MINUTES } from "@/lib/domain/constants";
 import { MAX_OCCURRENCES, MIN_OCCURRENCES } from "@/lib/domain/recurrence";
 import {
   SLOT_COUNT,
-  formatDuration,
+  splitDuration,
   getEndSlotBounds,
   getSlotIndex,
   getSlotLabel,
@@ -47,6 +48,20 @@ function subscribeToWideScreen(onChange: () => void) {
 
 const readWide = () => window.matchMedia(WIDE_SCREEN).matches;
 const readNotWide = () => false;
+
+/** Picks the phrasing the duration needs: minutes only, whole hours, or both. */
+function durationLabel(
+  totalMinutes: number,
+  t: (key: string, values?: Record<string, number>) => string,
+) {
+  const { hours, minutes } = splitDuration(totalMinutes);
+
+  if (hours === 0) return t("minutes", { count: minutes });
+  if (minutes === 0) return t("hours", { count: hours });
+
+  return t("hoursMinutes", { hours, minutes });
+}
+
 
 export type EditableBooking = {
   id: string;
@@ -111,6 +126,9 @@ function BookingForm({
   booking,
 }: BookingPanelProps) {
   const router = useRouter();
+  const t = useTranslations("form");
+  const tApi = useTranslations("api");
+  const tDuration = useTranslations("duration");
   const timeZone = useSyncExternalStore(
     noopSubscribe,
     readViewerTimeZone,
@@ -163,7 +181,13 @@ function BookingForm({
 
     const titleError = validateTitle(title);
     if (titleError) {
-      setError({ ...titleError, field: "title" });
+      // The domain names the rule; the wording is chosen here, where the
+      // reader's language is known.
+      setError({
+        code: titleError.code,
+        message: tApi(titleError.code, titleError.values),
+        field: "title",
+      });
       return;
     }
 
@@ -181,7 +205,7 @@ function BookingForm({
       const issue = parsed.error.issues[0];
       setError({
         code: "VALIDATION_ERROR",
-        message: issue.message,
+        message: tApi(issue.message),
         field: String(issue.path[0] ?? ""),
       });
       return;
@@ -202,7 +226,7 @@ function BookingForm({
     ).catch(() => null);
 
     if (response?.ok) {
-      showToast(booking ? "Зміни збережено" : "Бронювання створено");
+      showToast(booking ? t("updated") : t("created"));
       close(selectedRoomId);
       return;
     }
@@ -217,7 +241,7 @@ function BookingForm({
     setError(
       body?.error ?? {
         code: "UNKNOWN",
-        message: "Не вдалося зберегти бронювання. Спробуйте ще раз",
+        message: t("failed"),
       },
     );
     setPending(false);
@@ -344,12 +368,12 @@ function BookingForm({
           className="mb-4 flex touch-none items-center justify-between gap-4 sm:cursor-grab sm:active:cursor-grabbing"
         >
           <h2 id="booking-form-title" className="text-lg font-semibold text-slate-900">
-            {booking ? "Редагувати бронювання" : "Нове бронювання"}
+            {booking ? t("editBooking") : t("newBooking")}
           </h2>
           <button
             type="button"
             onClick={() => close(roomId)}
-            aria-label="Закрити"
+            aria-label={t("closeLabel")}
             className="rounded-lg px-2 py-1 text-slate-500 transition hover:bg-slate-100"
           >
             ✕
@@ -368,7 +392,7 @@ function BookingForm({
 
           <div className="flex flex-col gap-1.5">
             <label htmlFor="room" className="text-sm font-medium text-slate-700">
-              Кімната
+              {t("room")}
             </label>
             <select
               id="room"
@@ -380,7 +404,11 @@ function BookingForm({
                   alone means memorising which is which. */}
               {rooms.map((room) => (
                 <option key={room.id} value={room.id}>
-                  {room.name} · {room.floor} поверх · {room.capacity} місць
+                  {t("roomOption", {
+                    name: room.name,
+                    floor: room.floor,
+                    capacity: room.capacity,
+                  })}
                 </option>
               ))}
             </select>
@@ -389,20 +417,22 @@ function BookingForm({
           <Input
             id="date"
             type="date"
-            label="Дата"
+            label={t("date")}
             value={date}
             onChange={(event) => setDate(event.target.value)}
             error={fieldError("startsAt")}
           />
 
           <p className="text-sm text-slate-600">
-            Тривалість: {formatDuration((endIndex - startIndex) * SLOT_MINUTES)}
+            {t("duration", {
+              duration: durationLabel((endIndex - startIndex) * SLOT_MINUTES, tDuration),
+            })}
           </p>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
               <label htmlFor="start" className="text-sm font-medium text-slate-700">
-                Початок
+                {t("start")}
               </label>
               <select
                 id="start"
@@ -420,7 +450,7 @@ function BookingForm({
 
             <div className="flex flex-col gap-1.5">
               <label htmlFor="end" className="text-sm font-medium text-slate-700">
-                Кінець
+                {t("end")}
               </label>
               <select
                 id="end"
@@ -444,7 +474,7 @@ function BookingForm({
           <div>
             <Input
               id="title"
-              label="Назва"
+              label={t("titleField")}
               // The panel is not modal, so nothing moves the focus into it, and
               // the title is the field the user came here to fill in.
               autoFocus
@@ -461,7 +491,7 @@ function BookingForm({
           {booking ? (
             booking.seriesId ? (
               <p className="rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-600">
-                Це входження щотижневої серії. Зміни торкнуться лише його.
+                {t("seriesNote")}
               </p>
             ) : null
           ) : (
@@ -473,12 +503,12 @@ function BookingForm({
                   onChange={(event) => setRepeat(event.target.checked)}
                   className="h-4 w-4"
                 />
-                Повторювати щотижня
+                {t("repeat")}
               </label>
 
               {repeat ? (
                 <label className="flex items-center gap-2 text-sm text-slate-700">
-                  Кількість
+                  {t("repeatCount")}
                   <select
                     value={repeatWeeks}
                     onChange={(event) => setRepeatWeeks(Number(event.target.value))}
@@ -511,10 +541,10 @@ function BookingForm({
             ) : null}
 
             <Button type="button" variant="ghost" onClick={() => close(roomId)}>
-              Закрити
+              {t("close")}
             </Button>
             <Button type="submit" disabled={pending}>
-              {pending ? "Зберігаємо…" : booking ? "Зберегти" : "Забронювати"}
+              {pending ? t("saving") : booking ? t("save") : t("book")}
             </Button>
           </div>
         </form>

@@ -16,7 +16,7 @@ const querySchema = z.object({
 export async function GET(request: Request) {
   const user = await getCurrentUser();
   if (!user) {
-    return unauthorizedError();
+    return await unauthorizedError();
   }
 
   const url = new URL(request.url);
@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     cursor: url.searchParams.get("cursor") ?? undefined,
   });
   if (!parsed.success) {
-    return validationError(parsed.error);
+    return await validationError(parsed.error);
   }
 
   const { scope, cursor } = parsed.data;
@@ -41,7 +41,9 @@ export async function GET(request: Request) {
     });
 
     if (!owned) {
-      return apiError(400, "VALIDATION_ERROR", "Некоректний курсор", "cursor");
+      return await apiError(400, "VALIDATION_ERROR", "INVALID_CURSOR", {
+        field: "cursor",
+      });
     }
   }
 

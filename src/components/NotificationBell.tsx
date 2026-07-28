@@ -1,6 +1,7 @@
 "use client";
 
 import { DateTime } from "luxon";
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { showToast } from "@/components/toast";
@@ -21,6 +22,7 @@ type Notification = {
 const POLL_INTERVAL_MS = 30_000;
 
 export function NotificationBell() {
+  const t = useTranslations("notifications");
   const timeZone = useSyncExternalStore(
     noopSubscribe,
     readViewerTimeZone,
@@ -47,7 +49,7 @@ export function NotificationBell() {
       for (const item of body.items) {
         if (!announced.current.has(item.id)) {
           announced.current.add(item.id);
-          showToast(`«${item.title}» скоро завершується — кімнату зайнято далі`);
+          showToast(t("endingSoon", { title: item.title }));
         }
       }
     }
@@ -59,6 +61,9 @@ export function NotificationBell() {
       cancelled = true;
       clearInterval(timer);
     };
+    // t is stable for a given language; re-subscribing on it would restart the
+    // polling on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function toggle() {
@@ -77,7 +82,7 @@ export function NotificationBell() {
         type="button"
         onClick={toggle}
         aria-label={
-          items.length > 0 ? `Сповіщення: ${items.length}` : "Сповіщень немає"
+          items.length > 0 ? t("bellCount", { count: items.length }) : t("bellEmpty")
         }
         aria-expanded={open}
         className="relative flex min-h-11 min-w-11 items-center justify-center rounded-lg text-slate-600 transition hover:bg-slate-100 sm:min-h-9 sm:min-w-9 focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-none"
@@ -93,15 +98,18 @@ export function NotificationBell() {
       {open ? (
         <div className="absolute right-0 z-40 mt-1 w-72 rounded-xl border border-slate-200 bg-white p-3 shadow-lg">
           {items.length === 0 ? (
-            <p className="text-sm text-slate-600">Нових сповіщень немає.</p>
+            <p className="text-sm text-slate-600">{t("empty")}</p>
           ) : (
             <ul className="flex flex-col gap-2">
               {items.map((item) => (
                 <li key={item.id} className="text-sm text-slate-700">
-                  <span className="font-medium text-slate-900">{item.title}</span>{" "}
-                  завершується о{" "}
-                  {DateTime.fromISO(item.endsAt).setZone(timeZone).toFormat("HH:mm")} —
-                  далі {item.roomName} зайнято.
+                  {t("item", {
+                    title: item.title,
+                    time: DateTime.fromISO(item.endsAt)
+                      .setZone(timeZone)
+                      .toFormat("HH:mm"),
+                    room: item.roomName,
+                  })}
                 </li>
               ))}
             </ul>

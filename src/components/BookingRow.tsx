@@ -1,6 +1,7 @@
 "use client";
 
 import { DateTime } from "luxon";
+import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { useSyncExternalStore } from "react";
 
@@ -36,13 +37,17 @@ type BookingRowProps = {
  * week the grid would open.
  */
 export function BookingRow({ booking, now, actions }: BookingRowProps) {
+  const t = useTranslations("myBookings");
+  const tSchedule = useTranslations("schedule");
+  // Month names and weekday names follow the chosen language, not the office.
+  const locale = useLocale();
   const timeZone = useSyncExternalStore(
     noopSubscribe,
     readViewerTimeZone,
     readOfficeTimeZone,
   );
 
-  const start = DateTime.fromISO(booking.startsAt).setZone(timeZone).setLocale("uk");
+  const start = DateTime.fromISO(booking.startsAt).setZone(timeZone).setLocale(locale);
   const end = DateTime.fromISO(booking.endsAt).setZone(timeZone);
   const isRunning = booking.startsAt <= now && booking.endsAt > now;
 
@@ -59,8 +64,8 @@ export function BookingRow({ booking, now, actions }: BookingRowProps) {
       >
         <span className="flex flex-wrap items-center gap-2">
           <span className="font-medium text-slate-900">{booking.title}</span>
-          {isRunning ? <Badge tone="success">зараз</Badge> : null}
-          {booking.isRecurring ? <Badge>щотижня</Badge> : null}
+          {isRunning ? <Badge tone="success">{t("running")}</Badge> : null}
+          {booking.isRecurring ? <Badge>{tSchedule("recurring")}</Badge> : null}
         </span>
         <span className="mt-1 block text-sm text-slate-600">
           {start.toFormat("ccc, d MMMM")} · {start.toFormat("HH:mm")}–
