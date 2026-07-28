@@ -1,3 +1,5 @@
+import { testPrisma } from "./db";
+
 export const BASE_URL = process.env.TEST_BASE_URL ?? "http://localhost:3100";
 
 type Options = {
@@ -39,8 +41,26 @@ export async function api<T = Record<string, never>>(
   };
 }
 
-/** Registers a user and returns the session cookie it was signed in with. */
+/**
+ * Registers a user, confirms the address and returns the session cookie.
+ *
+ * Confirmation is done directly in the database on purpose: every other test
+ * is about bookings, and making each one walk the verification link would test
+ * the same thing over and over. The flow itself has its own file.
+ */
 export async function registerUser(email: string, name = "Тест Тестовий") {
+  const { id, cookie } = await registerUnverifiedUser(email, name);
+
+  await testPrisma.user.update({
+    where: { id },
+    data: { emailVerifiedAt: new Date() },
+  });
+
+  return { id, cookie };
+}
+
+/** Registers a user and leaves the address unconfirmed. */
+export async function registerUnverifiedUser(email: string, name = "Тест Тестовий") {
   const response = await api<{ id: string }>("/api/auth/register", {
     method: "POST",
     body: { name, email, password: "password123" },
