@@ -55,6 +55,9 @@ export function BookingBlock({
         {booking.isRecurring ? <span aria-hidden="true">↻ </span> : null}
         {booking.title}
       </div>
+      {/* The time is what the grid position only approximates, so it is spelled
+          out; a half-hour block has no room for it and keeps the tooltip. */}
+      <div className="truncate opacity-80">{range}</div>
       <div className="truncate opacity-80">{booking.user.name}</div>
     </>
   );

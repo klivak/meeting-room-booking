@@ -322,11 +322,15 @@ export function Schedule({
     );
   };
 
+  // Whole hours carry the weight; the half hours between them stay quiet, so the
+  // axis reads as a scale instead of forty equal labels.
   const timeAxis = (keyPrefix: string) =>
     labels.map((label, rowIndex) => (
       <div
         key={`${keyPrefix}-${label}-${rowIndex}`}
-        className="sticky left-0 z-20 -mt-2 bg-white pr-2 text-right text-xs text-slate-500"
+        className={`sticky left-0 z-20 -mt-2 bg-white pr-2 text-right text-xs ${
+          rowIndex % 2 === 0 ? "font-medium text-slate-600" : "text-slate-400"
+        }`}
         style={{ gridColumn: 1, gridRow: rowIndex + 2 }}
       >
         {label}
@@ -424,8 +428,9 @@ export function Schedule({
             gridTemplateRows: `auto repeat(${SLOT_COUNT}, ${ROW_HEIGHT_REM}rem)`,
           }}
         >
-          {/* Corner above the time axis */}
-          <div className="sticky left-0 z-20 border-b border-slate-200 bg-white" />
+          {/* Corner above the time axis, sticky both ways so it never uncovers
+              the cells sliding under it. */}
+          <div className="sticky top-0 left-0 z-30 border-b border-slate-200 bg-white" />
 
           {days.map((option) => {
             const isToday = option.toISODate() === todayIso;
@@ -433,8 +438,12 @@ export function Schedule({
             return (
               <div
                 key={option.toISODate()}
-                className={`border-b border-l border-slate-200 px-2 py-2 text-center text-sm ${
-                  isToday ? "bg-indigo-50 font-semibold text-indigo-900" : "text-slate-600"
+                // Sticky: on a long grid the columns lose their meaning once the
+                // headers scroll away.
+                className={`sticky top-0 z-20 border-b border-l border-slate-200 px-2 py-2 text-center text-sm ${
+                  isToday
+                    ? "bg-indigo-50 font-semibold text-indigo-900"
+                    : "bg-white text-slate-600"
                 }`}
               >
                 <div>{option.setLocale("uk").toFormat("ccc")}</div>
@@ -460,6 +469,13 @@ export function Schedule({
           {nowLine(DAYS_IN_WEEK + 1)}
         </div>
       </div>
+
+      {/* Says what to do with the grid: without it the cells look like a table
+          rather than something to press. */}
+      <p className="text-xs text-slate-500">
+        Натисніть на вільний час, щоб забронювати, або протягніть, щоб обрати
+        кілька півгодин одразу.
+      </p>
 
       <div className="flex flex-wrap items-center gap-4 text-xs text-slate-600">
         <span className="flex items-center gap-1.5">

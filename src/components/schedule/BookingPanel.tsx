@@ -15,17 +15,18 @@ import {
 } from "@/components/viewerTimeZone";
 import { createBookingSchema } from "@/lib/domain/bookingInput";
 import { MAX_TITLE_LENGTH, validateTitle } from "@/lib/domain/bookingRules";
-import { OFFICE_TZ } from "@/lib/domain/constants";
+import { OFFICE_TZ, SLOT_MINUTES } from "@/lib/domain/constants";
 import { MAX_OCCURRENCES, MIN_OCCURRENCES } from "@/lib/domain/recurrence";
 import {
   SLOT_COUNT,
+  formatDuration,
   getEndSlotBounds,
   getSlotIndex,
   getSlotLabel,
   getSlotStart,
 } from "@/lib/domain/grid";
 
-type RoomOption = { id: string; name: string };
+type RoomOption = { id: string; name: string; floor: number; capacity: number };
 
 type ApiError = { code: string; message: string; field?: string };
 
@@ -338,9 +339,11 @@ function BookingForm({
               onChange={(event) => setSelectedRoomId(event.target.value)}
               className="min-h-11 rounded-lg border border-slate-300 px-3 py-2 text-slate-900 sm:min-h-0"
             >
+              {/* Floor and capacity are how a room is actually chosen; the name
+                  alone means memorising which is which. */}
               {rooms.map((room) => (
                 <option key={room.id} value={room.id}>
-                  {room.name}
+                  {room.name} · {room.floor} поверх · {room.capacity} місць
                 </option>
               ))}
             </select>
@@ -354,6 +357,10 @@ function BookingForm({
             onChange={(event) => setDate(event.target.value)}
             error={fieldError("startsAt")}
           />
+
+          <p className="text-sm text-slate-600">
+            Тривалість: {formatDuration((endIndex - startIndex) * SLOT_MINUTES)}
+          </p>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">

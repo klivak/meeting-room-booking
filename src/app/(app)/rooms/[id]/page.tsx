@@ -5,6 +5,7 @@ import { Suspense } from "react";
 
 import { BookingPanel } from "@/components/schedule/BookingPanel";
 import { Schedule as ScheduleGrid } from "@/components/schedule/Schedule";
+import { WeekShortcuts } from "@/components/schedule/WeekShortcuts";
 import { LinkButton } from "@/components/ui/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { WEEK_START_DAY } from "@/lib/config";
@@ -211,7 +212,7 @@ export default async function RoomPage({
       : null;
 
   const rooms = await prisma.room.findMany({
-    select: { id: true, name: true },
+    select: { id: true, name: true, floor: true, capacity: true },
     orderBy: [{ floor: "asc" }, { name: "asc" }],
   });
 
@@ -223,6 +224,11 @@ export default async function RoomPage({
 
   return (
     <div className="flex flex-col gap-4">
+      <WeekShortcuts
+        previousHref={`/rooms/${room.id}?week=${previousWeek}`}
+        nextHref={`/rooms/${room.id}?week=${nextWeek}`}
+      />
+
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-semibold text-slate-900">{room.name}</h1>
 
