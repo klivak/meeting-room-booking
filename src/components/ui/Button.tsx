@@ -18,7 +18,8 @@ export function Button({
   return (
     <button
       disabled={disabled}
-      className={`rounded-lg px-4 py-2 text-sm font-medium transition focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60 ${
+      // min-h-11 is roughly the 44px a finger needs; desktop keeps the compact size.
+      className={`min-h-11 rounded-lg px-4 py-2 text-sm font-medium transition sm:min-h-0 focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60 ${
         VARIANTS[variant]
       } ${className ?? ""}`}
       {...props}

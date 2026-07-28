@@ -23,7 +23,8 @@ export function LinkButton({
   return (
     <Link
       aria-current={active ? "page" : undefined}
-      className={`rounded-lg border px-4 py-2 text-sm font-medium transition focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 focus-visible:outline-none ${style} ${
+      // Matches Button: a finger-sized target on a phone, compact on a desktop.
+      className={`inline-flex min-h-11 items-center rounded-lg border px-4 py-2 text-sm font-medium transition sm:min-h-0 focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 focus-visible:outline-none ${style} ${
         className ?? ""
       }`}
       {...props}

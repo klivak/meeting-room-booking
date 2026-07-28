@@ -191,16 +191,16 @@ function BookingForm({
 
   return (
     <div
-      className="fixed inset-0 z-40 flex items-end justify-center bg-slate-900/40 p-4 sm:items-center"
+      // Full screen on a phone, a centred dialog from the sm breakpoint up.
+      className="fixed inset-0 z-40 flex items-stretch justify-center bg-slate-900/40 sm:items-center sm:p-4"
       onClick={() => close(roomId)}
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="booking-form-title"
-        // On a short screen the sheet scrolls instead of pushing its buttons
-        // out of reach.
-        className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-xl bg-white p-5 shadow-xl"
+        // The sheet scrolls instead of pushing its buttons out of reach.
+        className="w-full overflow-y-auto bg-white p-5 shadow-xl sm:max-h-[90vh] sm:max-w-md sm:rounded-xl"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between gap-4">
@@ -235,7 +235,7 @@ function BookingForm({
               id="room"
               value={selectedRoomId}
               onChange={(event) => setSelectedRoomId(event.target.value)}
-              className="rounded-lg border border-slate-300 px-3 py-2 text-slate-900"
+              className="min-h-11 rounded-lg border border-slate-300 px-3 py-2 text-slate-900 sm:min-h-0"
             >
               {rooms.map((room) => (
                 <option key={room.id} value={room.id}>
@@ -263,7 +263,7 @@ function BookingForm({
                 id="start"
                 value={startIndex}
                 onChange={(event) => changeStart(Number(event.target.value))}
-                className="rounded-lg border border-slate-300 px-3 py-2 text-slate-900"
+                className="min-h-11 rounded-lg border border-slate-300 px-3 py-2 text-slate-900 sm:min-h-0"
               >
                 {Array.from({ length: SLOT_COUNT }, (_, index) => (
                   <option key={index} value={index}>
@@ -281,7 +281,7 @@ function BookingForm({
                 id="end"
                 value={endIndex}
                 onChange={(event) => setEndIndex(Number(event.target.value))}
-                className="rounded-lg border border-slate-300 px-3 py-2 text-slate-900"
+                className="min-h-11 rounded-lg border border-slate-300 px-3 py-2 text-slate-900 sm:min-h-0"
               >
                 {/* Only durations the rules allow are listed at all. */}
                 {Array.from(

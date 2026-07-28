@@ -41,6 +41,8 @@ type ScheduleProps = {
 };
 
 const ROW_HEIGHT_REM = 2.25;
+// Taller rows on a phone: a half-hour slot is a tap target, not just a line.
+const DAY_ROW_HEIGHT_REM = 3;
 
 // The "now" line ticks once a minute; it only moves half a row per half hour,
 // so anything finer would be wasted work. The snapshot is cached because
@@ -217,7 +219,7 @@ export function Schedule({
           <Link
             href={dayHref(day.minus({ days: 1 }))}
             aria-label="Попередній день"
-            className="rounded-lg border border-slate-300 px-4 py-2 text-slate-700 focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-none"
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-slate-300 text-slate-700 focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-none"
           >
             ←
           </Link>
@@ -227,7 +229,7 @@ export function Schedule({
           <Link
             href={dayHref(day.plus({ days: 1 }))}
             aria-label="Наступний день"
-            className="rounded-lg border border-slate-300 px-4 py-2 text-slate-700 focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-none"
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-slate-300 text-slate-700 focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-none"
           >
             →
           </Link>
@@ -242,7 +244,7 @@ export function Schedule({
                 key={option.toISODate()}
                 href={dayHref(option)}
                 aria-current={isSelected ? "page" : undefined}
-                className={`shrink-0 rounded-lg border px-3 py-1.5 text-xs ${
+                className={`flex min-h-11 shrink-0 items-center rounded-lg border px-3 text-xs ${
                   isSelected
                     ? "border-slate-900 bg-slate-900 text-white"
                     : option.toISODate() === todayIso
@@ -260,7 +262,7 @@ export function Schedule({
           className="grid"
           style={{
             gridTemplateColumns: "4rem minmax(0, 1fr)",
-            gridTemplateRows: `auto repeat(${SLOT_COUNT}, ${ROW_HEIGHT_REM}rem)`,
+            gridTemplateRows: `auto repeat(${SLOT_COUNT}, ${DAY_ROW_HEIGHT_REM}rem)`,
           }}
         >
           <div className="border-b border-slate-200" />
