@@ -1,10 +1,12 @@
 type ButtonProps = React.ComponentProps<"button"> & {
-  variant?: "primary" | "ghost";
+  variant?: "primary" | "ghost" | "danger";
 };
 
 const VARIANTS = {
   primary: "bg-slate-900 text-white hover:bg-slate-800",
   ghost: "border border-slate-300 text-slate-700 hover:bg-slate-100",
+  // Used only for actions that destroy something, so they never look routine.
+  danger: "bg-red-600 text-white hover:bg-red-700",
 };
 
 export function Button({

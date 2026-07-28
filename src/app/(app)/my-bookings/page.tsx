@@ -2,8 +2,14 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
+import { DateTime } from "luxon";
+
 import { BookingRow } from "@/components/BookingRow";
+import { CancelBookingButton } from "@/components/CancelBookingButton";
 import { MoreBookings } from "@/components/MoreBookings";
+import { WEEK_START_DAY } from "@/lib/config";
+import { OFFICE_TZ } from "@/lib/domain/constants";
+import { getWeekStart } from "@/lib/domain/week";
 import { prisma } from "@/lib/server/db";
 import { getCurrentUser } from "@/lib/server/session";
 
@@ -15,6 +21,14 @@ const TABS: { value: Tab; label: string }[] = [
   { value: "upcoming", label: "Майбутні" },
   { value: "past", label: "Минулі" },
 ];
+
+/** Office week that contains the booking, which is the week the grid opens. */
+function weekOf(startsAt: Date): string {
+  return (
+    getWeekStart(DateTime.fromJSDate(startsAt).setZone(OFFICE_TZ), WEEK_START_DAY)
+      .toISODate() ?? ""
+  );
+}
 
 async function BookingList({ tab }: { tab: Tab }) {
   const user = await getCurrentUser();
@@ -83,6 +97,21 @@ async function BookingList({ tab }: { tab: Tab }) {
               endsAt: booking.endsAt.toISOString(),
               room: booking.room,
             }}
+            // A finished booking can no longer be changed, so the past tab
+            // carries no actions at all.
+            actions={
+              tab === "upcoming" ? (
+                <>
+                  <Link
+                    href={`/rooms/${booking.room.id}?week=${weekOf(booking.startsAt)}&booking=${booking.id}`}
+                    className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+                  >
+                    Редагувати
+                  </Link>
+                  <CancelBookingButton bookingId={booking.id} title={booking.title} />
+                </>
+              ) : null
+            }
           />
         ))}
       </ul>

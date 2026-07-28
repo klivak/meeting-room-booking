@@ -4,6 +4,8 @@ import { DateTime } from "luxon";
 import { useRouter } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
 
+import { CancelBookingButton } from "@/components/CancelBookingButton";
+import { showToast } from "@/components/toast";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import {
@@ -56,37 +58,20 @@ export function BookingPanel({
   slot,
   booking,
 }: BookingPanelProps) {
-  const [toast, setToast] = useState<string | null>(null);
+  if (!slot && !booking) {
+    return null;
+  }
 
-  const showToast = (message: string) => {
-    setToast(message);
-    setTimeout(() => setToast(null), 4000);
-  };
-
+  // The key resets the form when a different slot or booking is picked.
   return (
-    <>
-      {slot || booking ? (
-        // The key resets the form when a different slot or booking is picked.
-        <BookingForm
-          key={booking?.id ?? slot}
-          rooms={rooms}
-          roomId={roomId}
-          weekParam={weekParam}
-          slot={slot}
-          booking={booking}
-          onSaved={showToast}
-        />
-      ) : null}
-
-      {toast ? (
-        <p
-          role="status"
-          className="fixed right-4 bottom-4 z-50 rounded-lg bg-slate-900 px-4 py-2 text-sm text-white shadow-lg"
-        >
-          {toast}
-        </p>
-      ) : null}
-    </>
+    <BookingForm
+      key={booking?.id ?? slot}
+      rooms={rooms}
+      roomId={roomId}
+      weekParam={weekParam}
+      slot={slot}
+      booking={booking}
+    />
   );
 }
 
@@ -96,8 +81,7 @@ function BookingForm({
   weekParam,
   slot,
   booking,
-  onSaved,
-}: BookingPanelProps & { onSaved: (message: string) => void }) {
+}: BookingPanelProps) {
   const router = useRouter();
   const timeZone = useSyncExternalStore(
     noopSubscribe,
@@ -179,7 +163,7 @@ function BookingForm({
     ).catch(() => null);
 
     if (response?.ok) {
-      onSaved(booking ? "Зміни збережено" : "Бронювання створено");
+      showToast(booking ? "Зміни збережено" : "Бронювання створено");
       close(selectedRoomId);
       return;
     }
@@ -318,9 +302,19 @@ function BookingForm({
             </p>
           </div>
 
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {booking ? (
+              <div className="mr-auto">
+                <CancelBookingButton
+                  bookingId={booking.id}
+                  title={booking.title}
+                  redirectTo={`/rooms/${roomId}?week=${weekParam}`}
+                />
+              </div>
+            ) : null}
+
             <Button type="button" variant="ghost" onClick={() => close(roomId)}>
-              Скасувати
+              Закрити
             </Button>
             <Button type="submit" disabled={pending}>
               {pending ? "Зберігаємо…" : booking ? "Зберегти" : "Забронювати"}
