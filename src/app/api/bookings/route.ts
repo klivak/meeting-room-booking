@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { createBookingSchema } from "@/lib/domain/bookingInput";
 import { validateBookingTime, validateTitle } from "@/lib/domain/bookingRules";
 import { apiError, unauthorizedError, validationError } from "@/lib/server/apiError";
+import { createBooking } from "@/lib/server/bookings";
 import { prisma } from "@/lib/server/db";
 import { getCurrentUser } from "@/lib/server/session";
 
@@ -43,34 +44,12 @@ export async function POST(request: Request) {
     return apiError(400, timeError.code, timeError.message);
   }
 
-  const booking = await prisma.$transaction(async (tx) => {
-    // Same rule as intervalsOverlap, expressed as a query: an active booking of
-    // this room clashes when it starts before ours ends and ends after ours
-    // starts. Canceled rows are skipped, so they stop blocking their slot.
-    const clash = await tx.booking.findFirst({
-      where: {
-        roomId,
-        canceledAt: null,
-        startsAt: { lt: end },
-        endsAt: { gt: start },
-      },
-      select: { id: true },
-    });
-
-    if (clash) {
-      return null;
-    }
-
-    return tx.booking.create({
-      data: {
-        roomId,
-        userId: user.id,
-        title: title.trim(),
-        startsAt: start,
-        endsAt: end,
-      },
-      select: { id: true, roomId: true, title: true, startsAt: true, endsAt: true },
-    });
+  const booking = await createBooking({
+    roomId,
+    userId: user.id,
+    title: title.trim(),
+    startsAt: start,
+    endsAt: end,
   });
 
   if (!booking) {

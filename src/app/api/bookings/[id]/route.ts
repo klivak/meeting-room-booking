@@ -8,6 +8,7 @@ import {
   type BookingAccess,
 } from "@/lib/domain/bookingRules";
 import { apiError, unauthorizedError, validationError } from "@/lib/server/apiError";
+import { updateBooking } from "@/lib/server/bookings";
 import { prisma } from "@/lib/server/db";
 import { getCurrentUser } from "@/lib/server/session";
 
@@ -83,34 +84,11 @@ export async function PATCH(
     return apiError(400, timeError.code, timeError.message);
   }
 
-  const updated = await prisma.$transaction(async (tx) => {
-    // The booking being edited is excluded from the overlap check, otherwise it
-    // would always clash with itself and could not even be renamed.
-    const clash = await tx.booking.findFirst({
-      where: {
-        id: { not: id },
-        roomId: nextRoomId,
-        canceledAt: null,
-        startsAt: { lt: nextEnd },
-        endsAt: { gt: nextStart },
-      },
-      select: { id: true },
-    });
-
-    if (clash) {
-      return null;
-    }
-
-    return tx.booking.update({
-      where: { id },
-      data: {
-        roomId: nextRoomId,
-        title: nextTitle.trim(),
-        startsAt: nextStart,
-        endsAt: nextEnd,
-      },
-      select: { id: true, roomId: true, title: true, startsAt: true, endsAt: true },
-    });
+  const updated = await updateBooking(id, {
+    roomId: nextRoomId,
+    title: nextTitle.trim(),
+    startsAt: nextStart,
+    endsAt: nextEnd,
   });
 
   if (!updated) {
