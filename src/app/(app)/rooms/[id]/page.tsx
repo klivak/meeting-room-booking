@@ -3,7 +3,10 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
-import { BookingPanel } from "@/components/schedule/BookingPanel";
+import {
+  BookingPanel,
+  SCHEDULE_ANCHOR_ID,
+} from "@/components/schedule/BookingPanel";
 import { Schedule as ScheduleGrid } from "@/components/schedule/Schedule";
 import { WeekShortcuts } from "@/components/schedule/WeekShortcuts";
 import { LinkButton } from "@/components/ui/LinkButton";
@@ -23,7 +26,10 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const room = await prisma.room.findUnique({ where: { id }, select: { name: true } });
+  const room = await prisma.room.findUnique({
+    where: { id },
+    select: { name: true },
+  });
 
   return { title: room ? `${room.name} — розклад` : "Кімнату не знайдено" };
 }
@@ -47,7 +53,10 @@ function resolveWeekStart(weekParam: string | undefined): DateTime {
  * contains it, otherwise to the first day of that week, so a phone never opens
  * on an arbitrary date.
  */
-function resolveSelectedDay(weekStart: DateTime, dayParam: string | undefined): string {
+function resolveSelectedDay(
+  weekStart: DateTime,
+  dayParam: string | undefined,
+): string {
   const days = getWeekDays(weekStart).map((day) => day.toISODate());
 
   if (dayParam && days.includes(dayParam)) {
@@ -219,7 +228,10 @@ export default async function RoomPage({
   const weekStart = resolveWeekStart(week);
   const previousWeek = weekStart.minus({ days: DAYS_IN_WEEK }).toISODate();
   const nextWeek = weekStart.plus({ days: DAYS_IN_WEEK }).toISODate();
-  const currentWeek = getWeekStart(DateTime.now().setZone(OFFICE_TZ), WEEK_START_DAY);
+  const currentWeek = getWeekStart(
+    DateTime.now().setZone(OFFICE_TZ),
+    WEEK_START_DAY,
+  );
   const isCurrentWeek = weekStart.toISODate() === currentWeek.toISODate();
 
   return (
@@ -267,16 +279,18 @@ export default async function RoomPage({
         ))}
       </nav>
 
-      <Suspense key={weekStart.toISODate()} fallback={<ScheduleSkeleton />}>
-        <Schedule
-          roomId={room.id}
-          weekStart={weekStart}
-          selectedDay={resolveSelectedDay(weekStart, day)}
-          selectedSlot={slot}
-          selectedSlotEnd={slotEnd}
-          selectedBookingId={selectedBooking?.id}
-        />
-      </Suspense>
+      <div id={SCHEDULE_ANCHOR_ID}>
+        <Suspense key={weekStart.toISODate()} fallback={<ScheduleSkeleton />}>
+          <Schedule
+            roomId={room.id}
+            weekStart={weekStart}
+            selectedDay={resolveSelectedDay(weekStart, day)}
+            selectedSlot={slot}
+            selectedSlotEnd={slotEnd}
+            selectedBookingId={selectedBooking?.id}
+          />
+        </Suspense>
+      </div>
 
       {/* Outside the Suspense boundary so the success toast survives the
           refresh that follows a save. */}

@@ -203,14 +203,20 @@ export function Schedule({
         aria-label={`Забронювати ${cellDay.setLocale("uk").toFormat("ccc dd.MM")}, ${
           labels[rowIndex]
         }`}
-        className={`border-l border-slate-200 transition hover:bg-indigo-100/60 focus-visible:z-20 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-inset focus-visible:outline-none ${
+        className={`group relative border-l border-slate-200 transition hover:bg-indigo-100/60 focus-visible:z-20 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-inset focus-visible:outline-none ${
           // A lighter line inside the hour, a full one between hours.
           rowIndex % 2 === 0 ? "border-t border-t-slate-200" : "border-t border-t-slate-100"
         } ${isToday ? "bg-indigo-50/40" : ""} ${
           isInDrag ? "bg-indigo-200/70" : ""
         } ${isSelected ? "z-10 bg-indigo-100 ring-2 ring-indigo-500 ring-inset" : ""}`}
         style={{ gridColumn, gridRow: rowIndex + 2 }}
-      />
+      >
+        {/* The hovered cell names its own time: the axis is far away once the
+            pointer is deep inside the week. */}
+        <span className="pointer-events-none absolute inset-0 hidden items-center justify-center text-[11px] font-medium text-indigo-700 group-hover:flex">
+          {labels[rowIndex]}
+        </span>
+      </button>
     );
   };
 
@@ -244,6 +250,8 @@ export function Schedule({
 
     return (
       <div
+        // Rendered from a map over the days, so it carries its own key.
+        key={`drag-${dayIndex}`}
         className="pointer-events-none z-20 m-0.5 flex items-center justify-center rounded-md bg-indigo-600 px-1.5 text-center text-xs leading-tight font-medium text-white"
         style={{
           gridColumn,
@@ -328,9 +336,11 @@ export function Schedule({
     labels.map((label, rowIndex) => (
       <div
         key={`${keyPrefix}-${label}-${rowIndex}`}
-        className={`sticky left-0 z-20 -mt-2 bg-white pr-2 text-right text-xs ${
-          rowIndex % 2 === 0 ? "font-medium text-slate-600" : "text-slate-400"
-        }`}
+        // Every label is lifted to sit on the line it marks, except the first:
+        // above it there is only the header row, and it would be cut off.
+        className={`sticky left-0 z-20 bg-white pr-2 text-right text-xs ${
+          rowIndex === 0 ? "" : "-mt-2"
+        } ${rowIndex % 2 === 0 ? "font-medium text-slate-600" : "text-slate-400"}`}
         style={{ gridColumn: 1, gridRow: rowIndex + 2 }}
       >
         {label}

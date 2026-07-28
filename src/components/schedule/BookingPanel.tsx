@@ -35,6 +35,9 @@ type ApiError = { code: string; message: string; field?: string };
 // and the browser corrects it after hydration.
 const WIDE_SCREEN = "(min-width: 640px)";
 
+/** Element the floating panel is placed against. */
+export const SCHEDULE_ANCHOR_ID = "schedule-section";
+
 function subscribeToWideScreen(onChange: () => void) {
   const query = window.matchMedia(WIDE_SCREEN);
   query.addEventListener("change", onChange);
@@ -232,6 +235,39 @@ function BookingForm({
       ? { left: `${position.x}px`, top: `${position.y}px`, right: "auto" }
       : undefined;
 
+  /**
+   * Places the panel beside the schedule the first time it is shown, instead of
+   * in a corner of the window: the form belongs next to the grid it is about.
+   * Measuring happens in a ref callback rather than an effect, so the panel is
+   * positioned before the browser paints it.
+   */
+  function anchorToSchedule(node: HTMLDivElement | null) {
+    if (!node || !isWide || position) {
+      return;
+    }
+
+    const section = document.getElementById(SCHEDULE_ANCHOR_ID);
+    if (!section) {
+      return;
+    }
+
+    const schedule = section.getBoundingClientRect();
+    const panel = node.getBoundingClientRect();
+    const margin = 8;
+
+    setPosition({
+      // Against the right edge of the schedule, and never off screen.
+      x: Math.max(
+        margin,
+        Math.min(
+          schedule.right - panel.width,
+          window.innerWidth - panel.width - margin,
+        ),
+      ),
+      y: Math.max(margin, Math.min(schedule.top, window.innerHeight - panel.height - margin)),
+    });
+  }
+
   function startDragging(event: React.PointerEvent<HTMLDivElement>) {
     const panel = event.currentTarget.parentElement;
     if (!isWide || !panel) {
@@ -291,6 +327,7 @@ function BookingForm({
       }}
     >
       <div
+        ref={anchorToSchedule}
         role="dialog"
         aria-modal="false"
         aria-labelledby="booking-form-title"
