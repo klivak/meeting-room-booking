@@ -2,7 +2,8 @@
 
 import { DateTime } from "luxon";
 import Link from "next/link";
-import { useSyncExternalStore } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { BookingBlock, type BookingView } from "@/components/schedule/BookingBlock";
 import { SwipeArea } from "@/components/schedule/SwipeArea";
@@ -12,11 +13,18 @@ import {
   readViewerTimeZone,
 } from "@/components/viewerTimeZone";
 import { WEEK_START_DAY } from "@/lib/config";
-import { OFFICE_TZ, WORK_DAY_END, WORK_DAY_START } from "@/lib/domain/constants";
+import {
+  OFFICE_TZ,
+  SLOT_MINUTES,
+  WORK_DAY_END,
+  WORK_DAY_START,
+} from "@/lib/domain/constants";
 import {
   DAYS_IN_WEEK,
   SLOT_COUNT,
+  formatDuration,
   getNowMarker,
+  getSelectionRows,
   getSlotLabels,
   getSlotStart,
   getWeekDays,
@@ -37,6 +45,8 @@ type ScheduleProps = {
   selectedDay: string;
   /** Start of the free slot picked in the URL, if any. */
   selectedSlot?: string;
+  /** End of the picked range, so a dragged selection stays highlighted whole. */
+  selectedSlotEnd?: string;
   /** Id of the own booking picked in the URL, if any. */
   selectedBookingId?: string;
 };
@@ -74,14 +84,23 @@ export function Schedule({
   now: serverNow,
   selectedDay,
   selectedSlot,
+  selectedSlotEnd,
   selectedBookingId,
 }: ScheduleProps) {
+  const router = useRouter();
   const timeZone = useSyncExternalStore(
     noopSubscribe,
     readViewerTimeZone,
     readOfficeTimeZone,
   );
   const now = useSyncExternalStore(subscribeToMinuteTick, readNow, readNoNow);
+
+  // Rows being dragged over right now; null when nothing is being selected.
+  const [drag, setDrag] = useState<{
+    dayIndex: number;
+    anchorRow: number;
+    focusRow: number;
+  } | null>(null);
 
   const weekStartDateTime = DateTime.fromISO(weekStart, { zone: OFFICE_TZ });
   const days = getWeekDays(weekStartDateTime);
@@ -91,6 +110,13 @@ export function Schedule({
   const weekParam = weekStartDateTime.toISODate();
 
   const selectedSlotStart = selectedSlot ? DateTime.fromISO(selectedSlot) : null;
+  const selectedSlotEndTime = selectedSlotEnd
+    ? DateTime.fromISO(selectedSlotEnd)
+    : null;
+
+  // Which pointer started the last interaction, so a mouse click is not handled
+  // twice: once by the drag and once by the click that follows it.
+  const lastPointerType = useRef<string | null>(null);
   const dayIndex = Math.max(
     0,
     days.findIndex((day) => day.toISODate() === selectedDay),
@@ -108,24 +134,72 @@ export function Schedule({
     return `${start.toFormat("HH:mm")}–${end.toFormat("HH:mm")}`;
   };
 
-  /** One empty half hour. Clicking it picks that slot as a booking start. */
+  /** Opens the booking form for a row range of one day. */
+  const openForm = (formDay: DateTime, rowStart: number, rowEnd: number) => {
+    const start = getSlotStart(formDay, rowStart).toUTC().toISO() ?? "";
+    const end = getSlotStart(formDay, rowEnd).toUTC().toISO() ?? "";
+
+    router.push(
+      `/rooms/${roomId}?week=${weekParam}&slot=${encodeURIComponent(start)}&slotEnd=${encodeURIComponent(end)}`,
+      { scroll: false },
+    );
+  };
+
+  /**
+   * One empty half hour. A click books that slot, dragging across several picks
+   * the whole range.
+   *
+   * Dragging is bound to the mouse only: on a touch screen a horizontal drag is
+   * how the day view is swiped, and a vertical one is how the page scrolls, so
+   * a finger keeps the plain tap.
+   */
   const renderCell = (
     cellDay: DateTime,
     rowIndex: number,
+    dayIndex: number,
     gridColumn: number,
     keyPrefix: string,
   ) => {
     const start = getSlotStart(cellDay, rowIndex);
-    const startIso = start.toUTC().toISO() ?? "";
+    // A click selects one cell, a dragged range selects everything up to its end.
     const isSelected =
-      selectedSlotStart?.isValid === true && +selectedSlotStart === +start;
+      selectedSlotStart?.isValid === true &&
+      +start >= +selectedSlotStart &&
+      (selectedSlotEndTime?.isValid === true
+        ? +start < +selectedSlotEndTime
+        : +start === +selectedSlotStart);
     const isToday = cellDay.toISODate() === todayIso;
+    const isInDrag =
+      drag?.dayIndex === dayIndex &&
+      rowIndex >= getSelectionRows(drag.anchorRow, drag.focusRow).rowStart &&
+      rowIndex < getSelectionRows(drag.anchorRow, drag.focusRow).rowEnd;
 
     return (
-      <Link
+      <button
         key={`${keyPrefix}-${cellDay.toISODate()}-${rowIndex}`}
-        href={`/rooms/${roomId}?week=${weekParam}&slot=${encodeURIComponent(startIso)}`}
-        scroll={false}
+        type="button"
+        onPointerDown={(event) => {
+          lastPointerType.current = event.pointerType;
+          if (event.pointerType !== "mouse") {
+            return;
+          }
+          // Keeps the browser from selecting text across the cells.
+          event.preventDefault();
+          setDrag({ dayIndex, anchorRow: rowIndex, focusRow: rowIndex });
+        }}
+        onPointerEnter={() => {
+          if (drag && drag.dayIndex === dayIndex) {
+            setDrag({ ...drag, focusRow: rowIndex });
+          }
+        }}
+        onClick={(event) => {
+          // A mouse release is handled by the drag, so this is a touch or a
+          // keyboard activation.
+          if (event.detail !== 0 && lastPointerType.current === "mouse") {
+            return;
+          }
+          openForm(cellDay, rowIndex, rowIndex + 1);
+        }}
         aria-label={`Забронювати ${cellDay.setLocale("uk").toFormat("ccc dd.MM")}, ${
           labels[rowIndex]
         }`}
@@ -133,10 +207,51 @@ export function Schedule({
           // A lighter line inside the hour, a full one between hours.
           rowIndex % 2 === 0 ? "border-t border-t-slate-200" : "border-t border-t-slate-100"
         } ${isToday ? "bg-indigo-50/40" : ""} ${
-          isSelected ? "z-10 bg-indigo-100 ring-2 ring-indigo-500 ring-inset" : ""
-        }`}
+          isInDrag ? "bg-indigo-200/70" : ""
+        } ${isSelected ? "z-10 bg-indigo-100 ring-2 ring-indigo-500 ring-inset" : ""}`}
         style={{ gridColumn, gridRow: rowIndex + 2 }}
       />
+    );
+  };
+
+  // The release can happen anywhere, including outside the grid, so the whole
+  // window is listened to rather than the cells.
+  useEffect(() => {
+    if (!drag) {
+      return;
+    }
+
+    const finish = () => {
+      const { rowStart, rowEnd } = getSelectionRows(drag.anchorRow, drag.focusRow);
+      setDrag(null);
+      openForm(days[drag.dayIndex], rowStart, rowEnd);
+    };
+
+    window.addEventListener("pointerup", finish);
+    return () => window.removeEventListener("pointerup", finish);
+  });
+
+  /** Shows what the current drag would book, with its duration. */
+  const renderDragPreview = (dayIndex: number, gridColumn: number) => {
+    if (!drag || drag.dayIndex !== dayIndex) {
+      return null;
+    }
+
+    const { rowStart, rowEnd } = getSelectionRows(drag.anchorRow, drag.focusRow);
+    const previewDay = days[dayIndex];
+    const from = getSlotStart(previewDay, rowStart).setZone(timeZone).toFormat("HH:mm");
+    const to = getSlotStart(previewDay, rowEnd).setZone(timeZone).toFormat("HH:mm");
+
+    return (
+      <div
+        className="pointer-events-none z-20 m-0.5 flex items-center justify-center rounded-md bg-indigo-600 px-1.5 text-center text-xs leading-tight font-medium text-white"
+        style={{
+          gridColumn,
+          gridRow: `${rowStart + 2} / span ${rowEnd - rowStart}`,
+        }}
+      >
+        {from}–{to} · {formatDuration((rowEnd - rowStart) * SLOT_MINUTES)}
+      </div>
     );
   };
 
@@ -180,19 +295,32 @@ export function Schedule({
     }))
     .filter((entry) => entry.placement !== null);
 
-  const nowLine = (gridColumn: number) => (
-    <div
-      className="pointer-events-none relative z-20"
-      style={{ gridColumn, gridRow: `2 / span ${SLOT_COUNT}` }}
-    >
+  /**
+   * The "now" line, drawn across every day and labelled with the time, the way a
+   * calendar does it. It only exists inside the office day: outside 09:00-19:00
+   * there is nothing on the grid for it to point at.
+   */
+  const nowLine = (columnSpan: number) => {
+    if (!nowMarker || now === null) {
+      return null;
+    }
+
+    return (
       <div
-        className="absolute right-0 left-0 border-t-2 border-red-500"
-        style={{ top: `${(nowMarker?.ratio ?? 0) * 100}%` }}
+        className="pointer-events-none relative z-30"
+        style={{ gridColumn: `1 / span ${columnSpan}`, gridRow: `2 / span ${SLOT_COUNT}` }}
       >
-        <span className="absolute -top-1 -left-1 block h-2 w-2 rounded-full bg-red-500" />
+        <div
+          className="absolute right-0 left-0 border-t-2 border-red-500"
+          style={{ top: `${nowMarker.ratio * 100}%` }}
+        >
+          <span className="absolute -top-2 left-0 rounded-sm bg-red-500 px-1 text-[10px] leading-4 font-medium text-white">
+            {DateTime.fromMillis(now).setZone(timeZone).toFormat("HH:mm")}
+          </span>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const timeAxis = (keyPrefix: string) =>
     labels.map((label, rowIndex) => (
@@ -275,11 +403,12 @@ export function Schedule({
 
             {timeAxis("day")}
             {Array.from({ length: SLOT_COUNT }, (_, rowIndex) =>
-              renderCell(day, rowIndex, 2, "day"),
+              renderCell(day, rowIndex, dayIndex, 2, "day"),
             )}
             {placements
               .filter((entry) => entry.placement!.dayIndex === dayIndex)
               .map((entry) => renderBooking(entry.booking, entry.placement!, 2, "day"))}
+            {renderDragPreview(dayIndex, 2)}
             {nowMarker?.dayIndex === dayIndex ? nowLine(2) : null}
           </div>
         </SwipeArea>
@@ -318,7 +447,7 @@ export function Schedule({
 
           {days.map((option, index) =>
             Array.from({ length: SLOT_COUNT }, (_, rowIndex) =>
-              renderCell(option, rowIndex, index + 2, "week"),
+              renderCell(option, rowIndex, index, index + 2, "week"),
             ),
           )}
 
@@ -326,7 +455,9 @@ export function Schedule({
             renderBooking(entry.booking, entry.placement!, entry.placement!.dayIndex + 2, "week"),
           )}
 
-          {nowMarker ? nowLine(nowMarker.dayIndex + 2) : null}
+          {days.map((_, index) => renderDragPreview(index, index + 2))}
+
+          {nowLine(DAYS_IN_WEEK + 1)}
         </div>
       </div>
 

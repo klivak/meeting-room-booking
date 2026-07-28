@@ -75,12 +75,14 @@ async function Schedule({
   weekStart,
   selectedDay,
   selectedSlot,
+  selectedSlotEnd,
   selectedBookingId,
 }: {
   roomId: string;
   weekStart: DateTime;
   selectedDay: string;
   selectedSlot?: string;
+  selectedSlotEnd?: string;
   selectedBookingId?: string;
 }) {
   const user = await getCurrentUser();
@@ -111,6 +113,7 @@ async function Schedule({
       roomId={roomId}
       selectedDay={selectedDay}
       selectedSlot={selectedSlot}
+      selectedSlotEnd={selectedSlotEnd}
       selectedBookingId={selectedBookingId}
       // Rendered on the server so the client agrees on which bookings are still
       // editable and hydration matches.
@@ -129,11 +132,32 @@ async function Schedule({
   );
 }
 
+// The grid placeholder is split into the seven day columns of the real week view
+// (plus the time gutter), so the sweep reads left to right across the week the
+// way the loaded grid is read.
 function ScheduleSkeleton() {
   return (
     <div className="flex flex-col gap-2">
-      <Skeleton className="h-10 w-full" />
-      <Skeleton className="w-full" style={{ height: `${SLOT_COUNT * 2.25}rem` }} />
+      <p role="status" className="sr-only">
+        Завантажуємо розклад…
+      </p>
+      <div aria-hidden className="flex flex-col gap-2">
+        <Skeleton className="h-10 w-full" />
+        <div
+          className="grid gap-1"
+          style={{ gridTemplateColumns: "4rem repeat(7, minmax(0, 1fr))" }}
+        >
+          {[0, 1, 2, 3, 4, 5, 6, 7].map((column) => (
+            <Skeleton
+              key={column}
+              style={{
+                height: `${SLOT_COUNT * 2.25}rem`,
+                animationDelay: `${column * 90}ms`,
+              }}
+            />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -147,11 +171,12 @@ export default async function RoomPage({
     week?: string;
     day?: string;
     slot?: string;
+    slotEnd?: string;
     booking?: string;
   }>;
 }) {
   const { id } = await params;
-  const { week, day, slot, booking } = await searchParams;
+  const { week, day, slot, slotEnd, booking } = await searchParams;
 
   const room = await prisma.room.findUnique({ where: { id } });
   if (!room) {
@@ -242,6 +267,7 @@ export default async function RoomPage({
           weekStart={weekStart}
           selectedDay={resolveSelectedDay(weekStart, day)}
           selectedSlot={slot}
+          selectedSlotEnd={slotEnd}
           selectedBookingId={selectedBooking?.id}
         />
       </Suspense>
@@ -253,6 +279,7 @@ export default async function RoomPage({
         roomId={room.id}
         weekParam={weekStart.toISODate() ?? ""}
         slot={slot}
+        slotEnd={slotEnd}
         booking={
           selectedBooking
             ? {

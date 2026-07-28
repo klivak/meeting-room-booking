@@ -10,6 +10,57 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --animate-shimmer: shimmer 1.6s linear infinite;
+  --animate-rise: rise 0.35s ease-out both;
+}
+
+/* A light band sweeping across the placeholder: reads as "loading" better than
+   a pulse, because it moves in one direction instead of blinking. The band is
+   wider than the element, so the sweep enters and leaves off-screen. */
+@utility skeleton {
+  background-color: var(--color-slate-200);
+  background-image: linear-gradient(
+    90deg,
+    transparent 25%,
+    rgba(255, 255, 255, 0.8) 50%,
+    transparent 75%
+  );
+  background-repeat: no-repeat;
+  background-size: 250% 100%;
+  animation: var(--animate-shimmer);
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 150% 0;
+  }
+  to {
+    background-position: -150% 0;
+  }
+}
+
+/* Content appears with a short lift instead of popping in. */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Motion is decoration here, so it is dropped entirely when the user asks for
+   less of it; the placeholders and content stay fully visible. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 @media (prefers-color-scheme: dark) {

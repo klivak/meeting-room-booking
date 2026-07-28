@@ -148,6 +148,40 @@ export function getEndSlotBounds(startIndex: number): { min: number; max: number
 }
 
 /**
+ * Rows covered by dragging from one cell to another, as a half-open range.
+ *
+ * The drag may go upwards, so the anchor is not necessarily the start, and it
+ * is clamped to the allowed duration: the grid should not offer a selection the
+ * server would refuse.
+ */
+export function getSelectionRows(
+  anchorRow: number,
+  focusRow: number,
+): { rowStart: number; rowEnd: number } {
+  const rowStart = Math.min(anchorRow, focusRow);
+  const maxRows = MAX_DURATION_MINUTES / SLOT_MINUTES;
+  const rowEnd = Math.min(
+    Math.max(anchorRow, focusRow) + 1,
+    rowStart + maxRows,
+    SLOT_COUNT,
+  );
+
+  return { rowStart, rowEnd };
+}
+
+/** Duration in words: "30 хв", "1 год", "1 год 30 хв". */
+export function formatDuration(minutes: number): string {
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+
+  if (hours === 0) {
+    return `${rest} хв`;
+  }
+
+  return rest === 0 ? `${hours} год` : `${hours} год ${rest} хв`;
+}
+
+/**
  * Position of the "now" line: which day column it belongs to and how far down
  * the office day it sits, as a 0..1 fraction. Null outside the displayed week
  * or outside working hours.

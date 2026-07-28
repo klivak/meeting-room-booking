@@ -9,7 +9,7 @@ export function Skeleton({
 }) {
   return (
     <div
-      className={`animate-pulse rounded-lg bg-slate-200 ${className ?? ""}`}
+      className={`skeleton rounded-lg ${className ?? ""}`}
       style={style}
     />
   );

@@ -135,15 +135,39 @@ async function BookingList({ tab }: { tab: Tab }) {
   );
 }
 
+// Same shape as a loaded row (title, time line, action on the right) with a per
+// row delay, so the shimmer runs down the list instead of blinking as one block.
 function ListSkeleton() {
   return (
-    <ul className="flex flex-col gap-2">
-      {[0, 1, 2].map((index) => (
-        <li key={index}>
-          <Skeleton className="h-20 rounded-xl" />
-        </li>
-      ))}
-    </ul>
+    <>
+      <p role="status" className="sr-only">
+        Завантажуємо бронювання…
+      </p>
+      <ul aria-hidden className="flex flex-col gap-2">
+        {[0, 1, 2].map((index) => (
+          <li
+            key={index}
+            className="animate-rise flex h-20 items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-4"
+            style={{ animationDelay: `${index * 50}ms` }}
+          >
+            <div className="min-w-0 flex-1">
+              <Skeleton
+                className="h-4 w-1/2"
+                style={{ animationDelay: `${index * 120}ms` }}
+              />
+              <Skeleton
+                className="mt-3 h-3 w-3/4"
+                style={{ animationDelay: `${index * 120 + 60}ms` }}
+              />
+            </div>
+            <Skeleton
+              className="h-8 w-20 shrink-0"
+              style={{ animationDelay: `${index * 120 + 120}ms` }}
+            />
+          </li>
+        ))}
+      </ul>
+    </>
   );
 }
 

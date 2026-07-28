@@ -44,6 +44,8 @@ type BookingPanelProps = {
   weekParam: string;
   /** Start of the slot picked in the grid; its presence opens the form. */
   slot?: string;
+  /** End of a range dragged across the grid; a plain click leaves it out. */
+  slotEnd?: string;
   /** Own booking picked in the grid; opens the same form in edit mode. */
   booking?: EditableBooking;
 };
@@ -58,6 +60,7 @@ export function BookingPanel({
   roomId,
   weekParam,
   slot,
+  slotEnd,
   booking,
 }: BookingPanelProps) {
   if (!slot && !booking) {
@@ -67,11 +70,14 @@ export function BookingPanel({
   // The key resets the form when a different slot or booking is picked.
   return (
     <BookingForm
-      key={booking?.id ?? slot}
+      // Includes the end, so dragging a different range while the form is open
+      // resets the times rather than keeping the first ones.
+      key={booking?.id ?? `${slot}-${slotEnd ?? ""}`}
       rooms={rooms}
       roomId={roomId}
       weekParam={weekParam}
       slot={slot}
+      slotEnd={slotEnd}
       booking={booking}
     />
   );
@@ -82,6 +88,7 @@ function BookingForm({
   roomId,
   weekParam,
   slot,
+  slotEnd,
   booking,
 }: BookingPanelProps) {
   const router = useRouter();
@@ -91,13 +98,15 @@ function BookingForm({
     readOfficeTimeZone,
   );
 
-  // Editing prefills from the booking; creating starts at the clicked cell and
-  // a click means "this half hour", so the end is one slot later.
+  // Editing prefills from the booking; creating starts at the picked cell. A
+  // dragged range brings its own end, a plain click means "this half hour".
   const start = DateTime.fromISO(booking?.startsAt ?? slot ?? "", { zone: OFFICE_TZ });
   const initialStart = Math.min(getSlotIndex(start.toJSDate()), SLOT_COUNT - 1);
   const initialEnd = booking
     ? getSlotIndex(new Date(booking.endsAt))
-    : initialStart + 1;
+    : slotEnd
+      ? getSlotIndex(new Date(slotEnd))
+      : initialStart + 1;
 
   const [selectedRoomId, setSelectedRoomId] = useState(booking?.roomId ?? roomId);
   const [date, setDate] = useState(start.toISODate() ?? "");

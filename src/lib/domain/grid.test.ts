@@ -5,8 +5,10 @@ import { validateBookingTime } from "./bookingRules";
 import { OFFICE_TZ } from "./constants";
 import {
   SLOT_COUNT,
+  formatDuration,
   getEndSlotBounds,
   getNowMarker,
+  getSelectionRows,
   getSlotIndex,
   getSlotLabel,
   getSlotLabels,
@@ -236,6 +238,45 @@ describe("getEndSlotBounds", () => {
     expect(longest).toEqual([]);
     expect(tooShort).toContain("VALIDATION_ERROR");
     expect(tooLong).toContain("DURATION_INVALID");
+  });
+});
+
+describe("getSelectionRows", () => {
+  it("covers a single row when the drag never leaves the cell", () => {
+    expect(getSelectionRows(4, 4)).toEqual({ rowStart: 4, rowEnd: 5 });
+  });
+
+  it("covers everything between the two cells", () => {
+    expect(getSelectionRows(4, 7)).toEqual({ rowStart: 4, rowEnd: 8 });
+  });
+
+  it("works the same when dragged upwards", () => {
+    expect(getSelectionRows(7, 4)).toEqual({ rowStart: 4, rowEnd: 8 });
+  });
+
+  it("stops at the maximum duration instead of offering a refusal", () => {
+    // Four hours is eight rows, however far the drag goes.
+    expect(getSelectionRows(0, 19)).toEqual({ rowStart: 0, rowEnd: 8 });
+  });
+
+  it("never runs past closing time", () => {
+    expect(getSelectionRows(18, 19)).toEqual({ rowStart: 18, rowEnd: 20 });
+  });
+
+  it("produces a range the booking rules accept", () => {
+    const day = kyiv("2026-08-24T00:00");
+    const { rowStart, rowEnd } = getSelectionRows(2, 19);
+
+    expect(codesForRange(day, rowStart, rowEnd)).toEqual([]);
+  });
+});
+
+describe("formatDuration", () => {
+  it("says minutes, hours and both", () => {
+    expect(formatDuration(30)).toBe("30 хв");
+    expect(formatDuration(60)).toBe("1 год");
+    expect(formatDuration(90)).toBe("1 год 30 хв");
+    expect(formatDuration(240)).toBe("4 год");
   });
 });
 

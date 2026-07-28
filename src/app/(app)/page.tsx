@@ -20,15 +20,45 @@ function seatsLabel(count: number): string {
   return `${count} місць`;
 }
 
+// Widths differ per card so the placeholder grid looks like a list of names of
+// different lengths rather than a stack of identical bars.
+const SKELETON_CARDS = [
+  { name: "w-1/2", meta: "w-3/4" },
+  { name: "w-2/3", meta: "w-1/2" },
+  { name: "w-2/5", meta: "w-2/3" },
+  { name: "w-3/5", meta: "w-3/5" },
+  { name: "w-1/2", meta: "w-2/3" },
+  { name: "w-3/5", meta: "w-1/2" },
+];
+
+// The placeholder repeats the real card (border, padding, two text lines) so the
+// switch to loaded content shifts nothing. The delay per card makes the shimmer
+// run across the grid as a wave instead of all six blinking in lockstep.
 function RoomsSkeleton() {
   return (
-    <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      {[0, 1, 2, 3, 4, 5].map((index) => (
-        <li key={index}>
-          <Skeleton className="h-20 rounded-xl" />
-        </li>
-      ))}
-    </ul>
+    <>
+      <p role="status" className="sr-only">
+        Завантажуємо переговорні…
+      </p>
+      <ul aria-hidden className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {SKELETON_CARDS.map((card, index) => (
+          <li
+            key={index}
+            className="animate-rise h-20 rounded-xl border border-slate-200 bg-white p-4"
+            style={{ animationDelay: `${index * 50}ms` }}
+          >
+            <Skeleton
+              className={`h-4 ${card.name}`}
+              style={{ animationDelay: `${index * 120}ms` }}
+            />
+            <Skeleton
+              className={`mt-3 h-3 ${card.meta}`}
+              style={{ animationDelay: `${index * 120 + 60}ms` }}
+            />
+          </li>
+        ))}
+      </ul>
+    </>
   );
 }
 
@@ -54,11 +84,17 @@ async function RoomsList({ capacityMin }: { capacityMin?: number }) {
 
   return (
     <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      {rooms.map((room) => (
-        <li key={room.id}>
+      {rooms.map((room, index) => (
+        // The same stagger as the placeholder, so the cards arrive in the order
+        // the shimmer was running.
+        <li
+          key={room.id}
+          className="animate-rise"
+          style={{ animationDelay: `${Math.min(index, 8) * 50}ms` }}
+        >
           <Link
             href={`/rooms/${room.id}`}
-            className="block rounded-xl border border-slate-200 bg-white p-4 transition hover:border-slate-300 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 focus-visible:outline-none"
+            className="block rounded-xl border border-slate-200 bg-white p-4 transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 focus-visible:outline-none"
           >
             <span className="font-medium text-slate-900">{room.name}</span>
             <span className="mt-1 block text-sm text-slate-600">
