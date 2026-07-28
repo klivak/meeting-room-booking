@@ -50,12 +50,15 @@ async function createTestDatabase() {
   }
 }
 
-async function waitForServer(server: ChildProcess) {
+async function waitForServer(server: ChildProcess, output: () => string) {
   const deadline = Date.now() + READY_TIMEOUT_MS;
 
   while (Date.now() < deadline) {
     if (server.exitCode !== null) {
-      throw new Error(`Test server exited early with code ${server.exitCode}`);
+      // Without its output the failure is unexplainable, so it travels with the error.
+      throw new Error(
+        `Test server exited early with code ${server.exitCode}:\n${output()}`,
+      );
     }
 
     try {
@@ -93,12 +96,22 @@ export default async function setup() {
       DATABASE_URL: TEST_DATABASE_URL,
       SESSION_SECRET: "integration-test-secret-value",
       NODE_ENV: "development",
+      // Its own build directory, so the tests can run while a dev server is up:
+      // Next refuses to start a second dev server sharing one.
+      NEXT_DIST_DIR: ".next-test",
     },
     stdio: "pipe",
     shell: process.platform === "win32",
   });
 
-  await waitForServer(server);
+  let log = "";
+  const collect = (chunk: Buffer) => {
+    log = `${log}${chunk.toString()}`.slice(-2000);
+  };
+  server.stdout?.on("data", collect);
+  server.stderr?.on("data", collect);
+
+  await waitForServer(server, () => log);
 
   return async () => {
     if (server.pid === undefined) {

@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { LogoutButton } from "@/components/LogoutButton";
+import { NotificationBell } from "@/components/NotificationBell";
 import type { CurrentUser } from "@/lib/server/session";
 
 const FOCUS_RING =
@@ -26,6 +27,7 @@ export function Header({ user }: { user: CurrentUser }) {
           >
             Мої бронювання
           </Link>
+          <NotificationBell />
           <span className="hidden text-sm text-slate-600 sm:inline">{user.name}</span>
           <LogoutButton />
         </div>
