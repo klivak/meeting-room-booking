@@ -4,7 +4,9 @@ import { fileURLToPath } from "node:url";
 export default defineConfig({
   test: {
     environment: "node",
-    include: ["src/**/*.test.ts", "tests/**/*.test.ts"],
+    // Only the tests that live next to the code. The API tests under tests/
+    // need a running application and have their own config.
+    include: ["src/**/*.test.ts"],
   },
   resolve: {
     // Mirrors the "@/*" alias from tsconfig.json.
