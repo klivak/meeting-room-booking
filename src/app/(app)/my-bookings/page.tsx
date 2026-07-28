@@ -1,4 +1,5 @@
 import { DateTime } from "luxon";
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
@@ -13,6 +14,8 @@ import { OFFICE_TZ } from "@/lib/domain/constants";
 import { getWeekStart } from "@/lib/domain/week";
 import { prisma } from "@/lib/server/db";
 import { getCurrentUser } from "@/lib/server/session";
+
+export const metadata: Metadata = { title: "Мої бронювання" };
 
 const PAGE_SIZE = 20;
 

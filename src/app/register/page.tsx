@@ -1,8 +1,11 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { RegisterForm } from "@/components/auth/RegisterForm";
 import { getCurrentUser } from "@/lib/server/session";
+
+export const metadata: Metadata = { title: "Реєстрація" };
 
 export default async function RegisterPage() {
   if (await getCurrentUser()) {

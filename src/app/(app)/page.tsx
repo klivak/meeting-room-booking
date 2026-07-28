@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { prisma } from "@/lib/server/db";
+
+export const metadata: Metadata = { title: "Переговорні" };
 
 /** Ukrainian plural for "місце": 1 місце, 2-4 місця, 5+ місць (11-14 are the exception). */
 function seatsLabel(count: number): string {

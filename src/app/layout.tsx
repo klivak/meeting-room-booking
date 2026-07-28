@@ -13,7 +13,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Бронювання переговорних",
+  // Every page fills in the template, so the tab always says where you are.
+  title: {
+    default: "Бронювання переговорних",
+    template: "%s · Бронювання переговорних",
+  },
   description: "Бронювання переговорних кімнат в офісі",
 };
 

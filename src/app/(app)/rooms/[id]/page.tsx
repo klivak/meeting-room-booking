@@ -1,4 +1,5 @@
 import { DateTime } from "luxon";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
@@ -14,6 +15,17 @@ import { prisma } from "@/lib/server/db";
 import { getCurrentUser } from "@/lib/server/session";
 
 const WEEK_MS = DAYS_IN_WEEK * 24 * 60 * 60 * 1000;
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const room = await prisma.room.findUnique({ where: { id }, select: { name: true } });
+
+  return { title: room ? `${room.name} — розклад` : "Кімнату не знайдено" };
+}
 
 /**
  * Week shown by the page. Any date in the ?week parameter snaps to the start of

@@ -1,8 +1,11 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { LoginForm } from "@/components/auth/LoginForm";
 import { getCurrentUser } from "@/lib/server/session";
+
+export const metadata: Metadata = { title: "Вхід" };
 
 export default async function LoginPage() {
   // A signed-in user has nothing to do here.

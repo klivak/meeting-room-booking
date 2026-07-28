@@ -14,8 +14,6 @@ export const createBookingSchema = z.object({
   endsAt: isoInstant,
 });
 
-export type CreateBookingInput = z.infer<typeof createBookingSchema>;
-
 // Editing may touch any subset of the fields; whatever is omitted keeps its
 // current value and is still re-validated together with the rest.
 export const updateBookingSchema = z.object({
@@ -24,5 +22,3 @@ export const updateBookingSchema = z.object({
   startsAt: isoInstant.optional(),
   endsAt: isoInstant.optional(),
 });
-
-export type UpdateBookingInput = z.infer<typeof updateBookingSchema>;
