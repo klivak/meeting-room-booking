@@ -30,4 +30,32 @@ function loadEnv() {
   return parsed.data;
 }
 
+// The value shipped in .env.example and used as the compose fallback. Anyone can
+// read it, so signing session cookies with it in production means anyone can
+// forge a session.
+const PLACEHOLDER_SESSION_SECRET = "dev-secret-change-me-in-production";
+
+function warnAboutPlaceholderSecret(secret: string) {
+  if (secret !== PLACEHOLDER_SESSION_SECRET || process.env.NODE_ENV !== "production") {
+    return;
+  }
+
+  // A warning rather than a refusal: the demo has to start from one command,
+  // and refusing here would break `docker compose up` for a reviewer who never
+  // intended to deploy anything.
+  console.warn(
+    [
+      "",
+      "!".repeat(72),
+      "  SESSION_SECRET має значення з .env.example.",
+      "  Для реального розгортання задайте власний секрет, інакше сесію",
+      "  зможе підробити будь-хто: openssl rand -base64 32",
+      "!".repeat(72),
+      "",
+    ].join("\n"),
+  );
+}
+
 export const env = loadEnv();
+
+warnAboutPlaceholderSecret(env.SESSION_SECRET);

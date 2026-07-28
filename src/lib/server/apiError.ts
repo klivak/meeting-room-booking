@@ -22,7 +22,11 @@ export type ApiErrorCode =
   // without need. The need here is that a refusal to book because the address
   // is unconfirmed has to be told apart from an ordinary FORBIDDEN, since the
   // user can fix only one of the two.
-  | "EMAIL_NOT_VERIFIED";
+  | "EMAIL_NOT_VERIFIED"
+  // Likewise: throttling after repeated failures is neither a wrong password
+  // nor a validation problem, and the user is told to wait rather than to fix
+  // the request.
+  | "TOO_MANY_ATTEMPTS";
 
 export function apiError(
   status: number,
@@ -46,6 +50,14 @@ export function validationError(error: ZodError) {
 
 export function unauthorizedError() {
   return apiError(401, "UNAUTHORIZED", "Потрібно увійти в систему");
+}
+
+export function tooManyAttemptsError() {
+  return apiError(
+    429,
+    "TOO_MANY_ATTEMPTS",
+    "Забагато спроб. Зачекайте кілька хвилин і спробуйте ще раз",
+  );
 }
 
 export function emailNotVerifiedError() {
