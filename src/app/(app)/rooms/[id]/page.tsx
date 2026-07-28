@@ -4,12 +4,12 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { BookingPanel } from "@/components/schedule/BookingPanel";
-import { WeekGrid } from "@/components/schedule/WeekGrid";
+import { Schedule as ScheduleGrid } from "@/components/schedule/Schedule";
 import { LinkButton } from "@/components/ui/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { WEEK_START_DAY } from "@/lib/config";
 import { OFFICE_TZ } from "@/lib/domain/constants";
-import { DAYS_IN_WEEK, SLOT_COUNT } from "@/lib/domain/grid";
+import { DAYS_IN_WEEK, SLOT_COUNT, getWeekDays } from "@/lib/domain/grid";
 import { getWeekStart } from "@/lib/domain/week";
 import { prisma } from "@/lib/server/db";
 import { getCurrentUser } from "@/lib/server/session";
@@ -41,6 +41,23 @@ function resolveWeekStart(weekParam: string | undefined): DateTime {
   return getWeekStart(base, WEEK_START_DAY);
 }
 
+/**
+ * Day shown by the single-day view. Defaults to today when the displayed week
+ * contains it, otherwise to the first day of that week, so a phone never opens
+ * on an arbitrary date.
+ */
+function resolveSelectedDay(weekStart: DateTime, dayParam: string | undefined): string {
+  const days = getWeekDays(weekStart).map((day) => day.toISODate());
+
+  if (dayParam && days.includes(dayParam)) {
+    return dayParam;
+  }
+
+  const today = DateTime.now().setZone(OFFICE_TZ).toISODate();
+
+  return today && days.includes(today) ? today : (days[0] ?? "");
+}
+
 function formatWeekRange(weekStart: DateTime): string {
   const weekEnd = weekStart.plus({ days: DAYS_IN_WEEK - 1 });
   const from = weekStart.setLocale("uk");
@@ -56,11 +73,13 @@ function formatWeekRange(weekStart: DateTime): string {
 async function Schedule({
   roomId,
   weekStart,
+  selectedDay,
   selectedSlot,
   selectedBookingId,
 }: {
   roomId: string;
   weekStart: DateTime;
+  selectedDay: string;
   selectedSlot?: string;
   selectedBookingId?: string;
 }) {
@@ -87,8 +106,9 @@ async function Schedule({
   });
 
   return (
-    <WeekGrid
+    <ScheduleGrid
       roomId={roomId}
+      selectedDay={selectedDay}
       selectedSlot={selectedSlot}
       selectedBookingId={selectedBookingId}
       // Rendered on the server so the client agrees on which bookings are still
@@ -121,10 +141,15 @@ export default async function RoomPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ week?: string; slot?: string; booking?: string }>;
+  searchParams: Promise<{
+    week?: string;
+    day?: string;
+    slot?: string;
+    booking?: string;
+  }>;
 }) {
   const { id } = await params;
-  const { week, slot, booking } = await searchParams;
+  const { week, day, slot, booking } = await searchParams;
 
   const room = await prisma.room.findUnique({ where: { id } });
   if (!room) {
@@ -206,6 +231,7 @@ export default async function RoomPage({
         <Schedule
           roomId={room.id}
           weekStart={weekStart}
+          selectedDay={resolveSelectedDay(weekStart, day)}
           selectedSlot={slot}
           selectedBookingId={selectedBooking?.id}
         />
