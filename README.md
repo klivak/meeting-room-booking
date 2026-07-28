@@ -15,8 +15,16 @@ cp .env.example .env      # значення за замовчуванням п�
 docker compose up -d      # postgres 16 на localhost:5432
 npm install               # postinstall одразу генерує Prisma Client у src/generated/prisma
 npx prisma migrate dev    # створити схему в БД
+npx prisma db seed        # кімнати і тестові користувачі
 npm run dev               # http://localhost:3000
 ```
+
+## Тестові користувачі
+
+| Пошта | Пароль |
+|---|---|
+| `alice@example.com` | `password123` |
+| `bob@example.com` | `password123` |
 
 ## Команди
 
