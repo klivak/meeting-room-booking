@@ -11,6 +11,12 @@ export function Header({ user }: { user: CurrentUser }) {
           Бронювання переговорних
         </Link>
         <div className="flex items-center gap-3">
+          <Link
+            href="/my-bookings"
+            className="text-sm text-slate-600 transition hover:text-slate-900"
+          >
+            Мої бронювання
+          </Link>
           <span className="text-sm text-slate-600">{user.name}</span>
           <LogoutButton />
         </div>

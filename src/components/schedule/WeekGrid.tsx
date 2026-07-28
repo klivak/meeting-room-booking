@@ -4,6 +4,11 @@ import { DateTime } from "luxon";
 import Link from "next/link";
 import { useSyncExternalStore } from "react";
 
+import {
+  noopSubscribe,
+  readOfficeTimeZone,
+  readViewerTimeZone,
+} from "@/components/viewerTimeZone";
 import { OFFICE_TZ, WORK_DAY_END, WORK_DAY_START } from "@/lib/domain/constants";
 import {
   DAYS_IN_WEEK,
@@ -39,13 +44,6 @@ type WeekGridProps = {
 
 const ROW_HEIGHT_REM = 2.25;
 
-// The viewer's timezone exists only in the browser. The server render, and with
-// it the first client render, falls back to office time and swaps afterwards,
-// which keeps hydration consistent.
-const noopSubscribe = () => () => {};
-const readTimeZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
-const readOfficeTimeZone = () => OFFICE_TZ;
-
 // The "now" line ticks once a minute; it only moves half a row per half hour,
 // so anything finer would be wasted work. The snapshot is cached because
 // useSyncExternalStore needs a stable value between ticks.
@@ -73,7 +71,7 @@ export function WeekGrid({
 }: WeekGridProps) {
   const timeZone = useSyncExternalStore(
     noopSubscribe,
-    readTimeZone,
+    readViewerTimeZone,
     readOfficeTimeZone,
   );
   const now = useSyncExternalStore(subscribeToMinuteTick, readNow, readNoNow);

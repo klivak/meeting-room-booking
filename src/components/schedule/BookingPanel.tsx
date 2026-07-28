@@ -6,6 +6,11 @@ import { useState, useSyncExternalStore } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import {
+  noopSubscribe,
+  readOfficeTimeZone,
+  readViewerTimeZone,
+} from "@/components/viewerTimeZone";
 import { createBookingSchema } from "@/lib/domain/bookingInput";
 import { MAX_TITLE_LENGTH, validateTitle } from "@/lib/domain/bookingRules";
 import { OFFICE_TZ } from "@/lib/domain/constants";
@@ -38,12 +43,6 @@ type BookingPanelProps = {
   /** Own booking picked in the grid; opens the same form in edit mode. */
   booking?: EditableBooking;
 };
-
-// Same browser-only value the grid reads, resolved here too so the form shows
-// times in the viewer's zone rather than the office one.
-const noopSubscribe = () => () => {};
-const readTimeZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
-const readOfficeTimeZone = () => OFFICE_TZ;
 
 /**
  * Owns the create/edit form and the success toast. The toast lives here rather
@@ -102,7 +101,7 @@ function BookingForm({
   const router = useRouter();
   const timeZone = useSyncExternalStore(
     noopSubscribe,
-    readTimeZone,
+    readViewerTimeZone,
     readOfficeTimeZone,
   );
 
