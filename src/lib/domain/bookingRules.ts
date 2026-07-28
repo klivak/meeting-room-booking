@@ -115,6 +115,35 @@ export function validateBookingTime(input: {
   return errors;
 }
 
+export type BookingAccess = "allowed" | "not-owner" | "canceled" | "finished";
+
+/**
+ * Decides whether a booking may still be edited or canceled.
+ *
+ * Ownership is checked first so a stranger never learns whether someone else's
+ * booking is canceled. A booking stays modifiable until it ends, even if it has
+ * already started, and a canceled one counts as gone.
+ */
+export function checkBookingAccess(
+  booking: { userId: string; canceledAt: Date | null; endsAt: Date },
+  userId: string,
+  now: Date,
+): BookingAccess {
+  if (booking.userId !== userId) {
+    return "not-owner";
+  }
+
+  if (booking.canceledAt !== null) {
+    return "canceled";
+  }
+
+  if (booking.endsAt <= now) {
+    return "finished";
+  }
+
+  return "allowed";
+}
+
 /** Title must be 1..100 characters once surrounding spaces are dropped. */
 export function validateTitle(title: string): BookingRuleError | null {
   const trimmed = title.trim();

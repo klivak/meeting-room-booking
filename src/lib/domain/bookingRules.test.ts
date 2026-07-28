@@ -1,7 +1,7 @@
 import { DateTime } from "luxon";
 import { describe, expect, it } from "vitest";
 
-import { validateBookingTime, validateTitle } from "./bookingRules";
+import { checkBookingAccess, validateBookingTime, validateTitle } from "./bookingRules";
 import { OFFICE_TZ } from "./constants";
 
 /** Builds an instant from a wall-clock time in the office timezone. */
@@ -132,6 +132,47 @@ describe("future only", () => {
     );
 
     expect(codes).toEqual(["TIME_NOT_ALIGNED", "DURATION_INVALID", "TIME_IN_PAST"]);
+  });
+});
+
+describe("checkBookingAccess", () => {
+  const now = kyiv("2026-03-10T12:00");
+  const mine = {
+    userId: "user-1",
+    canceledAt: null,
+    endsAt: kyiv("2026-03-10T13:00"),
+  };
+
+  it("lets the author change a booking that has not ended", () => {
+    expect(checkBookingAccess(mine, "user-1", now)).toBe("allowed");
+  });
+
+  it("lets the author change a booking that is already running", () => {
+    const running = { ...mine, endsAt: kyiv("2026-03-10T12:30") };
+
+    expect(checkBookingAccess(running, "user-1", now)).toBe("allowed");
+  });
+
+  it("refuses someone else's booking", () => {
+    expect(checkBookingAccess(mine, "user-2", now)).toBe("not-owner");
+  });
+
+  it("hides the state of someone else's canceled booking behind not-owner", () => {
+    const canceled = { ...mine, canceledAt: kyiv("2026-03-10T11:00") };
+
+    expect(checkBookingAccess(canceled, "user-2", now)).toBe("not-owner");
+  });
+
+  it("treats a canceled booking as gone", () => {
+    const canceled = { ...mine, canceledAt: kyiv("2026-03-10T11:00") };
+
+    expect(checkBookingAccess(canceled, "user-1", now)).toBe("canceled");
+  });
+
+  it("refuses a booking that has just ended", () => {
+    const finished = { ...mine, endsAt: now };
+
+    expect(checkBookingAccess(finished, "user-1", now)).toBe("finished");
   });
 });
 

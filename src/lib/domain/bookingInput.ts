@@ -15,3 +15,14 @@ export const createBookingSchema = z.object({
 });
 
 export type CreateBookingInput = z.infer<typeof createBookingSchema>;
+
+// Editing may touch any subset of the fields; whatever is omitted keeps its
+// current value and is still re-validated together with the rest.
+export const updateBookingSchema = z.object({
+  roomId: z.string().min(1, "Оберіть кімнату").optional(),
+  title: z.string().optional(),
+  startsAt: isoInstant.optional(),
+  endsAt: isoInstant.optional(),
+});
+
+export type UpdateBookingInput = z.infer<typeof updateBookingSchema>;
