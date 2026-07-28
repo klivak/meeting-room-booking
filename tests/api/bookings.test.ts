@@ -17,8 +17,8 @@ let bob: { id: string; cookie: string };
 beforeEach(async () => {
   await resetDatabase();
 
-  roomId = (await createRoom("Акваріум")).id;
-  otherRoomId = (await createRoom("Марс")).id;
+  roomId = (await createRoom("Хортиця")).id;
+  otherRoomId = (await createRoom("Говерла")).id;
   alice = await registerUser("alice@example.com", "Аліса");
   bob = await registerUser("bob@example.com", "Богдан");
 });

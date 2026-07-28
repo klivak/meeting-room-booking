@@ -11,7 +11,7 @@ let roomId: string;
 
 beforeEach(async () => {
   await resetDatabase();
-  roomId = (await createRoom("Акваріум")).id;
+  roomId = (await createRoom("Хортиця")).id;
 });
 
 /** A valid free slot, so only the verification rule can refuse the booking. */

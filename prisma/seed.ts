@@ -12,12 +12,12 @@ import { hashPassword } from "../src/lib/server/password";
 // running the seed twice does not duplicate anything.
 
 const ROOMS = [
-  { name: "Акваріум", floor: 2, capacity: 8 },
-  { name: "Марс", floor: 2, capacity: 4 },
-  { name: "Гагарін", floor: 3, capacity: 12 },
-  { name: "Кіото", floor: 3, capacity: 2 },
-  { name: "Атлантида", floor: 1, capacity: 6 },
-  { name: "Оберіг", floor: 1, capacity: 4 },
+  { name: "Хортиця", floor: 2, capacity: 8 },
+  { name: "Говерла", floor: 2, capacity: 4 },
+  { name: "Світязь", floor: 3, capacity: 12 },
+  { name: "Синевир", floor: 3, capacity: 2 },
+  { name: "Асканія-Нова", floor: 1, capacity: 6 },
+  { name: "Дністер", floor: 1, capacity: 4 },
 ];
 
 const USERS = [
@@ -30,18 +30,18 @@ const USERS = [
 // current week, 7-11 on the next one. Fixed ids make the upsert idempotent,
 // since a booking has no natural unique key.
 const DEMO_BOOKINGS = [
-  { id: "seed-booking-01", room: "Акваріум", email: "alice@example.com", dayOffset: 0, start: "10:00", minutes: 60, title: "Синхронізація команди" },
+  { id: "seed-booking-01", room: "Хортиця", email: "alice@example.com", dayOffset: 0, start: "10:00", minutes: 60, title: "Синхронізація команди" },
   // Starts exactly when the previous one ends: back-to-back is legal.
-  { id: "seed-booking-02", room: "Акваріум", email: "bob@example.com", dayOffset: 0, start: "11:00", minutes: 30, title: "Дзвінок із клієнтом" },
-  { id: "seed-booking-03", room: "Марс", email: "bob@example.com", dayOffset: 1, start: "14:00", minutes: 120, title: "Планування спринту" },
-  { id: "seed-booking-04", room: "Гагарін", email: "alice@example.com", dayOffset: 2, start: "09:00", minutes: 90, title: "Ретроспектива" },
-  { id: "seed-booking-05", room: "Кіото", email: "bob@example.com", dayOffset: 3, start: "16:00", minutes: 60, title: "Співбесіда" },
-  { id: "seed-booking-06", room: "Атлантида", email: "alice@example.com", dayOffset: 4, start: "12:00", minutes: 30, title: "Зустріч з партнерами" },
-  { id: "seed-booking-07", room: "Акваріум", email: "alice@example.com", dayOffset: 7, start: "09:30", minutes: 60, title: "Демо для замовника" },
-  { id: "seed-booking-08", room: "Гагарін", email: "bob@example.com", dayOffset: 8, start: "13:00", minutes: 120, title: "Воркшоп із дизайну" },
-  { id: "seed-booking-09", room: "Оберіг", email: "alice@example.com", dayOffset: 9, start: "15:00", minutes: 60, title: "Один на один" },
+  { id: "seed-booking-02", room: "Хортиця", email: "bob@example.com", dayOffset: 0, start: "11:00", minutes: 30, title: "Дзвінок із клієнтом" },
+  { id: "seed-booking-03", room: "Говерла", email: "bob@example.com", dayOffset: 1, start: "14:00", minutes: 120, title: "Планування спринту" },
+  { id: "seed-booking-04", room: "Світязь", email: "alice@example.com", dayOffset: 2, start: "09:00", minutes: 90, title: "Ретроспектива" },
+  { id: "seed-booking-05", room: "Синевир", email: "bob@example.com", dayOffset: 3, start: "16:00", minutes: 60, title: "Співбесіда" },
+  { id: "seed-booking-06", room: "Асканія-Нова", email: "alice@example.com", dayOffset: 4, start: "12:00", minutes: 30, title: "Зустріч з партнерами" },
+  { id: "seed-booking-07", room: "Хортиця", email: "alice@example.com", dayOffset: 7, start: "09:30", minutes: 60, title: "Демо для замовника" },
+  { id: "seed-booking-08", room: "Світязь", email: "bob@example.com", dayOffset: 8, start: "13:00", minutes: 120, title: "Воркшоп із дизайну" },
+  { id: "seed-booking-09", room: "Дністер", email: "alice@example.com", dayOffset: 9, start: "15:00", minutes: 60, title: "Один на один" },
   // The longest booking the rules allow.
-  { id: "seed-booking-10", room: "Марс", email: "bob@example.com", dayOffset: 10, start: "10:00", minutes: 240, title: "Технічна сесія" },
+  { id: "seed-booking-10", room: "Говерла", email: "bob@example.com", dayOffset: 10, start: "10:00", minutes: 240, title: "Технічна сесія" },
 ];
 
 async function seedBookings() {
@@ -56,7 +56,11 @@ async function seedBookings() {
     const roomId = roomIdByName.get(demo.room);
     const userId = userIdByEmail.get(normalizeEmail(demo.email));
     if (!roomId || !userId) {
-      continue;
+      // Loud rather than silent: a room renamed above and not here would
+      // otherwise leave the demo without any bookings at all.
+      throw new Error(
+        `Демо-бронювання ${demo.id} посилається на невідому кімнату «${demo.room}»`,
+      );
     }
 
     const [hour, minute] = demo.start.split(":").map(Number);
