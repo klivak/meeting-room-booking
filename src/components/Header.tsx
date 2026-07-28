@@ -1,5 +1,7 @@
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 
+import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 import { LogoutButton } from "@/components/LogoutButton";
 import { NotificationBell } from "@/components/NotificationBell";
 import type { CurrentUser } from "@/lib/server/session";
@@ -7,7 +9,9 @@ import type { CurrentUser } from "@/lib/server/session";
 const FOCUS_RING =
   "focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 focus-visible:outline-none";
 
-export function Header({ user }: { user: CurrentUser }) {
+export async function Header({ user }: { user: CurrentUser }) {
+  const t = await getTranslations("app");
+
   return (
     <header className="border-b border-slate-200 bg-white">
       {/* On a narrow screen the two groups wrap onto separate lines instead of
@@ -17,7 +21,7 @@ export function Header({ user }: { user: CurrentUser }) {
           href="/"
           className={`rounded text-sm font-semibold text-slate-900 sm:text-base ${FOCUS_RING}`}
         >
-          Бронювання переговорних
+          {t("title")}
         </Link>
 
         <div className="flex items-center gap-3">
@@ -25,10 +29,11 @@ export function Header({ user }: { user: CurrentUser }) {
             href="/my-bookings"
             className={`rounded text-sm text-slate-600 transition hover:text-slate-900 ${FOCUS_RING}`}
           >
-            Мої бронювання
+            {t("myBookings")}
           </Link>
           <NotificationBell />
           <span className="hidden text-sm text-slate-600 sm:inline">{user.name}</span>
+          <LocaleSwitcher />
           <LogoutButton />
         </div>
       </div>
