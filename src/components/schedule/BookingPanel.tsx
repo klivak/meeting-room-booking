@@ -445,6 +445,9 @@ function BookingForm({
             <Input
               id="title"
               label="Назва"
+              // The panel is not modal, so nothing moves the focus into it, and
+              // the title is the field the user came here to fill in.
+              autoFocus
               value={title}
               maxLength={MAX_TITLE_LENGTH}
               onChange={(event) => setTitle(event.target.value)}

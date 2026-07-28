@@ -82,6 +82,7 @@ function formatWeekRange(weekStart: DateTime): string {
 
 async function Schedule({
   roomId,
+  userId,
   weekStart,
   selectedDay,
   selectedSlot,
@@ -89,13 +90,14 @@ async function Schedule({
   selectedBookingId,
 }: {
   roomId: string;
+  /** Passed in rather than read again: the page already resolved the session. */
+  userId?: string;
   weekStart: DateTime;
   selectedDay: string;
   selectedSlot?: string;
   selectedSlotEnd?: string;
   selectedBookingId?: string;
 }) {
-  const user = await getCurrentUser();
   const weekStartDate = weekStart.toUTC().toJSDate();
   const weekEndDate = new Date(weekStartDate.getTime() + WEEK_MS);
 
@@ -135,7 +137,7 @@ async function Schedule({
         startsAt: booking.startsAt.toISOString(),
         endsAt: booking.endsAt.toISOString(),
         user: booking.user,
-        isMine: booking.user.id === user?.id,
+        isMine: booking.user.id === userId,
         isRecurring: booking.seriesId !== null,
       }))}
     />
@@ -188,12 +190,19 @@ export default async function RoomPage({
   const { id } = await params;
   const { week, day, slot, slotEnd, booking } = await searchParams;
 
-  const room = await prisma.room.findUnique({ where: { id } });
+  // Independent of each other, so they travel together rather than in a queue.
+  const [room, user, rooms] = await Promise.all([
+    prisma.room.findUnique({ where: { id } }),
+    getCurrentUser(),
+    prisma.room.findMany({
+      select: { id: true, name: true, floor: true, capacity: true },
+      orderBy: [{ floor: "asc" }, { name: "asc" }],
+    }),
+  ]);
+
   if (!room) {
     notFound();
   }
-
-  const user = await getCurrentUser();
 
   const now = new Date();
 
@@ -219,11 +228,6 @@ export default async function RoomPage({
           },
         })
       : null;
-
-  const rooms = await prisma.room.findMany({
-    select: { id: true, name: true, floor: true, capacity: true },
-    orderBy: [{ floor: "asc" }, { name: "asc" }],
-  });
 
   const weekStart = resolveWeekStart(week);
   const previousWeek = weekStart.minus({ days: DAYS_IN_WEEK }).toISODate();
@@ -283,6 +287,7 @@ export default async function RoomPage({
         <Suspense key={weekStart.toISODate()} fallback={<ScheduleSkeleton />}>
           <Schedule
             roomId={room.id}
+            userId={user?.id}
             weekStart={weekStart}
             selectedDay={resolveSelectedDay(weekStart, day)}
             selectedSlot={slot}

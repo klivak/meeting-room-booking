@@ -322,7 +322,7 @@ export function Schedule({
           className="absolute right-0 left-0 border-t-2 border-red-500"
           style={{ top: `${nowMarker.ratio * 100}%` }}
         >
-          <span className="absolute -top-2 left-0 rounded-sm bg-red-500 px-1 text-[10px] leading-4 font-medium text-white">
+          <span className="absolute -top-2 left-0 rounded-sm bg-red-600 px-1 text-[10px] leading-4 font-medium text-white">
             {DateTime.fromMillis(now).setZone(timeZone).toFormat("HH:mm")}
           </span>
         </div>
@@ -340,7 +340,9 @@ export function Schedule({
         // above it there is only the header row, and it would be cut off.
         className={`sticky left-0 z-20 bg-white pr-2 text-right text-xs ${
           rowIndex === 0 ? "" : "-mt-2"
-        } ${rowIndex % 2 === 0 ? "font-medium text-slate-600" : "text-slate-400"}`}
+        // slate-500 rather than a lighter grey: the half hours are quieter than
+        // the hours but still have to clear the contrast threshold.
+        } ${rowIndex % 2 === 0 ? "font-medium text-slate-700" : "text-slate-500"}`}
         style={{ gridColumn: 1, gridRow: rowIndex + 2 }}
       >
         {label}
@@ -430,7 +432,11 @@ export function Schedule({
 
       {/* Whole week. Wide screens scroll it sideways; the time column stays put
           via position: sticky, so the rows never lose their labels. */}
-      <div className="hidden overflow-x-auto sm:block">
+      <div
+        role="group"
+        aria-label="Тижневий розклад кімнати"
+        className="hidden overflow-x-auto sm:block"
+      >
         <div
           className="grid min-w-[48rem]"
           style={{
