@@ -2,7 +2,12 @@ import { NextResponse } from "next/server";
 
 import { createBookingSchema } from "@/lib/domain/bookingInput";
 import { validateBookingTime, validateTitle } from "@/lib/domain/bookingRules";
-import { apiError, unauthorizedError, validationError } from "@/lib/server/apiError";
+import {
+  apiError,
+  emailNotVerifiedError,
+  unauthorizedError,
+  validationError,
+} from "@/lib/server/apiError";
 import { createBooking } from "@/lib/server/bookings";
 import { prisma } from "@/lib/server/db";
 import { getCurrentUser } from "@/lib/server/session";
@@ -11,6 +16,10 @@ export async function POST(request: Request) {
   const user = await getCurrentUser();
   if (!user) {
     return unauthorizedError();
+  }
+
+  if (!user.emailVerified) {
+    return emailNotVerifiedError();
   }
 
   const body = await request.json().catch(() => null);

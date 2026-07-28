@@ -15,6 +15,8 @@ export type CurrentUser = {
   id: string;
   name: string;
   email: string;
+  /** Booking is closed until the address is confirmed. */
+  emailVerified: boolean;
 };
 
 // The id is signed so a forged or tampered cookie is rejected before it ever
@@ -83,6 +85,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     id: session.user.id,
     name: session.user.name,
     email: session.user.email,
+    emailVerified: session.user.emailVerifiedAt !== null,
   };
 }
 

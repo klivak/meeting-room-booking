@@ -17,7 +17,12 @@ export type ApiErrorCode =
   | "SLOT_TAKEN"
   | "FORBIDDEN"
   | "UNAUTHORIZED"
-  | "NOT_FOUND";
+  | "NOT_FOUND"
+  // Beyond the codes in the specification, which asks not to invent new ones
+  // without need. The need here is that a refusal to book because the address
+  // is unconfirmed has to be told apart from an ordinary FORBIDDEN, since the
+  // user can fix only one of the two.
+  | "EMAIL_NOT_VERIFIED";
 
 export function apiError(
   status: number,
@@ -41,4 +46,12 @@ export function validationError(error: ZodError) {
 
 export function unauthorizedError() {
   return apiError(401, "UNAUTHORIZED", "Потрібно увійти в систему");
+}
+
+export function emailNotVerifiedError() {
+  return apiError(
+    403,
+    "EMAIL_NOT_VERIFIED",
+    "Підтвердьте електронну пошту, щоб бронювати. Посилання — у лозі сервера",
+  );
 }
