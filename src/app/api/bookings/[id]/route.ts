@@ -107,8 +107,9 @@ export async function PATCH(
   return NextResponse.json(updated);
 }
 
+/** Cancels one occurrence, or the whole series with ?scope=series. */
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const user = await getCurrentUser();
@@ -122,17 +123,33 @@ export async function DELETE(
     return apiError(404, "NOT_FOUND", "Бронювання не знайдено");
   }
 
-  const access = checkBookingAccess(booking, user.id, new Date());
+  const now = new Date();
+  const access = checkBookingAccess(booking, user.id, now);
   if (access !== "allowed") {
     return accessError(access);
   }
 
-  // Soft delete: the row stays for history but drops out of the grid, the lists
-  // and every overlap check.
-  await prisma.booking.update({
-    where: { id },
-    data: { canceledAt: new Date() },
-  });
+  const cancelWholeSeries =
+    new URL(request.url).searchParams.get("scope") === "series" &&
+    booking.seriesId !== null;
+
+  // Soft delete: rows stay for history but drop out of the grid, the lists and
+  // every overlap check.
+  if (cancelWholeSeries) {
+    // Only the occurrences that have not happened yet: cancelling a series
+    // must not rewrite what already took place.
+    await prisma.booking.updateMany({
+      where: {
+        seriesId: booking.seriesId,
+        userId: user.id,
+        canceledAt: null,
+        endsAt: { gt: now },
+      },
+      data: { canceledAt: now },
+    });
+  } else {
+    await prisma.booking.update({ where: { id }, data: { canceledAt: now } });
+  }
 
   return new NextResponse(null, { status: 204 });
 }
