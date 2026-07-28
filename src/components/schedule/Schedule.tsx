@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSyncExternalStore } from "react";
 
 import { BookingBlock, type BookingView } from "@/components/schedule/BookingBlock";
+import { SwipeArea } from "@/components/schedule/SwipeArea";
 import {
   noopSubscribe,
   readOfficeTimeZone,
@@ -258,25 +259,30 @@ export function Schedule({
           })}
         </div>
 
-        <div
-          className="grid"
-          style={{
-            gridTemplateColumns: "4rem minmax(0, 1fr)",
-            gridTemplateRows: `auto repeat(${SLOT_COUNT}, ${DAY_ROW_HEIGHT_REM}rem)`,
-          }}
+        <SwipeArea
+          prevHref={dayHref(day.minus({ days: 1 }))}
+          nextHref={dayHref(day.plus({ days: 1 }))}
         >
-          <div className="border-b border-slate-200" />
-          <div className="border-b border-l border-slate-200" />
+          <div
+            className="grid"
+            style={{
+              gridTemplateColumns: "4rem minmax(0, 1fr)",
+              gridTemplateRows: `auto repeat(${SLOT_COUNT}, ${DAY_ROW_HEIGHT_REM}rem)`,
+            }}
+          >
+            <div className="border-b border-slate-200" />
+            <div className="border-b border-l border-slate-200" />
 
-          {timeAxis("day")}
-          {Array.from({ length: SLOT_COUNT }, (_, rowIndex) =>
-            renderCell(day, rowIndex, 2, "day"),
-          )}
-          {placements
-            .filter((entry) => entry.placement!.dayIndex === dayIndex)
-            .map((entry) => renderBooking(entry.booking, entry.placement!, 2, "day"))}
-          {nowMarker?.dayIndex === dayIndex ? nowLine(2) : null}
-        </div>
+            {timeAxis("day")}
+            {Array.from({ length: SLOT_COUNT }, (_, rowIndex) =>
+              renderCell(day, rowIndex, 2, "day"),
+            )}
+            {placements
+              .filter((entry) => entry.placement!.dayIndex === dayIndex)
+              .map((entry) => renderBooking(entry.booking, entry.placement!, 2, "day"))}
+            {nowMarker?.dayIndex === dayIndex ? nowLine(2) : null}
+          </div>
+        </SwipeArea>
       </div>
 
       {/* Whole week. Wide screens scroll it sideways; the time column stays put
