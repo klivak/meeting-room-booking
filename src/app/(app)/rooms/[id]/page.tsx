@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
+import { BookingPanel } from "@/components/schedule/BookingPanel";
 import { WeekGrid } from "@/components/schedule/WeekGrid";
 import { WEEK_START_DAY } from "@/lib/config";
 import { OFFICE_TZ } from "@/lib/domain/constants";
@@ -198,6 +199,15 @@ export default async function RoomPage({
           selectedBookingId={booking}
         />
       </Suspense>
+
+      {/* Outside the Suspense boundary so the success toast survives the
+          refresh that follows a save. */}
+      <BookingPanel
+        rooms={rooms}
+        roomId={room.id}
+        weekParam={weekStart.toISODate() ?? ""}
+        slot={slot}
+      />
     </div>
   );
 }

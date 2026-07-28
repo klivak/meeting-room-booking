@@ -116,6 +116,16 @@ export function getSlotLabels(day: DateTime, timeZone: string): string[] {
 }
 
 /**
+ * Slot index of an instant inside the office day: the inverse of getSlotStart,
+ * used to prefill the form from a booking or from a clicked cell.
+ */
+export function getSlotIndex(instant: Date): number {
+  const moment = DateTime.fromJSDate(instant).setZone(OFFICE_TZ);
+
+  return Math.round((moment.hour * 60 + moment.minute - OPEN_MINUTES) / SLOT_MINUTES);
+}
+
+/**
  * Label for one slot boundary, rendered in the viewer's timezone.
  *
  * Index 0 is opening time and index SLOT_COUNT is closing time, which is a

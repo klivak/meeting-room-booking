@@ -4,12 +4,7 @@ import { DateTime } from "luxon";
 import Link from "next/link";
 import { useSyncExternalStore } from "react";
 
-import {
-  OFFICE_TZ,
-  SLOT_MINUTES,
-  WORK_DAY_END,
-  WORK_DAY_START,
-} from "@/lib/domain/constants";
+import { OFFICE_TZ, WORK_DAY_END, WORK_DAY_START } from "@/lib/domain/constants";
 import {
   DAYS_IN_WEEK,
   SLOT_COUNT,
@@ -96,13 +91,6 @@ export function WeekGrid({
   const weekParam = weekStartDateTime.toISODate();
 
   const selected = selectedSlot ? DateTime.fromISO(selectedSlot) : null;
-  const selectedLabel =
-    selected?.isValid === true
-      ? `${selected.setZone(timeZone).setLocale("uk").toFormat("ccc dd.MM, HH:mm")}–${selected
-          .plus({ minutes: SLOT_MINUTES })
-          .setZone(timeZone)
-          .toFormat("HH:mm")}`
-      : null;
 
   return (
     <div className="flex flex-col gap-3">
@@ -112,12 +100,6 @@ export function WeekGrid({
           {WORK_DAY_END} за {OFFICE_TZ}.
         </p>
       )}
-
-      {selectedLabel ? (
-        <p className="rounded-lg bg-indigo-50 px-3 py-2 text-sm text-indigo-900">
-          Обрано слот: {selectedLabel}
-        </p>
-      ) : null}
 
       <div className="overflow-x-auto">
         <div

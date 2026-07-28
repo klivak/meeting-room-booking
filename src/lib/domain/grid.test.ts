@@ -7,6 +7,7 @@ import {
   SLOT_COUNT,
   getEndSlotBounds,
   getNowMarker,
+  getSlotIndex,
   getSlotLabel,
   getSlotLabels,
   getSlotStart,
@@ -183,6 +184,21 @@ describe("getSlotLabels", () => {
 
     expect(beforeSwitch[0]).toBe("16:00");
     expect(afterSwitch[0]).toBe("15:00");
+  });
+});
+
+describe("getSlotIndex", () => {
+  it("is the inverse of getSlotStart", () => {
+    const day = kyiv("2026-08-24T00:00");
+
+    for (const index of [0, 1, 7, SLOT_COUNT - 1, SLOT_COUNT]) {
+      expect(getSlotIndex(getSlotStart(day, index).toJSDate())).toBe(index);
+    }
+  });
+
+  it("works the same on both sides of a DST switch", () => {
+    expect(getSlotIndex(at("2026-03-27T10:00"))).toBe(2);
+    expect(getSlotIndex(at("2026-03-30T10:00"))).toBe(2);
   });
 });
 
