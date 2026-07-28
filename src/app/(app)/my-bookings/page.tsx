@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { BookingRow } from "@/components/BookingRow";
+import { MoreBookings } from "@/components/MoreBookings";
 import { prisma } from "@/lib/server/db";
 import { getCurrentUser } from "@/lib/server/session";
 
@@ -25,7 +26,8 @@ async function BookingList({ tab }: { tab: Tab }) {
 
   // A booking that has started but not ended still counts as upcoming: it is
   // over only once it ends.
-  const bookings = await prisma.booking.findMany({
+  // One extra row is read purely to learn whether another page exists.
+  const page = await prisma.booking.findMany({
     where: {
       userId: user.id,
       canceledAt: null,
@@ -35,7 +37,7 @@ async function BookingList({ tab }: { tab: Tab }) {
       { startsAt: tab === "upcoming" ? "asc" : "desc" },
       { id: tab === "upcoming" ? "asc" : "desc" },
     ],
-    take: PAGE_SIZE,
+    take: PAGE_SIZE + 1,
     select: {
       id: true,
       title: true,
@@ -44,6 +46,10 @@ async function BookingList({ tab }: { tab: Tab }) {
       room: { select: { id: true, name: true } },
     },
   });
+
+  const hasMore = page.length > PAGE_SIZE;
+  const bookings = hasMore ? page.slice(0, PAGE_SIZE) : page;
+  const nextCursor = hasMore ? bookings[bookings.length - 1].id : null;
 
   if (bookings.length === 0) {
     return (
@@ -64,21 +70,31 @@ async function BookingList({ tab }: { tab: Tab }) {
   }
 
   return (
-    <ul className="flex flex-col gap-2">
-      {bookings.map((booking) => (
-        <BookingRow
-          key={booking.id}
+    <div className="flex flex-col gap-2">
+      <ul className="flex flex-col gap-2">
+        {bookings.map((booking) => (
+          <BookingRow
+            key={booking.id}
+            now={now.toISOString()}
+            booking={{
+              id: booking.id,
+              title: booking.title,
+              startsAt: booking.startsAt.toISOString(),
+              endsAt: booking.endsAt.toISOString(),
+              room: booking.room,
+            }}
+          />
+        ))}
+      </ul>
+
+      {nextCursor ? (
+        <MoreBookings
+          initialCursor={nextCursor}
           now={now.toISOString()}
-          booking={{
-            id: booking.id,
-            title: booking.title,
-            startsAt: booking.startsAt.toISOString(),
-            endsAt: booking.endsAt.toISOString(),
-            room: booking.room,
-          }}
+          scope={tab}
         />
-      ))}
-    </ul>
+      ) : null}
+    </div>
   );
 }
 
