@@ -198,7 +198,9 @@ function BookingForm({
         role="dialog"
         aria-modal="true"
         aria-labelledby="booking-form-title"
-        className="w-full max-w-md rounded-xl bg-white p-5 shadow-xl"
+        // On a short screen the sheet scrolls instead of pushing its buttons
+        // out of reach.
+        className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-xl bg-white p-5 shadow-xl"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between gap-4">

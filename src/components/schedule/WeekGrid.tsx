@@ -102,6 +102,8 @@ export function WeekGrid({
         </p>
       )}
 
+      {/* Narrow screens scroll the grid sideways; the time column stays put via
+          position: sticky, so the rows never lose their labels. */}
       <div className="overflow-x-auto">
         <div
           className="grid min-w-[48rem]"

@@ -3,21 +3,30 @@ import Link from "next/link";
 import { LogoutButton } from "@/components/LogoutButton";
 import type { CurrentUser } from "@/lib/server/session";
 
+const FOCUS_RING =
+  "focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 focus-visible:outline-none";
+
 export function Header({ user }: { user: CurrentUser }) {
   return (
     <header className="border-b border-slate-200 bg-white">
-      <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
-        <Link href="/" className="rounded font-semibold text-slate-900 focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 focus-visible:outline-none">
+      {/* On a narrow screen the two groups wrap onto separate lines instead of
+          squeezing, and the user name gives way first since the actions matter more. */}
+      <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3">
+        <Link
+          href="/"
+          className={`rounded text-sm font-semibold text-slate-900 sm:text-base ${FOCUS_RING}`}
+        >
           Бронювання переговорних
         </Link>
+
         <div className="flex items-center gap-3">
           <Link
             href="/my-bookings"
-            className="text-sm text-slate-600 transition hover:text-slate-900"
+            className={`rounded text-sm text-slate-600 transition hover:text-slate-900 ${FOCUS_RING}`}
           >
             Мої бронювання
           </Link>
-          <span className="text-sm text-slate-600">{user.name}</span>
+          <span className="hidden text-sm text-slate-600 sm:inline">{user.name}</span>
           <LogoutButton />
         </div>
       </div>
