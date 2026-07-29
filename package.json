@@ -12,6 +12,10 @@
     "test:unit": "vitest run",
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:watch": "vitest",
+    "e2e": "playwright test",
+    "e2e:desktop": "playwright test --project=desktop",
+    "e2e:ui": "playwright test --ui",
+    "e2e:report": "playwright show-report",
     "typecheck": "tsc --noEmit",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down"
@@ -31,6 +35,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.0",
     "@tailwindcss/postcss": "^4",
     "@types/bcrypt": "^6.0.0",
     "@types/luxon": "^3.7.2",
