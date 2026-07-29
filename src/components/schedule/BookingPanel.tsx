@@ -374,9 +374,14 @@ function BookingForm({
 
   /**
    * Places the panel beside the schedule the first time it is shown, instead of
-   * in a corner of the window: the form belongs next to the grid it is about,
-   * and there it only covers Sunday. Measuring happens in a ref callback rather
-   * than an effect, so the panel is positioned before the browser paints it.
+   * in a corner of the window: the form belongs next to the grid it is about.
+   * Measuring happens in a ref callback rather than an effect, so the panel is
+   * positioned before the browser paints it.
+   *
+   * The right edge of the schedule is where it goes by default — except when the
+   * picked range is itself over there, which is what every Friday, Saturday and
+   * Sunday is. Then the panel moves to the other side of that range, so the slot
+   * being booked stays visible while the form about it is filled in.
    */
   function anchorToSchedule(node: HTMLDivElement | null) {
     if (!node || !isWide || position) {
@@ -391,16 +396,37 @@ function BookingForm({
     const schedule = section.getBoundingClientRect();
     const panel = node.getBoundingClientRect();
     const margin = 8;
+    const lastX = window.innerWidth - panel.width - margin;
+
+    // Against the right edge of the schedule, and never off screen.
+    let x = Math.max(margin, Math.min(schedule.right - panel.width, lastX));
+
+    // The day view marks its selection too and is merely hidden at this width,
+    // so the first match can be a box of zeros. The visible one is the one with
+    // a width.
+    const selection = Array.from(
+      document.querySelectorAll<HTMLElement>("[data-selection]"),
+    )
+      .map((element) => element.getBoundingClientRect())
+      .find((rect) => rect.width > 0);
+
+    // Only the horizontal overlap matters: the panel is nearly as tall as the
+    // grid, so there is no "above or below it" to move to.
+    if (selection && x < selection.right && x + panel.width > selection.left) {
+      const toTheLeft = selection.left - panel.width - margin;
+      const toTheRight = selection.right + margin;
+
+      // Left of the picked day if it fits, right of it otherwise; if neither
+      // fits the panel stays where it was and can still be dragged away.
+      if (toTheLeft >= margin) {
+        x = toTheLeft;
+      } else if (toTheRight <= lastX) {
+        x = toTheRight;
+      }
+    }
 
     setPosition({
-      // Against the right edge of the schedule, and never off screen.
-      x: Math.max(
-        margin,
-        Math.min(
-          schedule.right - panel.width,
-          window.innerWidth - panel.width - margin,
-        ),
-      ),
+      x,
       y: Math.max(margin, Math.min(schedule.top, window.innerHeight - panel.height - margin)),
     });
   }

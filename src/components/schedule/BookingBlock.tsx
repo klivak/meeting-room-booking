@@ -214,6 +214,9 @@ export function BookingBlock({
       // Alt + arrow moves this booking, so the week navigation has to leave the
       // combination alone while the block has the focus.
       data-reshapable={onGrab ? true : undefined}
+      // Editing has the same problem a fresh pick does: the panel must not cover
+      // the booking it is about.
+      data-selection={isSelected ? true : undefined}
       onPointerDown={onGrab ? (event) => onGrab("move", event) : undefined}
       onKeyDown={onKeyDown}
       onClick={onClick}

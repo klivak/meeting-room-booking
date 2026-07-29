@@ -837,6 +837,9 @@ export function Schedule({
 
     return (
       <div
+        // Read by the booking panel, which has to place itself somewhere other
+        // than on top of the range being picked.
+        data-selection
         className="pointer-events-none absolute right-[3px] left-[3px] z-8"
         style={{
           top: rowSpan(rows.rowStart, rowHeight),

@@ -170,6 +170,40 @@ test("navigates the weeks and explains itself from the keyboard", async ({ page 
   await expect(help).toHaveCount(0);
 });
 
+test("keeps the picked slot visible wherever in the week it is", async ({ page }) => {
+  await openRoom(page);
+  await goToNextWeek(page);
+
+  const panel = page.getByRole("dialog", { name: "Нове бронювання" });
+  // The day view marks its selection as well and is merely hidden at this
+  // width, so the visible one is the one to measure.
+  const selection = page.locator("[data-selection]:visible").first();
+
+  /** True when the panel stands in front of the range being picked. */
+  async function panelCoversThePick() {
+    const form = (await panel.boundingBox())!;
+    const pick = (await selection.boundingBox())!;
+
+    return form.x < pick.x + pick.width && form.x + form.width > pick.x;
+  }
+
+  // Monday: the panel's usual place at the right edge of the grid is nowhere
+  // near it.
+  await cell(page, 0, 8).click();
+  await expect(panel).toBeVisible();
+  expect(await panelCoversThePick()).toBe(false);
+
+  // Escape first: an open panel stands in front of the columns underneath it,
+  // and a cell behind it cannot be clicked — which is what "Закрити" is for.
+  await page.keyboard.press("Escape");
+  await expect(panel).toHaveCount(0);
+
+  // Friday, which is exactly where the panel would otherwise stand.
+  await cell(page, 4, 8).click();
+  await expect(panel).toBeVisible();
+  expect(await panelCoversThePick()).toBe(false);
+});
+
 test("leaves a colleague's booking inert", async ({ page }) => {
   await openRoom(page);
 
