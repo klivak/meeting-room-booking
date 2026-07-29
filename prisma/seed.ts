@@ -97,6 +97,19 @@ async function main() {
     });
   }
 
+  // A room renamed in the list above would otherwise survive in the database
+  // under its old name, and the seed has to stay at the 5-6 rooms the spec
+  // asks for. Bookings go first: Room -> Booking has no cascade.
+  const stale = await prisma.room.findMany({
+    where: { name: { notIn: ROOMS.map((room) => room.name) } },
+    select: { id: true },
+  });
+  if (stale.length > 0) {
+    const ids = stale.map((room) => room.id);
+    await prisma.booking.deleteMany({ where: { roomId: { in: ids } } });
+    await prisma.room.deleteMany({ where: { id: { in: ids } } });
+  }
+
   for (const user of USERS) {
     const email = normalizeEmail(user.email);
 
