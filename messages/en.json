@@ -92,6 +92,18 @@
     "timezoneNotice": "Your timezone. Room hours are {from}–{to} ({officeZone}).",
     "recurring": "weekly"
   },
+  "shortcuts": {
+    "title": "Keyboard shortcuts",
+    "week": "Previous week",
+    "weekNext": "Next week",
+    "today": "Current week",
+    "cells": "Move between the grid slots",
+    "book": "Book the focused slot",
+    "moveBooking": "Move your booking (while it has the focus)",
+    "resizeBooking": "Change how long your booking runs",
+    "close": "Close the panel or the dialog",
+    "help": "This help"
+  },
   "form": {
     "newBooking": "New booking",
     "editBooking": "Edit booking",

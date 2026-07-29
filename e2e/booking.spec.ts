@@ -144,6 +144,32 @@ test("moves and resizes an own booking on the grid itself", async ({ page }) => 
   await cancelBooking(page, MOVE_TITLE);
 });
 
+test("navigates the weeks and explains itself from the keyboard", async ({ page }) => {
+  await openRoom(page);
+
+  // Alt + arrow walks the weeks, T comes back to this one. "Сьогодні" marks
+  // itself as the current page exactly while the current week is shown, so it
+  // is what tells the two apart.
+  const today = page.getByRole("link", { name: "Сьогодні" });
+  await expect(today).toHaveAttribute("aria-current", "page");
+
+  await page.keyboard.press("Alt+ArrowRight");
+  await expect(today).not.toHaveAttribute("aria-current", "page");
+
+  await page.keyboard.press("T");
+  await expect(today).toHaveAttribute("aria-current", "page");
+
+  // "?" is the shortcut that has to be findable without knowing the shortcuts,
+  // so it is the one printed under the grid.
+  await page.keyboard.press("?");
+  const help = page.getByRole("dialog", { name: "Клавіатурні скорочення" });
+  await expect(help).toBeVisible();
+  await expect(help).toContainText("Перенести своє бронювання");
+
+  await page.keyboard.press("Escape");
+  await expect(help).toHaveCount(0);
+});
+
 test("leaves a colleague's booking inert", async ({ page }) => {
   await openRoom(page);
 

@@ -464,6 +464,14 @@ function BookingForm({
         aria-labelledby="booking-form-title"
         // The sheet scrolls instead of pushing its buttons out of reach.
         className="rounded-panel bg-surface border-border-control shadow-modal animate-sheet sm:animate-rise flex max-h-[92vh] w-full flex-col overflow-hidden rounded-b-none border sm:pointer-events-auto sm:max-h-[85vh] sm:w-[364px] sm:rounded-b-panel"
+        // Escape means "Close" here as much as it does in the cancel dialog. The
+        // panel is not modal, so it only answers when the focus is inside it —
+        // which it is, the title field takes it as the panel opens.
+        onKeyDown={(event) => {
+          if (event.key === "Escape" && !pending) {
+            close(roomId);
+          }
+        }}
       >
         <div
           // The header is the handle: dragging it moves the panel off whatever

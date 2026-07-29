@@ -18,7 +18,7 @@ import {
 import { Schedule as ScheduleGrid } from "@/components/schedule/Schedule";
 import { ScheduleLegend } from "@/components/schedule/ScheduleLegend";
 import { TimeZoneNotice } from "@/components/schedule/TimeZoneNotice";
-import { WeekShortcuts } from "@/components/schedule/WeekShortcuts";
+import { ScheduleShortcuts } from "@/components/schedule/ScheduleShortcuts";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { WEEK_START_DAY } from "@/lib/config";
 import { OFFICE_TZ } from "@/lib/domain/constants";
@@ -349,11 +349,6 @@ export default async function RoomPage({
 
   return (
     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-5">
-      <WeekShortcuts
-        previousHref={`/rooms/${room.id}?week=${previousWeek}`}
-        nextHref={`/rooms/${room.id}?week=${nextWeek}`}
-      />
-
       {/* The room list takes width, not height: that is what leaves room for all
           twenty rows on a laptop screen. Floor and capacity are visible at the
           moment of choosing, so nothing has to be remembered. Below lg it turns
@@ -458,6 +453,14 @@ export default async function RoomPage({
               <span aria-hidden="true">→</span>
             </Link>
           </div>
+
+          {/* Both the shortcut listener and the button that says the shortcuts
+              exist; it belongs next to the navigation those shortcuts are for. */}
+          <ScheduleShortcuts
+            previousHref={`/rooms/${room.id}?week=${previousWeek}`}
+            nextHref={`/rooms/${room.id}?week=${nextWeek}`}
+            todayHref={`/rooms/${room.id}`}
+          />
 
           <TimeZoneNotice />
         </div>
