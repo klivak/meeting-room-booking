@@ -467,7 +467,13 @@ export default async function RoomPage({
 
         {/* The legend sits outside the boundary, next to the grid rather than
             inside it: it needs no data, so it should not blink or move. */}
-        <div id={SCHEDULE_ANCHOR_ID} className="flex flex-col gap-2.5">
+        {/* tabIndex -1 so the closing panel can hand the focus back here: it is
+            not a tab stop of its own, only a place the focus can be put. */}
+        <div
+          id={SCHEDULE_ANCHOR_ID}
+          tabIndex={-1}
+          className="flex flex-col gap-2.5 focus:outline-none"
+        >
           <Suspense key={weekStart.toISODate()} fallback={await ScheduleSkeleton()}>
             <Schedule
               roomId={room.id}

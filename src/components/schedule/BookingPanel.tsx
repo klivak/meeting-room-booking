@@ -274,6 +274,12 @@ function BookingForm({
   const close = (targetRoomId: string) => {
     router.replace(`/rooms/${targetRoomId}?week=${weekParam}`);
     router.refresh();
+
+    // The panel took the focus when it opened, and closing it would drop the
+    // focus on the body — the next Tab would then start again from the top of
+    // the page. It goes back to the grid the booking is on instead.
+    const schedule = document.getElementById(SCHEDULE_ANCHOR_ID);
+    schedule?.focus();
   };
 
   /** Keeps the end after the start when the start moves. */
