@@ -6,7 +6,17 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
-import { BookingBlock, type BookingView } from "@/components/schedule/BookingBlock";
+import { showToast } from "@/components/toast";
+import {
+  BookingBlock,
+  type BookingState,
+  type BookingView,
+} from "@/components/schedule/BookingBlock";
+import {
+  DAY_ROW_REM,
+  HEADER_REM,
+  ROW_REM,
+} from "@/components/schedule/geometry";
 import { SwipeArea } from "@/components/schedule/SwipeArea";
 import {
   noopSubscribe,
@@ -14,12 +24,7 @@ import {
   readViewerTimeZone,
 } from "@/components/viewerTimeZone";
 import { WEEK_START_DAY } from "@/lib/config";
-import {
-  OFFICE_TZ,
-  SLOT_MINUTES,
-  WORK_DAY_END,
-  WORK_DAY_START,
-} from "@/lib/domain/constants";
+import { OFFICE_TZ, SLOT_MINUTES } from "@/lib/domain/constants";
 import {
   DAYS_IN_WEEK,
   SLOT_COUNT,
@@ -31,6 +36,7 @@ import {
   getWeekDays,
   placeBooking,
 } from "@/lib/domain/grid";
+import { intervalsOverlap } from "@/lib/domain/overlap";
 import { getWeekStart } from "@/lib/domain/week";
 
 export type { BookingView };
@@ -50,11 +56,9 @@ type ScheduleProps = {
   selectedSlotEnd?: string;
   /** Id of the own booking picked in the URL, if any. */
   selectedBookingId?: string;
+  /** False until the address is confirmed; the grid then only shows, never books. */
+  canBook: boolean;
 };
-
-const ROW_HEIGHT_REM = 2.25;
-// Taller rows on a phone: a half-hour slot is a tap target, not just a line.
-const DAY_ROW_HEIGHT_REM = 3;
 
 // The "now" line ticks once a minute; it only moves half a row per half hour,
 // so anything finer would be wasted work. The snapshot is cached because
@@ -86,6 +90,22 @@ function durationLabel(
   return t("hoursMinutes", { hours, minutes });
 }
 
+/** Rows of one day that are already over, used to grey out the past. */
+function pastRows(day: DateTime, now: number | null): number {
+  if (now === null) {
+    return 0;
+  }
+
+  const moment = DateTime.fromMillis(now).setZone(OFFICE_TZ);
+  const date = day.toISODate();
+
+  if ((moment.toISODate() ?? "") > (date ?? "")) return SLOT_COUNT;
+  if ((moment.toISODate() ?? "") < (date ?? "")) return 0;
+
+  const elapsed = +moment - +getSlotStart(day, 0);
+
+  return Math.max(0, Math.min(SLOT_COUNT, Math.floor(elapsed / (SLOT_MINUTES * 60_000))));
+}
 
 /**
  * The room schedule. A week of columns on a wide screen and a single day on a
@@ -101,6 +121,7 @@ export function Schedule({
   selectedSlot,
   selectedSlotEnd,
   selectedBookingId,
+  canBook,
 }: ScheduleProps) {
   const router = useRouter();
   const t = useTranslations("schedule");
@@ -121,17 +142,36 @@ export function Schedule({
     focusRow: number;
   } | null>(null);
 
+  // The one cell that answers Tab. Everything else is reached with the arrow
+  // keys, so the grid costs one stop instead of a hundred and forty.
+  const [focusCell, setFocusCell] = useState({ column: 0, row: 0 });
+
+  // The range just picked, held until the address catches up. Picking a slot is
+  // a navigation, and the server needs a moment to answer it; without this the
+  // grid keeps showing the previous selection for that moment, which reads as a
+  // blink onto the old slot and then a jump to the new one.
+  const [justPicked, setJustPicked] = useState<{
+    dayIndex: number;
+    rowStart: number;
+    rowEnd: number;
+  } | null>(null);
+
+  // Once the address carries the new range, the local copy has done its job.
+  // Adjusting state during the render is what React prescribes here: an effect
+  // would show one frame of the stale selection first.
+  const urlSelection = `${selectedSlot ?? ""}|${selectedSlotEnd ?? ""}`;
+  const [lastUrlSelection, setLastUrlSelection] = useState(urlSelection);
+  if (urlSelection !== lastUrlSelection) {
+    setLastUrlSelection(urlSelection);
+    setJustPicked(null);
+  }
+
   const weekStartDateTime = DateTime.fromISO(weekStart, { zone: OFFICE_TZ });
   const days = getWeekDays(weekStartDateTime);
   const labels = getSlotLabels(days[0], timeZone);
   const nowMarker = now ? getNowMarker(new Date(now), weekStartDateTime) : null;
   const todayIso = DateTime.now().setZone(OFFICE_TZ).toISODate();
   const weekParam = weekStartDateTime.toISODate();
-
-  const selectedSlotStart = selectedSlot ? DateTime.fromISO(selectedSlot) : null;
-  const selectedSlotEndTime = selectedSlotEnd
-    ? DateTime.fromISO(selectedSlotEnd)
-    : null;
 
   // Which pointer started the last interaction, so a mouse click is not handled
   // twice: once by the drag and once by the click that follows it.
@@ -146,22 +186,48 @@ export function Schedule({
   const dayHref = (target: DateTime) =>
     `/rooms/${roomId}?week=${getWeekStart(target, WEEK_START_DAY).toISODate()}&day=${target.toISODate()}`;
 
-  const formatRange = (booking: BookingView) => {
-    const start = DateTime.fromISO(booking.startsAt).setZone(timeZone);
-    const end = DateTime.fromISO(booking.endsAt).setZone(timeZone);
-
-    return `${start.toFormat("HH:mm")}–${end.toFormat("HH:mm")}`;
-  };
+  const formatTime = (iso: string) =>
+    DateTime.fromISO(iso).setZone(timeZone).toFormat("HH:mm");
 
   /** Opens the booking form for a row range of one day. */
   const openForm = (formDay: DateTime, rowStart: number, rowEnd: number) => {
+    if (!canBook) {
+      // The banner under the header already says why; the toast says it again
+      // at the moment the user tried, which is when it matters.
+      showToast(t("verifyFirst"));
+      return;
+    }
+
     const start = getSlotStart(formDay, rowStart).toUTC().toISO() ?? "";
     const end = getSlotStart(formDay, rowEnd).toUTC().toISO() ?? "";
+
+    setJustPicked({
+      dayIndex: days.findIndex((option) => option.hasSame(formDay, "day")),
+      rowStart,
+      rowEnd,
+    });
 
     router.push(
       `/rooms/${roomId}?week=${weekParam}&slot=${encodeURIComponent(start)}&slotEnd=${encodeURIComponent(end)}`,
       { scroll: false },
     );
+  };
+
+  /**
+   * Arrow keys move the focus between cells, Enter books the focused half hour.
+   * This is the whole point of the roving tabindex: a time range has to be
+   * pickable without a mouse, and dragging is only a shortcut for those who have one.
+   */
+  const moveFocus = (prefix: string, nextColumn: number, nextRow: number) => {
+    const target = document.querySelector<HTMLElement>(
+      `[data-cell="${prefix}-${nextColumn}-${nextRow}"]`,
+    );
+    if (!target) {
+      return;
+    }
+
+    setFocusCell({ column: nextColumn, row: nextRow });
+    target.focus();
   };
 
   /**
@@ -172,42 +238,51 @@ export function Schedule({
    * how the day view is swiped, and a vertical one is how the page scrolls, so
    * a finger keeps the plain tap.
    */
-  const renderCell = (
-    cellDay: DateTime,
-    rowIndex: number,
-    dayIndex: number,
-    gridColumn: number,
-    keyPrefix: string,
-  ) => {
-    const start = getSlotStart(cellDay, rowIndex);
-    // A click selects one cell, a dragged range selects everything up to its end.
-    const isSelected =
-      selectedSlotStart?.isValid === true &&
-      +start >= +selectedSlotStart &&
-      (selectedSlotEndTime?.isValid === true
-        ? +start < +selectedSlotEndTime
-        : +start === +selectedSlotStart);
-    const isToday = cellDay.toISODate() === todayIso;
-    const isInDrag =
-      drag?.dayIndex === dayIndex &&
-      rowIndex >= getSelectionRows(drag.anchorRow, drag.focusRow).rowStart &&
-      rowIndex < getSelectionRows(drag.anchorRow, drag.focusRow).rowEnd;
+  const renderCell = ({
+    cellDay,
+    rowIndex,
+    dayIndex: cellDayIndex,
+    columnIndex,
+    prefix,
+    lastColumn,
+    rowRem,
+  }: {
+    cellDay: DateTime;
+    rowIndex: number;
+    /** Day of the displayed week, which is what a drag and the form are about. */
+    dayIndex: number;
+    /** Column within this view: the day view has one, the week view seven. */
+    columnIndex: number;
+    prefix: string;
+    lastColumn: number;
+    rowRem: number;
+  }) => {
+    const isHour = rowIndex % 2 === 0;
 
     return (
       <button
-        key={`${keyPrefix}-${cellDay.toISODate()}-${rowIndex}`}
+        key={`${prefix}-${rowIndex}`}
         type="button"
+        data-cell={`${prefix}-${columnIndex}-${rowIndex}`}
+        // One stop for the whole grid; the arrows do the rest. It is keyed
+        // to the column rather than to the weekday, so the single-column day
+        // view always has one too.
+        tabIndex={
+          focusCell.column === columnIndex && focusCell.row === rowIndex ? 0 : -1
+        }
+        aria-disabled={canBook ? undefined : true}
+        onFocus={() => setFocusCell({ column: columnIndex, row: rowIndex })}
         onPointerDown={(event) => {
           lastPointerType.current = event.pointerType;
-          if (event.pointerType !== "mouse") {
+          if (event.pointerType !== "mouse" || !canBook) {
             return;
           }
           // Keeps the browser from selecting text across the cells.
           event.preventDefault();
-          setDrag({ dayIndex, anchorRow: rowIndex, focusRow: rowIndex });
+          setDrag({ dayIndex: cellDayIndex, anchorRow: rowIndex, focusRow: rowIndex });
         }}
         onPointerEnter={() => {
-          if (drag && drag.dayIndex === dayIndex) {
+          if (drag && drag.dayIndex === cellDayIndex) {
             setDrag({ ...drag, focusRow: rowIndex });
           }
         }}
@@ -219,21 +294,52 @@ export function Schedule({
           }
           openForm(cellDay, rowIndex, rowIndex + 1);
         }}
+        onKeyDown={(event) => {
+          const moves: Record<string, [number, number]> = {
+            ArrowUp: [columnIndex, rowIndex - 1],
+            ArrowDown: [columnIndex, rowIndex + 1],
+            ArrowLeft: [columnIndex - 1, rowIndex],
+            ArrowRight: [columnIndex + 1, rowIndex],
+            Home: [columnIndex, 0],
+            End: [columnIndex, SLOT_COUNT - 1],
+          };
+
+          const move = moves[event.key];
+          if (!move || event.altKey) {
+            return;
+          }
+
+          const [nextColumn, nextRow] = move;
+          if (
+            nextColumn < 0 ||
+            nextColumn > lastColumn ||
+            nextRow < 0 ||
+            nextRow >= SLOT_COUNT
+          ) {
+            return;
+          }
+
+          event.preventDefault();
+          moveFocus(prefix, nextColumn, nextRow);
+        }}
         aria-label={t("book", {
-          day: cellDay.setLocale(locale).toFormat("ccc dd.MM"),
+          day: cellDay.setLocale(locale).toFormat("cccc dd.MM"),
           time: labels[rowIndex],
         })}
-        className={`group relative border-l border-slate-200 transition hover:bg-indigo-100/60 focus-visible:z-20 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-inset focus-visible:outline-none ${
-          // A lighter line inside the hour, a full one between hours.
-          rowIndex % 2 === 0 ? "border-t border-t-slate-200" : "border-t border-t-slate-100"
-        } ${isToday ? "bg-indigo-50/40" : ""} ${
-          isInDrag ? "bg-indigo-200/70" : ""
-        } ${isSelected ? "z-10 bg-indigo-100 ring-2 ring-indigo-500 ring-inset" : ""}`}
-        style={{ gridColumn, gridRow: rowIndex + 2 }}
+        className={`focus-ring-inset group relative flex items-center justify-center border-t transition ${
+          // A full line between hours, a lighter one inside them: that contrast
+          // is what stops twenty equal rows from reading as a spreadsheet.
+          rowIndex === 0
+            ? "border-t-transparent"
+            : isHour
+              ? "border-t-border-grid"
+              : "border-t-border-grid-half"
+        } ${canBook ? "hover:bg-surface-muted cursor-pointer" : "cursor-default"}`}
+        style={{ height: `${rowRem}rem` }}
       >
         {/* The hovered cell names its own time: the axis is far away once the
             pointer is deep inside the week. */}
-        <span className="pointer-events-none absolute inset-0 hidden items-center justify-center text-[11px] font-medium text-indigo-700 group-hover:flex">
+        <span className="text-text-tertiary pointer-events-none font-mono text-xs sm:text-[11px] opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100">
           {labels[rowIndex]}
         </span>
       </button>
@@ -257,63 +363,6 @@ export function Schedule({
     return () => window.removeEventListener("pointerup", finish);
   });
 
-  /** Shows what the current drag would book, with its duration. */
-  const renderDragPreview = (dayIndex: number, gridColumn: number) => {
-    if (!drag || drag.dayIndex !== dayIndex) {
-      return null;
-    }
-
-    const { rowStart, rowEnd } = getSelectionRows(drag.anchorRow, drag.focusRow);
-    const previewDay = days[dayIndex];
-    const from = getSlotStart(previewDay, rowStart).setZone(timeZone).toFormat("HH:mm");
-    const to = getSlotStart(previewDay, rowEnd).setZone(timeZone).toFormat("HH:mm");
-
-    return (
-      <div
-        // Rendered from a map over the days, so it carries its own key.
-        key={`drag-${dayIndex}`}
-        className="pointer-events-none z-20 m-0.5 flex items-center justify-center rounded-md bg-indigo-600 px-1.5 text-center text-xs leading-tight font-medium text-white"
-        style={{
-          gridColumn,
-          gridRow: `${rowStart + 2} / span ${rowEnd - rowStart}`,
-        }}
-      >
-        {from}–{to} ·{" "}
-        {durationLabel((rowEnd - rowStart) * SLOT_MINUTES, tDuration)}
-      </div>
-    );
-  };
-
-  /** One booking, placed into the given column of whichever view is drawing it. */
-  const renderBooking = (
-    booking: BookingView,
-    placement: { rowStart: number; rowSpan: number },
-    gridColumn: number,
-    keyPrefix: string,
-  ) => {
-    // A finished booking can no longer be edited or canceled, so it offers no
-    // action even to its author.
-    const isEditable = booking.isMine && booking.endsAt > serverNow;
-
-    return (
-      <BookingBlock
-        key={`${keyPrefix}-${booking.id}`}
-        booking={booking}
-        range={formatRange(booking)}
-        href={
-          isEditable
-            ? `/rooms/${roomId}?week=${weekParam}&booking=${booking.id}`
-            : undefined
-        }
-        isSelected={booking.id === selectedBookingId}
-        style={{
-          gridColumn,
-          gridRow: `${placement.rowStart + 2} / span ${placement.rowSpan}`,
-        }}
-      />
-    );
-  };
-
   const placements = bookings
     .map((booking) => ({
       booking,
@@ -324,88 +373,235 @@ export function Schedule({
     }))
     .filter((entry) => entry.placement !== null);
 
+  /** One booking, placed into whichever column is drawing it. */
+  const renderBooking = (
+    booking: BookingView,
+    placement: { rowStart: number; rowSpan: number },
+    rowRem: number,
+    keyPrefix: string,
+  ) => {
+    // A finished booking can no longer be edited or canceled, so it offers no
+    // action even to its author.
+    const isEditable = booking.isMine && booking.endsAt > serverNow;
+    const state: BookingState = booking.isMine
+      ? isEditable
+        ? "own"
+        : "finished"
+      : "other";
+
+    return (
+      <BookingBlock
+        key={`${keyPrefix}-${booking.id}`}
+        booking={booking}
+        state={state}
+        range={`${formatTime(booking.startsAt)}–${formatTime(booking.endsAt)}`}
+        start={formatTime(booking.startsAt)}
+        // One row leaves a single line; from an hour up the time and the title
+        // get a line each.
+        compact={placement.rowSpan === 1 && rowRem < 2.5}
+        href={
+          isEditable
+            ? `/rooms/${roomId}?week=${weekParam}&booking=${booking.id}`
+            : undefined
+        }
+        isSelected={booking.id === selectedBookingId}
+        interactive={drag === null}
+        style={{
+          top: `${placement.rowStart * rowRem}rem`,
+          // The 2px gap plus each block's own border is what makes 10:00–11:00
+          // and 11:00–12:00 read as two blocks with a visible seam.
+          height: `calc(${placement.rowSpan * rowRem}rem - 2px)`,
+        }}
+      />
+    );
+  };
+
   /**
-   * The "now" line, drawn across every day and labelled with the time, the way a
-   * calendar does it. It only exists inside the office day: outside 09:00-19:00
-   * there is nothing on the grid for it to point at.
+   * The range being picked, either dragged right now or already in the URL with
+   * the form open. A 2px dashed outline and a centred plaque: no booking block
+   * carries a dashed outline that thick, so there is nothing to confuse it with.
    */
-  const nowLine = (columnSpan: number) => {
-    if (!nowMarker || now === null) {
+  const selectionFor = (
+    targetDay: number,
+  ): { rowStart: number; rowEnd: number } | null => {
+    if (drag) {
+      return drag.dayIndex === targetDay
+        ? getSelectionRows(drag.anchorRow, drag.focusRow)
+        : null;
+    }
+
+    // Ahead of the address on purpose: see justPicked above.
+    if (justPicked) {
+      return justPicked.dayIndex === targetDay
+        ? { rowStart: justPicked.rowStart, rowEnd: justPicked.rowEnd }
+        : null;
+    }
+
+    if (!selectedSlot) {
       return null;
     }
 
+    const start = new Date(selectedSlot);
+    const end = selectedSlotEnd
+      ? new Date(selectedSlotEnd)
+      : new Date(+start + SLOT_MINUTES * 60_000);
+    const placement = placeBooking({ startsAt: start, endsAt: end }, weekStartDateTime);
+
+    return placement && placement.dayIndex === targetDay
+      ? { rowStart: placement.rowStart, rowEnd: placement.rowStart + placement.rowSpan }
+      : null;
+  };
+
+  /**
+   * Whether the picked range runs into a booking that is already there. It is
+   * the same half-open rule the server applies, so the grid and the API agree;
+   * the server still has the final word, this only says it sooner. The booking
+   * being edited is left out, or it would clash with itself.
+   */
+  const selectionClashes = (start: Date, end: Date): boolean =>
+    bookings.some(
+      (booking) =>
+        booking.id !== selectedBookingId &&
+        intervalsOverlap(start, end, new Date(booking.startsAt), new Date(booking.endsAt)),
+    );
+
+  const renderSelection = (targetDay: number, targetDate: DateTime, rowRem: number) => {
+    const rows = selectionFor(targetDay);
+    if (!rows) {
+      return null;
+    }
+
+    const startsAt = getSlotStart(targetDate, rows.rowStart);
+    const endsAt = getSlotStart(targetDate, rows.rowEnd);
+    const from = startsAt.setZone(timeZone).toFormat("HH:mm");
+    const to = endsAt.setZone(timeZone).toFormat("HH:mm");
+    // Red while the range is still being dragged, not only after the save is
+    // refused: by then the user has already typed a title.
+    const clashes = selectionClashes(startsAt.toJSDate(), endsAt.toJSDate());
+
     return (
       <div
-        className="pointer-events-none relative z-30"
-        style={{ gridColumn: `1 / span ${columnSpan}`, gridRow: `2 / span ${SLOT_COUNT}` }}
+        className="pointer-events-none absolute right-[3px] left-[3px] z-8"
+        style={{
+          top: `${rows.rowStart * rowRem}rem`,
+          height: `calc(${(rows.rowEnd - rows.rowStart) * rowRem}rem - 2px)`,
+        }}
       >
         <div
-          className="absolute right-0 left-0 border-t-2 border-red-500"
-          style={{ top: `${nowMarker.ratio * 100}%` }}
+          className={`rounded-booking flex h-full items-center justify-center border-2 border-dashed ${
+            clashes
+              ? "border-danger bg-danger-surface/75"
+              : "border-accent-own-booking bg-accent-own-surface/70"
+          }`}
         >
-          <span className="absolute -top-2 left-0 rounded-sm bg-red-600 px-1 text-[10px] leading-4 font-medium text-white">
-            {DateTime.fromMillis(now).setZone(timeZone).toFormat("HH:mm")}
+          <span
+            className={`rounded-booking border px-1.5 py-0.5 font-mono text-xs sm:text-[11px] font-semibold ${
+              clashes
+                ? "border-danger bg-surface text-danger-ink"
+                : "border-accent-own-booking bg-surface text-accent-own-ink"
+            }`}
+          >
+            {clashes ? (
+              <>
+                <span aria-hidden="true">✕ </span>
+                {t("taken")}
+              </>
+            ) : (
+              <>
+                {from}–{to} ·{" "}
+                {durationLabel((rows.rowEnd - rows.rowStart) * SLOT_MINUTES, tDuration)}
+              </>
+            )}
           </span>
         </div>
       </div>
     );
   };
 
-  // Whole hours carry the weight; the half hours between them stay quiet, so the
-  // axis reads as a scale instead of forty equal labels.
-  const timeAxis = (keyPrefix: string) =>
+  /** Everything before the current moment, dimmed so the eye starts at "now". */
+  const renderPast = (targetDate: DateTime, rowRem: number) => {
+    const rows = pastRows(targetDate, now);
+    if (rows === 0) {
+      return null;
+    }
+
+    return (
+      <div
+        aria-hidden
+        // Enough to see at a glance where "now" starts, not enough to compete
+        // with the bookings sitting on top of it.
+        className="bg-surface-raised pointer-events-none absolute inset-x-0 top-0 opacity-60"
+        style={{ height: `${rows * rowRem}rem` }}
+      />
+    );
+  };
+
+  // Whole hours carry the weight; the half hours between them go unlabelled, so
+  // the axis reads as a scale instead of forty equal numbers.
+  const timeAxis = (rowRem: number) =>
     labels.map((label, rowIndex) => (
       <div
-        key={`${keyPrefix}-${label}-${rowIndex}`}
-        // Every label is lifted to sit on the line it marks, except the first:
-        // above it there is only the header row, and it would be cut off.
-        className={`sticky left-0 z-20 bg-white pr-2 text-right text-xs ${
-          rowIndex === 0 ? "" : "-mt-2"
-        // slate-500 rather than a lighter grey: the half hours are quieter than
-        // the hours but still have to clear the contrast threshold.
-        } ${rowIndex % 2 === 0 ? "font-medium text-slate-700" : "text-slate-500"}`}
-        style={{ gridColumn: 1, gridRow: rowIndex + 2 }}
+        key={`${label}-${rowIndex}`}
+        className={`flex items-start justify-end pr-2 ${
+          rowIndex === 0
+            ? "border-t-transparent"
+            : rowIndex % 2 === 0
+              ? "border-t-border-grid"
+              : "border-t-transparent"
+        } border-t`}
+        style={{ height: `${rowRem}rem` }}
       >
-        {label}
+        {/* Lifted onto the line it marks, the way a calendar axis reads —
+            except the first, which has only the header above it and would be
+            clipped by the top edge of the grid. */}
+        <span
+          className={`font-mono text-xs sm:text-[11px] leading-none ${
+            rowIndex === 0 ? "" : "-translate-y-[6px]"
+          } ${
+            rowIndex % 2 === 0
+              ? "text-text-secondary font-semibold"
+              : "text-transparent"
+          }`}
+        >
+          {label}
+        </span>
       </div>
     ));
 
-  return (
-    <div className="flex flex-col gap-3">
-      {timeZone === OFFICE_TZ ? null : (
-        <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
-          {t("timezoneNotice", {
-            timeZone,
-            from: WORK_DAY_START,
-            to: WORK_DAY_END,
-            officeZone: OFFICE_TZ,
-          })}
-        </p>
-      )}
+  const isWeekEmpty = placements.length === 0;
 
+  return (
+    <div className="flex flex-col gap-2.5">
       {/* Single day: a phone has no room for seven columns. */}
       <div className="flex flex-col gap-2 sm:hidden">
-        <div className="flex items-center justify-between gap-2">
+        <div className="bg-surface border-border-grid rounded-card flex items-center gap-2 border p-2">
           <Link
             href={dayHref(day.minus({ days: 1 }))}
             aria-label={t("previousDay")}
-            className="flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-slate-300 text-slate-700 focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-none"
+            title={t("previousDay")}
+            className="focus-ring border-border-grid text-text-secondary rounded-control flex h-11 w-11 shrink-0 items-center justify-center border no-underline"
           >
-            ←
+            <span aria-hidden="true">←</span>
           </Link>
-          <span className="text-sm font-medium text-slate-900">
-            {day.setLocale(locale).toFormat("cccc, d MMMM")}
+          <span className="flex min-w-0 flex-1 flex-col items-center">
+            <span className="truncate text-[15px] font-semibold">
+              {day.setLocale(locale).toFormat("cccc")}
+            </span>
+            <span className="text-text-tertiary font-mono text-xs">
+              {day.toFormat("dd.MM.yyyy")}
+            </span>
           </span>
           <Link
             href={dayHref(day.plus({ days: 1 }))}
             aria-label={t("nextDay")}
-            className="flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-slate-300 text-slate-700 focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-none"
+            title={t("nextDay")}
+            className="focus-ring border-border-grid text-text-secondary rounded-control flex h-11 w-11 shrink-0 items-center justify-center border no-underline"
           >
-            →
+            <span aria-hidden="true">→</span>
           </Link>
         </div>
 
-        <div className="flex gap-1 overflow-x-auto pb-1">
+        <div className="flex gap-1">
           {days.map((option) => {
             const isSelected = option.toISODate() === day.toISODate();
 
@@ -414,15 +610,14 @@ export function Schedule({
                 key={option.toISODate()}
                 href={dayHref(option)}
                 aria-current={isSelected ? "page" : undefined}
-                className={`flex min-h-11 shrink-0 items-center rounded-lg border px-3 text-xs ${
+                className={`focus-ring rounded-control flex min-h-11 flex-1 flex-col items-center justify-center border text-xs no-underline ${
                   isSelected
-                    ? "border-slate-900 bg-slate-900 text-white"
-                    : option.toISODate() === todayIso
-                      ? "border-indigo-300 bg-indigo-50 text-indigo-900"
-                      : "border-slate-300 text-slate-700"
+                    ? "border-accent-own-booking bg-accent-own-booking text-accent-own-on font-bold"
+                    : "border-border-grid bg-surface text-text-secondary"
                 }`}
               >
-                {option.setLocale(locale).toFormat("ccc dd.MM")}
+                <span>{option.setLocale(locale).toFormat("ccc")}</span>
+                <span className="font-mono font-semibold">{option.toFormat("dd")}</span>
               </Link>
             );
           })}
@@ -432,27 +627,47 @@ export function Schedule({
           prevHref={dayHref(day.minus({ days: 1 }))}
           nextHref={dayHref(day.plus({ days: 1 }))}
         >
-          <div
-            className="grid"
-            style={{
-              gridTemplateColumns: "4rem minmax(0, 1fr)",
-              gridTemplateRows: `auto repeat(${SLOT_COUNT}, ${DAY_ROW_HEIGHT_REM}rem)`,
-            }}
-          >
-            <div className="border-b border-slate-200" />
-            <div className="border-b border-l border-slate-200" />
-
-            {timeAxis("day")}
-            {Array.from({ length: SLOT_COUNT }, (_, rowIndex) =>
-              renderCell(day, rowIndex, dayIndex, 2, "day"),
-            )}
-            {placements
-              .filter((entry) => entry.placement!.dayIndex === dayIndex)
-              .map((entry) => renderBooking(entry.booking, entry.placement!, 2, "day"))}
-            {renderDragPreview(dayIndex, 2)}
-            {nowMarker?.dayIndex === dayIndex ? nowLine(2) : null}
+          <div className="bg-surface border-border-grid rounded-card overflow-hidden border">
+            <div className="relative flex">
+              <div className="border-border-grid w-13 flex-none border-r">
+                {timeAxis(DAY_ROW_REM)}
+              </div>
+              <div className="relative min-w-0 flex-1">
+                {Array.from({ length: SLOT_COUNT }, (_, rowIndex) =>
+                  renderCell({
+                    cellDay: day,
+                    rowIndex,
+                    dayIndex,
+                    columnIndex: 0,
+                    prefix: "day",
+                    lastColumn: 0,
+                    rowRem: DAY_ROW_REM,
+                  }),
+                )}
+                {renderPast(day, DAY_ROW_REM)}
+                {placements
+                  .filter((entry) => entry.placement!.dayIndex === dayIndex)
+                  .map((entry) =>
+                    renderBooking(entry.booking, entry.placement!, DAY_ROW_REM, "day"),
+                  )}
+                {renderSelection(dayIndex, day, DAY_ROW_REM)}
+                {now !== null && nowMarker?.dayIndex === dayIndex ? (
+                  <div
+                    aria-hidden
+                    className="border-now-line pointer-events-none absolute inset-x-0 z-9 border-t-2"
+                    style={{ top: `${nowMarker.ratio * SLOT_COUNT * DAY_ROW_REM}rem` }}
+                  >
+                    <span className="bg-now-label rounded-booking absolute -top-2.5 left-1.5 px-1 py-px font-mono text-xs sm:text-[11px] font-semibold text-white">
+                      {DateTime.fromMillis(now).setZone(timeZone).toFormat("HH:mm")}
+                    </span>
+                  </div>
+                ) : null}
+              </div>
+            </div>
           </div>
         </SwipeArea>
+
+        <p className="text-text-tertiary text-xs leading-relaxed">{t("hintTouch")}</p>
       </div>
 
       {/* Whole week. Wide screens scroll it sideways; the time column stays put
@@ -460,74 +675,130 @@ export function Schedule({
       <div
         role="group"
         aria-label={t("weekGrid")}
-        className="hidden overflow-x-auto sm:block"
+        className="bg-surface border-border-grid rounded-card hidden overflow-auto border sm:block"
       >
-        <div
-          className="grid min-w-[48rem]"
-          style={{
-            gridTemplateColumns: `4rem repeat(${DAYS_IN_WEEK}, minmax(6rem, 1fr))`,
-            gridTemplateRows: `auto repeat(${SLOT_COUNT}, ${ROW_HEIGHT_REM}rem)`,
-          }}
-        >
-          {/* Corner above the time axis, sticky both ways so it never uncovers
-              the cells sliding under it. */}
-          <div className="sticky top-0 left-0 z-30 border-b border-slate-200 bg-white" />
+        {/* 64px of time axis plus seven 88px days. Wider than that and the week
+            no longer fits a 768px tablet, which is the width where the seven
+            columns first appear and the last day used to be sliced in half. */}
+        <div className="flex min-w-[42.5rem] flex-col">
+          <div className="bg-surface sticky top-0 z-12 flex shadow-[0_1px_0_var(--color-border-grid)]">
+            <div className="bg-surface border-border-grid sticky left-0 z-13 w-axis flex-none border-r" />
+            {days.map((option) => {
+              const isToday = option.toISODate() === todayIso;
 
-          {days.map((option) => {
-            const isToday = option.toISODate() === todayIso;
+              return (
+                <div
+                  key={option.toISODate()}
+                  // items-center on the cell, items-baseline inside it: the pair
+                  // shares one baseline, and the pair as a whole sits in the
+                  // middle of the row. items-baseline alone hangs both labels
+                  // from the top edge.
+                  className={`border-border-grid-half relative flex min-w-[5.5rem] flex-1 items-center justify-center border-l px-1.5 ${
+                    isToday ? "bg-today-column" : ""
+                  }`}
+                  style={{ height: `${HEADER_REM}rem` }}
+                >
+                  <span className="flex items-baseline gap-1.5">
+                    <span
+                      className={`text-[13px] ${
+                        isToday
+                          ? "text-text-primary font-bold"
+                          : "text-text-secondary font-medium"
+                      }`}
+                    >
+                      {option.setLocale(locale).toFormat("ccc")}
+                    </span>
+                    <span
+                      className={`font-mono text-xs ${
+                        isToday
+                          ? "text-text-primary font-bold"
+                          : "text-text-tertiary font-medium"
+                      }`}
+                    >
+                      {option.toFormat("dd.MM")}
+                    </span>
+                  </span>
+                  {/* Out of the flow: in the row it widened the today column's
+                      label group and pushed its text off the centre the other
+                      six days line up on. */}
+                  {isToday ? (
+                    <span
+                      aria-hidden="true"
+                      className="bg-now-line absolute top-1/2 right-2 h-1.5 w-1.5 -translate-y-1/2 rounded-full"
+                    />
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
 
-            return (
+          <div className="relative flex">
+            <div className="bg-surface border-border-grid sticky left-0 z-11 w-axis flex-none border-r">
+              {timeAxis(ROW_REM)}
+            </div>
+
+            <div className="relative flex min-w-0 flex-1">
+              {days.map((option, index) => (
+                <div
+                  key={option.toISODate()}
+                  className={`border-border-grid-half relative flex min-w-[5.5rem] flex-1 flex-col border-l ${
+                    option.toISODate() === todayIso ? "bg-today-column" : ""
+                  }`}
+                >
+                  {Array.from({ length: SLOT_COUNT }, (_, rowIndex) =>
+                    renderCell({
+                      cellDay: option,
+                      rowIndex,
+                      dayIndex: index,
+                      columnIndex: index,
+                      prefix: "week",
+                      lastColumn: DAYS_IN_WEEK - 1,
+                      rowRem: ROW_REM,
+                    }),
+                  )}
+                  {renderPast(option, ROW_REM)}
+                  {placements
+                    .filter((entry) => entry.placement!.dayIndex === index)
+                    .map((entry) =>
+                      renderBooking(entry.booking, entry.placement!, ROW_REM, "week"),
+                    )}
+                  {renderSelection(index, option, ROW_REM)}
+                </div>
+              ))}
+            </div>
+
+            {/* One line across all seven days, the way a calendar draws it, with
+                the time in the gutter. It exists only inside 09:00-19:00:
+                outside them there is nothing on the grid for it to point at.
+                Drawn as a sibling of the axis rather than inside the day
+                columns, so the label is not painted over by the sticky axis. */}
+            {nowMarker && now !== null ? (
               <div
-                key={option.toISODate()}
-                // Sticky: on a long grid the columns lose their meaning once the
-                // headers scroll away.
-                className={`sticky top-0 z-20 border-b border-l border-slate-200 px-2 py-2 text-center text-sm ${
-                  isToday
-                    ? "bg-indigo-50 font-semibold text-indigo-900"
-                    : "bg-white text-slate-600"
-                }`}
+                aria-hidden
+                className="pointer-events-none absolute inset-x-0 z-14"
+                style={{ top: `${nowMarker.ratio * SLOT_COUNT * ROW_REM}rem` }}
               >
-                <div>{option.setLocale(locale).toFormat("ccc")}</div>
-                <div className="text-xs text-slate-500">{option.toFormat("dd.MM")}</div>
+                <div className="border-now-line ml-axis border-t-2" />
+                <span className="w-axis absolute -top-2.5 left-0 pr-1 text-right">
+                  <span className="bg-now-label rounded-booking px-1 py-px font-mono text-xs sm:text-[11px] font-semibold text-white">
+                    {DateTime.fromMillis(now).setZone(timeZone).toFormat("HH:mm")}
+                  </span>
+                </span>
               </div>
-            );
-          })}
-
-          {timeAxis("week")}
-
-          {days.map((option, index) =>
-            Array.from({ length: SLOT_COUNT }, (_, rowIndex) =>
-              renderCell(option, rowIndex, index, index + 2, "week"),
-            ),
-          )}
-
-          {placements.map((entry) =>
-            renderBooking(entry.booking, entry.placement!, entry.placement!.dayIndex + 2, "week"),
-          )}
-
-          {days.map((_, index) => renderDragPreview(index, index + 2))}
-
-          {nowLine(DAYS_IN_WEEK + 1)}
+            ) : null}
+          </div>
         </div>
       </div>
 
-      {/* Says what to do with the grid: without it the cells look like a table
-          rather than something to press. */}
-      <p className="text-xs text-slate-500">
-        {t("hint")}
-      </p>
+      {/* An empty week has to read as an opportunity rather than as a failure,
+          so the grid stays and a plain sentence says what it means. */}
+      {isWeekEmpty ? (
+        <p className="border-success bg-success-surface text-success-ink rounded-control flex flex-wrap items-center gap-2 border px-3 py-2">
+          <span className="text-sm font-semibold">{t("emptyWeekTitle")}</span>
+          <span className="text-[13px] leading-snug">{t("emptyWeekText")}</span>
+        </p>
+      ) : null}
 
-      <div className="flex flex-wrap items-center gap-4 text-xs text-slate-600">
-        <span className="flex items-center gap-1.5">
-          <span className="h-3 w-3 rounded bg-indigo-600" /> {t("mine")}
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="h-3 w-3 rounded bg-slate-200" /> {t("others")}
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="h-3 w-0.5 bg-red-600" /> {t("now")}
-        </span>
-      </div>
     </div>
   );
 }

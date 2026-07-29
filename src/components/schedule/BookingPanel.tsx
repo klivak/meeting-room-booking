@@ -3,7 +3,7 @@
 import { DateTime } from "luxon";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { CancelBookingButton } from "@/components/CancelBookingButton";
 import { showToast } from "@/components/toast";
@@ -16,8 +16,11 @@ import {
 } from "@/components/viewerTimeZone";
 import { createBookingSchema } from "@/lib/domain/bookingInput";
 import { MAX_TITLE_LENGTH, validateTitle } from "@/lib/domain/bookingRules";
-import { OFFICE_TZ, SLOT_MINUTES } from "@/lib/domain/constants";
+import { MAX_DURATION_MINUTES, OFFICE_TZ, SLOT_MINUTES } from "@/lib/domain/constants";
+import { intervalsOverlap } from "@/lib/domain/overlap";
 import { MAX_OCCURRENCES, MIN_OCCURRENCES } from "@/lib/domain/recurrence";
+import { getWeekStart } from "@/lib/domain/week";
+import { WEEK_START_DAY } from "@/lib/config";
 import {
   SLOT_COUNT,
   splitDuration,
@@ -38,6 +41,10 @@ const WIDE_SCREEN = "(min-width: 640px)";
 
 /** Element the floating panel is placed against. */
 export const SCHEDULE_ANCHOR_ID = "schedule-section";
+
+// One look for all three selects; they differ only in what they list.
+const SELECT_CLASS =
+  "focus-ring-tight border-border-control bg-surface text-text-primary rounded-control min-h-11 min-w-0 border px-2 text-sm transition hover:border-text-tertiary focus-visible:border-accent-own-booking sm:min-h-[38px]";
 
 function subscribeToWideScreen(onChange: () => void) {
   const query = window.matchMedia(WIDE_SCREEN);
@@ -61,7 +68,6 @@ function durationLabel(
 
   return t("hoursMinutes", { hours, minutes });
 }
-
 
 export type EditableBooking = {
   id: string;
@@ -163,6 +169,61 @@ function BookingForm({
 
   const day = DateTime.fromISO(date, { zone: OFFICE_TZ });
   const endBounds = getEndSlotBounds(startIndex);
+  const durationMinutes = (endIndex - startIndex) * SLOT_MINUTES;
+
+  // Bookings of the room and week currently picked in the form, which is not
+  // necessarily the room and week the grid behind the panel is showing. They are
+  // read only to warn before saving: the server checks the overlap again and has
+  // the final word.
+  const [taken, setTaken] = useState<{ id: string; startsAt: string; endsAt: string }[]>(
+    [],
+  );
+  const weekStartIso = day.isValid
+    ? (getWeekStart(day, WEEK_START_DAY).toUTC().toISO() ?? "")
+    : "";
+
+  useEffect(() => {
+    // A half-typed date has no week to ask about; the check below is skipped
+    // for it anyway.
+    if (!weekStartIso) {
+      return;
+    }
+
+    // A reply that arrives after the room or the week changed again would
+    // describe the wrong week, so it is dropped.
+    let current = true;
+
+    fetch(
+      `/api/rooms/${selectedRoomId}/bookings?weekStart=${encodeURIComponent(weekStartIso)}`,
+    )
+      .then((response) => (response.ok ? response.json() : []))
+      .then((items: { id: string; startsAt: string; endsAt: string }[]) => {
+        if (current) {
+          setTaken(items);
+        }
+      })
+      // A warning that fails to load is not worth an error message: the save
+      // itself still reports the clash.
+      .catch(() => undefined);
+
+    return () => {
+      current = false;
+    };
+  }, [selectedRoomId, weekStartIso]);
+
+  // The booking being edited is excluded, or it would clash with itself.
+  const clashes =
+    day.isValid &&
+    taken.some(
+      (other) =>
+        other.id !== booking?.id &&
+        intervalsOverlap(
+          getSlotStart(day, startIndex).toJSDate(),
+          getSlotStart(day, endIndex).toJSDate(),
+          new Date(other.startsAt),
+          new Date(other.endsAt),
+        ),
+    );
 
   const close = (targetRoomId: string) => {
     router.replace(`/rooms/${targetRoomId}?week=${weekParam}`);
@@ -261,9 +322,9 @@ function BookingForm({
 
   /**
    * Places the panel beside the schedule the first time it is shown, instead of
-   * in a corner of the window: the form belongs next to the grid it is about.
-   * Measuring happens in a ref callback rather than an effect, so the panel is
-   * positioned before the browser paints it.
+   * in a corner of the window: the form belongs next to the grid it is about,
+   * and there it only covers Sunday. Measuring happens in a ref callback rather
+   * than an effect, so the panel is positioned before the browser paints it.
    */
   function anchorToSchedule(node: HTMLDivElement | null) {
     if (!node || !isWide || position) {
@@ -294,7 +355,7 @@ function BookingForm({
 
   function startDragging(event: React.PointerEvent<HTMLDivElement>) {
     const panel = event.currentTarget.parentElement;
-    if (!isWide || !panel) {
+    if (!isWide || !panel || (event.target as HTMLElement).closest("button")) {
       return;
     }
 
@@ -341,7 +402,7 @@ function BookingForm({
       // No backdrop above the sm breakpoint: the point of the panel is that the
       // schedule stays readable while it is open. On a phone there is no room
       // for both, so it covers the screen as before.
-      className="fixed inset-0 z-40 flex items-stretch justify-center bg-slate-900/40 sm:pointer-events-none sm:inset-auto sm:top-20 sm:right-6 sm:block sm:bg-transparent"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-[oklch(0.24_0.02_264/0.5)] sm:pointer-events-none sm:inset-auto sm:top-20 sm:right-6 sm:block sm:bg-transparent"
       style={panelStyle}
       onClick={(event) => {
         // Only the phone overlay closes on a tap outside it.
@@ -356,196 +417,284 @@ function BookingForm({
         aria-modal="false"
         aria-labelledby="booking-form-title"
         // The sheet scrolls instead of pushing its buttons out of reach.
-        className="w-full overflow-y-auto bg-white p-5 shadow-xl sm:pointer-events-auto sm:max-h-[85vh] sm:w-96 sm:rounded-xl sm:border sm:border-slate-200"
+        className="rounded-panel bg-surface border-border-control shadow-modal animate-sheet sm:animate-rise flex max-h-[92vh] w-full flex-col overflow-hidden rounded-b-none border sm:pointer-events-auto sm:max-h-[85vh] sm:w-[364px] sm:rounded-b-panel"
       >
         <div
           // The header is the handle: dragging it moves the panel off whatever
-          // part of the grid the user wants to look at.
+          // part of the grid the user wants to look at. It is a fallback for the
+          // rare "the slot I need is under the form", not the main mechanism.
           onPointerDown={startDragging}
           onPointerMove={keepDragging}
           onPointerUp={stopDragging}
           onPointerCancel={stopDragging}
-          className="mb-4 flex touch-none items-center justify-between gap-4 sm:cursor-grab sm:active:cursor-grabbing"
+          className="border-border-grid bg-surface-muted relative flex flex-none touch-none items-center gap-2.5 border-b px-3.5 py-3 sm:cursor-grab sm:active:cursor-grabbing"
         >
-          <h2 id="booking-form-title" className="text-lg font-semibold text-slate-900">
+          {/* A grab handle on the phone sheet, three grip lines on the desktop
+              panel: the same affordance in the idiom of each. */}
+          <span
+            aria-hidden="true"
+            className="bg-border-control absolute top-1.5 left-1/2 h-1 w-8 -translate-x-1/2 rounded-full sm:hidden"
+          />
+          <span aria-hidden="true" className="hidden w-2.5 flex-none flex-col gap-[3px] sm:flex">
+            <span className="bg-border-control h-px rounded-full" />
+            <span className="bg-border-control h-px rounded-full" />
+            <span className="bg-border-control h-px rounded-full" />
+          </span>
+          <h2
+            id="booking-form-title"
+            className="flex-1 text-[15px] font-semibold tracking-tight"
+          >
             {booking ? t("editBooking") : t("newBooking")}
           </h2>
           <button
             type="button"
             onClick={() => close(roomId)}
             aria-label={t("closeLabel")}
-            className="rounded-lg px-2 py-1 text-slate-500 transition hover:bg-slate-100"
+            className="focus-ring text-text-tertiary hover:bg-surface-raised hover:text-text-primary rounded-control flex h-11 w-11 items-center justify-center transition sm:h-7 sm:w-7"
           >
-            ✕
+            <span aria-hidden="true">✕</span>
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
-          {generalError ? (
-            <p
-              role="alert"
-              className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700"
-            >
-              {generalError}
+        <form
+          onSubmit={handleSubmit}
+          className="flex min-h-0 flex-1 flex-col overflow-y-auto"
+          noValidate
+        >
+          <div className="flex flex-col gap-3 p-3.5">
+            {generalError ? (
+              <p
+                role="alert"
+                className="bg-danger-surface border-danger text-danger-ink rounded-control flex gap-2 border px-3 py-2.5 text-[13px] leading-snug"
+              >
+                <span aria-hidden="true" className="font-bold">
+                  !
+                </span>
+                {generalError}
+              </p>
+            ) : null}
+
+            {booking?.seriesId ? (
+              <p className="bg-warning-surface border-warning-border text-warning-ink rounded-control border px-3 py-2.5 text-[13px] leading-snug">
+                <span aria-hidden="true">↻ </span>
+                {t("seriesNote")}
+              </p>
+            ) : null}
+
+            <div className="flex flex-col gap-1">
+              <label htmlFor="room" className="text-text-secondary text-xs font-semibold">
+                {t("room")}
+              </label>
+              <select
+                id="room"
+                value={selectedRoomId}
+                onChange={(event) => setSelectedRoomId(event.target.value)}
+                className={SELECT_CLASS}
+              >
+                {/* Floor and capacity are how a room is actually chosen; the name
+                    alone means memorising which is which. */}
+                {rooms.map((room) => (
+                  <option key={room.id} value={room.id}>
+                    {t("roomOption", {
+                      name: room.name,
+                      floor: room.floor,
+                      capacity: room.capacity,
+                    })}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* The date takes its own line so the two time fields get half the
+                panel each. Three across 364px would clip "13:30 · 30 хв" to
+                "13:30 ·", and that duration is the whole reason a range can be
+                picked without dragging. */}
+            <div className="flex flex-wrap gap-2">
+              <div className="flex w-full min-w-0 flex-col gap-1">
+                <label htmlFor="date" className="text-text-secondary text-xs font-semibold">
+                  {t("date")}
+                </label>
+                <input
+                  id="date"
+                  type="date"
+                  value={date}
+                  onChange={(event) => setDate(event.target.value)}
+                  className={`${SELECT_CLASS} font-mono text-[13px]`}
+                />
+              </div>
+
+              <div className="flex min-w-0 flex-1 flex-col gap-1">
+                <label
+                  htmlFor="start"
+                  className="text-text-secondary text-xs font-semibold"
+                >
+                  {t("start")}
+                </label>
+                <select
+                  id="start"
+                  value={startIndex}
+                  onChange={(event) => changeStart(Number(event.target.value))}
+                  className={`${SELECT_CLASS} font-mono text-[13px]`}
+                >
+                  {Array.from({ length: SLOT_COUNT }, (_, index) => (
+                    <option key={index} value={index}>
+                      {getSlotLabel(day, index, timeZone)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex min-w-0 flex-1 flex-col gap-1">
+                <label htmlFor="end" className="text-text-secondary text-xs font-semibold">
+                  {t("end")}
+                </label>
+                <select
+                  id="end"
+                  value={endIndex}
+                  onChange={(event) => setEndIndex(Number(event.target.value))}
+                  className={`${SELECT_CLASS} font-mono text-[13px] ${
+                    generalError ? "border-danger" : ""
+                  }`}
+                >
+                  {/* Only durations the rules allow are listed at all, and each
+                      option says how long it makes the booking — that is what
+                      replaces dragging for anyone without a mouse. */}
+                  {Array.from(
+                    { length: endBounds.max - endBounds.min + 1 },
+                    (_, offset) => endBounds.min + offset,
+                  ).map((index) => (
+                    <option key={index} value={index}>
+                      {getSlotLabel(day, index, timeZone)} ·{" "}
+                      {durationLabel((index - startIndex) * SLOT_MINUTES, tDuration)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Said while the range is still being picked, not after the save
+                comes back refused. aria-live, because on a phone the panel
+                covers the grid and its red block cannot be seen. */}
+            {clashes ? (
+              <p
+                aria-live="polite"
+                className="border-danger bg-danger-surface text-danger-ink rounded-control flex items-start gap-2 border px-2.5 py-2 text-[13px]"
+              >
+                <span aria-hidden="true">✕</span>
+                {t("clash")}
+              </p>
+            ) : null}
+
+            <p className="bg-surface-muted text-text-secondary rounded-control flex items-center gap-2 px-2.5 py-2 text-[13px]">
+              <span className="font-semibold">{t("duration")}</span>
+              <span className="text-text-primary font-mono font-semibold">
+                {durationLabel(durationMinutes, tDuration)}
+              </span>
+              <span className="flex-1" />
+              <span className="text-text-tertiary text-xs">
+                {t("maxDuration", { hours: MAX_DURATION_MINUTES / 60 })}
+              </span>
             </p>
-          ) : null}
 
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="room" className="text-sm font-medium text-slate-700">
-              {t("room")}
-            </label>
-            <select
-              id="room"
-              value={selectedRoomId}
-              onChange={(event) => setSelectedRoomId(event.target.value)}
-              className="min-h-11 rounded-lg border border-slate-300 px-3 py-2 text-slate-900 sm:min-h-0"
-            >
-              {/* Floor and capacity are how a room is actually chosen; the name
-                  alone means memorising which is which. */}
-              {rooms.map((room) => (
-                <option key={room.id} value={room.id}>
-                  {t("roomOption", {
-                    name: room.name,
-                    floor: room.floor,
-                    capacity: room.capacity,
-                  })}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <Input
-            id="date"
-            type="date"
-            label={t("date")}
-            value={date}
-            onChange={(event) => setDate(event.target.value)}
-            error={fieldError("startsAt")}
-          />
-
-          <p className="text-sm text-slate-600">
-            {t("duration", {
-              duration: durationLabel((endIndex - startIndex) * SLOT_MINUTES, tDuration),
-            })}
-          </p>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="start" className="text-sm font-medium text-slate-700">
-                {t("start")}
-              </label>
-              <select
-                id="start"
-                value={startIndex}
-                onChange={(event) => changeStart(Number(event.target.value))}
-                className="min-h-11 rounded-lg border border-slate-300 px-3 py-2 text-slate-900 sm:min-h-0"
-              >
-                {Array.from({ length: SLOT_COUNT }, (_, index) => (
-                  <option key={index} value={index}>
-                    {getSlotLabel(day, index, timeZone)}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="end" className="text-sm font-medium text-slate-700">
-                {t("end")}
-              </label>
-              <select
-                id="end"
-                value={endIndex}
-                onChange={(event) => setEndIndex(Number(event.target.value))}
-                className="min-h-11 rounded-lg border border-slate-300 px-3 py-2 text-slate-900 sm:min-h-0"
-              >
-                {/* Only durations the rules allow are listed at all. */}
-                {Array.from(
-                  { length: endBounds.max - endBounds.min + 1 },
-                  (_, offset) => endBounds.min + offset,
-                ).map((index) => (
-                  <option key={index} value={index}>
-                    {getSlotLabel(day, index, timeZone)}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div>
             <Input
               id="title"
               label={t("titleField")}
+              placeholder={t("titlePlaceholder")}
               // The panel is not modal, so nothing moves the focus into it, and
-              // the title is the field the user came here to fill in.
+              // the title is the field the user came here to fill in. It also
+              // satisfies 2.4.11: the focus lands inside the panel, never under it.
               autoFocus
               value={title}
               maxLength={MAX_TITLE_LENGTH}
               onChange={(event) => setTitle(event.target.value)}
               error={fieldError("title")}
+              labelSuffix={
+                <span
+                  className={`font-mono text-xs sm:text-[11px] ${
+                    // The counter turns red before the limit, so the point where
+                    // typing stops working is not a surprise.
+                    title.length > MAX_TITLE_LENGTH - 10
+                      ? "text-danger-ink"
+                      : "text-text-tertiary"
+                  }`}
+                >
+                  {title.length}/{MAX_TITLE_LENGTH}
+                </span>
+              }
             />
-            <p className="mt-1 text-right text-xs text-slate-500">
-              {title.trim().length}/{MAX_TITLE_LENGTH}
-            </p>
-          </div>
 
-          {booking ? (
-            booking.seriesId ? (
-              <p className="rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-600">
-                {t("seriesNote")}
-              </p>
-            ) : null
-          ) : (
-            <div className="flex flex-col gap-2">
-              <label className="flex items-center gap-2 text-sm text-slate-700">
+            {booking ? null : (
+              <div className="border-border-grid rounded-control flex flex-wrap items-center gap-2.5 border p-2.5">
                 <input
+                  id="repeat"
                   type="checkbox"
                   checked={repeat}
                   onChange={(event) => setRepeat(event.target.checked)}
-                  className="h-4 w-4"
+                  className="accent-accent-own-booking focus-ring h-4 w-4"
                 />
-                {t("repeat")}
-              </label>
-
-              {repeat ? (
-                <label className="flex items-center gap-2 text-sm text-slate-700">
-                  {t("repeatCount")}
-                  <select
-                    value={repeatWeeks}
-                    onChange={(event) => setRepeatWeeks(Number(event.target.value))}
-                    className="min-h-11 rounded-lg border border-slate-300 px-3 py-2 text-slate-900 sm:min-h-0"
-                  >
-                    {Array.from(
-                      { length: MAX_OCCURRENCES - MIN_OCCURRENCES + 1 },
-                      (_, offset) => MIN_OCCURRENCES + offset,
-                    ).map((count) => (
-                      <option key={count} value={count}>
-                        {count}
-                      </option>
-                    ))}
-                  </select>
+                <label htmlFor="repeat" className="flex-1 text-[13px]">
+                  <span aria-hidden="true">↻ </span>
+                  {t("repeat")}
                 </label>
-              ) : null}
-            </div>
-          )}
 
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            {booking ? (
-              <div className="mr-auto">
-                <CancelBookingButton
-                  bookingId={booking.id}
-                  title={booking.title}
-                  isRecurring={booking.seriesId !== null}
-                  redirectTo={`/rooms/${roomId}?week=${weekParam}`}
-                />
+                <select
+                  value={repeatWeeks}
+                  onChange={(event) => setRepeatWeeks(Number(event.target.value))}
+                  disabled={!repeat}
+                  aria-label={t("repeatCount")}
+                  className={`${SELECT_CLASS} min-h-11 font-mono text-[13px] sm:min-h-8 disabled:opacity-[0.45]`}
+                >
+                  {Array.from(
+                    { length: MAX_OCCURRENCES - MIN_OCCURRENCES + 1 },
+                    (_, offset) => MIN_OCCURRENCES + offset,
+                  ).map((count) => (
+                    <option key={count} value={count}>
+                      {count}
+                    </option>
+                  ))}
+                </select>
+                <span className="text-text-tertiary text-xs">{t("times")}</span>
               </div>
-            ) : null}
+            )}
+          </div>
 
-            <Button type="button" variant="ghost" onClick={() => close(roomId)}>
-              {t("close")}
-            </Button>
-            <Button type="submit" disabled={pending}>
-              {pending ? t("saving") : booking ? t("save") : t("book")}
-            </Button>
+          {/* "Close" leaves the form, "Cancel booking" destroys the booking, and
+              they never share a word. Three buttons never fit one 364px row, so
+              instead of letting them wrap ragged the destructive one takes a row
+              of its own under the pair that ends the form. */}
+          <div className="border-border-grid bg-surface-muted flex flex-none flex-col gap-2 border-t p-3.5">
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                size="lg"
+                className="flex-1 sm:min-h-[38px]"
+                onClick={() => close(roomId)}
+              >
+                {t("close")}
+              </Button>
+              {/* Wider than "Close": of the two ways out of the form, this is
+                  the one the panel was opened for. */}
+              <Button
+                type="submit"
+                size="lg"
+                disabled={pending}
+                className="flex-[1.4] sm:min-h-[38px]"
+              >
+                {pending ? t("saving") : booking ? t("save") : t("book")}
+              </Button>
+            </div>
+
+            {booking ? (
+              <CancelBookingButton
+                bookingId={booking.id}
+                title={booking.title}
+                isRecurring={booking.seriesId !== null}
+                redirectTo={`/rooms/${roomId}?week=${weekParam}`}
+                disabled={pending}
+                className="w-full sm:min-h-[38px]"
+              />
+            ) : null}
           </div>
         </form>
       </div>
