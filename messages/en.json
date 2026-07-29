@@ -90,7 +90,9 @@
     "emptyWeekText": "Any slot between 09:00 and 19:00 is yours — click one.",
     "verifyFirst": "Confirm your email first — the link is in the banner above the grid.",
     "timezoneNotice": "Your timezone. Room hours are {from}–{to} ({officeZone}).",
-    "recurring": "weekly"
+    "recurring": "weekly",
+    "pastWeek": "past week",
+    "pastDay": "This day is already over — you can only book future time."
   },
   "shortcuts": {
     "title": "Keyboard shortcuts",

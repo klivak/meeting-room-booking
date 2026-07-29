@@ -297,6 +297,9 @@ export function Schedule({
     days.findIndex((day) => day.toISODate() === selectedDay),
   );
   const day = days[dayIndex];
+  // Compared as office dates, because "already over" is a question about the
+  // working day, not about the viewer's clock.
+  const isPastDay = (option: DateTime) => (option.toISODate() ?? "") < (todayIso ?? "");
 
   /** Link to another day, moving to the neighbouring week when it runs out. */
   const dayHref = (target: DateTime) =>
@@ -960,6 +963,15 @@ export function Schedule({
           </Link>
         </div>
 
+        {/* A day that is already over still opens — its bookings are worth
+            reading — but nothing can be booked in it, so it says so instead of
+            letting the user pick a slot and be refused by the server. */}
+        {isPastDay(day) ? (
+          <p className="bg-warning-surface border-warning-border text-warning-ink rounded-control border px-3 py-2 text-[13px] leading-snug">
+            {t("pastDay")}
+          </p>
+        ) : null}
+
         <div className="flex gap-1">
           {days.map((option) => {
             const isSelected = option.toISODate() === day.toISODate();
@@ -973,7 +985,7 @@ export function Schedule({
                   isSelected
                     ? "border-accent-own-booking bg-accent-own-booking text-accent-own-on font-bold"
                     : "border-border-grid bg-surface text-text-secondary"
-                }`}
+                } ${!isSelected && isPastDay(option) ? "opacity-55" : ""}`}
               >
                 <span>{option.setLocale(locale).toFormat("ccc")}</span>
                 <span className="font-mono font-semibold">{option.toFormat("dd")}</span>
@@ -1063,7 +1075,7 @@ export function Schedule({
                   // from the top edge.
                   className={`border-border-grid-half relative flex min-w-[5.5rem] flex-1 items-center justify-center border-l px-1.5 ${
                     isToday ? "bg-today-column" : ""
-                  }`}
+                  } ${isPastDay(option) ? "opacity-55" : ""}`}
                   style={{ height: `${HEADER_REM}rem` }}
                 >
                   <span className="flex items-baseline gap-1.5">

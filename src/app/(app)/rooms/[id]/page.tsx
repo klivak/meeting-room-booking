@@ -19,6 +19,7 @@ import { Schedule as ScheduleGrid } from "@/components/schedule/Schedule";
 import { ScheduleLegend } from "@/components/schedule/ScheduleLegend";
 import { TimeZoneNotice } from "@/components/schedule/TimeZoneNotice";
 import { ScheduleShortcuts } from "@/components/schedule/ScheduleShortcuts";
+import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { WEEK_START_DAY } from "@/lib/config";
 import { OFFICE_TZ } from "@/lib/domain/constants";
@@ -341,6 +342,7 @@ export default async function RoomPage({
     WEEK_START_DAY,
   );
   const isCurrentWeek = weekStart.toISODate() === currentWeek.toISODate();
+  const isPastWeek = weekStart < currentWeek;
   const roomLabel = tRooms("roomLine", {
     name: room.name,
     floor: room.floor,
@@ -417,8 +419,13 @@ export default async function RoomPage({
             <h1 className="truncate text-[17px] font-semibold tracking-tight">
               {roomLabel}
             </h1>
-            <span className="text-text-tertiary font-mono text-xs">
-              {formatWeekRange(weekStart, locale)}
+            <span className="flex items-center gap-1.5">
+              <span className="text-text-tertiary font-mono text-xs">
+                {formatWeekRange(weekStart, locale)}
+              </span>
+              {/* Paging back a week looks the same as paging forward, so a week
+                  that is entirely over says so next to its own dates. */}
+              {isPastWeek ? <Badge tone="warning">{t("pastWeek")}</Badge> : null}
             </span>
           </div>
 
