@@ -1,6 +1,7 @@
 import { DateTime } from "luxon";
 import { getLocale, getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
@@ -8,9 +9,15 @@ import {
   BookingPanel,
   SCHEDULE_ANCHOR_ID,
 } from "@/components/schedule/BookingPanel";
+import {
+  DAY_ROW_REM,
+  HEADER_REM,
+  ROW_REM,
+} from "@/components/schedule/geometry";
 import { Schedule as ScheduleGrid } from "@/components/schedule/Schedule";
+import { ScheduleLegend } from "@/components/schedule/ScheduleLegend";
+import { TimeZoneNotice } from "@/components/schedule/TimeZoneNotice";
 import { WeekShortcuts } from "@/components/schedule/WeekShortcuts";
-import { LinkButton } from "@/components/ui/LinkButton";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { WEEK_START_DAY } from "@/lib/config";
 import { OFFICE_TZ } from "@/lib/domain/constants";
@@ -87,6 +94,7 @@ function formatWeekRange(weekStart: DateTime, locale: string): string {
 async function Schedule({
   roomId,
   userId,
+  canBook,
   weekStart,
   selectedDay,
   selectedSlot,
@@ -96,6 +104,7 @@ async function Schedule({
   roomId: string;
   /** Passed in rather than read again: the page already resolved the session. */
   userId?: string;
+  canBook: boolean;
   weekStart: DateTime;
   selectedDay: string;
   selectedSlot?: string;
@@ -127,6 +136,7 @@ async function Schedule({
   return (
     <ScheduleGrid
       roomId={roomId}
+      canBook={canBook}
       selectedDay={selectedDay}
       selectedSlot={selectedSlot}
       selectedSlotEnd={selectedSlotEnd}
@@ -148,34 +158,116 @@ async function Schedule({
   );
 }
 
-// The grid placeholder is split into the seven day columns of the real week view
-// (plus the time gutter), so the sweep reads left to right across the week the
-// way the loaded grid is read.
+// The grid placeholder repeats the real geometry — the axis, the columns, a
+// couple of blocks per day — so nothing shifts when the week arrives. It has to
+// mirror both layouts: below sm the real grid is a single day of 48px rows with
+// a day picker above it, above sm a seven-column week with the legend under it.
+// The delay per column runs the wave the way the week is read.
 async function ScheduleSkeleton() {
   const t = await getTranslations("rooms");
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2.5">
       <p role="status" className="sr-only">
         {t("loading")}
       </p>
-      <div aria-hidden className="flex flex-col gap-2">
-        <Skeleton className="h-10 w-full" />
-        <div
-          className="grid gap-1"
-          style={{ gridTemplateColumns: "4rem repeat(7, minmax(0, 1fr))" }}
-        >
-          {[0, 1, 2, 3, 4, 5, 6, 7].map((column) => (
+
+      <div aria-hidden className="flex flex-col gap-2 sm:hidden">
+        <div className="bg-surface border-border-grid rounded-card flex items-center gap-2 border p-2">
+          <Skeleton className="h-11 w-11 shrink-0" />
+          <Skeleton className="h-8 flex-1" />
+          <Skeleton className="h-11 w-11 shrink-0" />
+        </div>
+
+        <div className="flex gap-1">
+          {Array.from({ length: DAYS_IN_WEEK }, (_, column) => (
             <Skeleton
               key={column}
-              style={{
-                height: `${SLOT_COUNT * 2.25}rem`,
-                animationDelay: `${column * 90}ms`,
-              }}
+              className="h-11 flex-1"
+              style={{ animationDelay: `${column * 90}ms` }}
             />
           ))}
         </div>
+
+        <div className="bg-surface border-border-grid rounded-card overflow-hidden border">
+          <div className="flex" style={{ height: `${SLOT_COUNT * DAY_ROW_REM}rem` }}>
+            <div className="border-border-grid w-13 flex-none border-r" />
+            <div className="relative min-w-0 flex-1">
+              <Skeleton
+                className="absolute right-[3px] left-[3px]"
+                style={{
+                  top: `${2 * DAY_ROW_REM}rem`,
+                  height: `${2 * DAY_ROW_REM}rem`,
+                }}
+              />
+              <Skeleton
+                className="absolute right-[3px] left-[3px]"
+                style={{
+                  top: `${10 * DAY_ROW_REM}rem`,
+                  height: `${3 * DAY_ROW_REM}rem`,
+                  animationDelay: "90ms",
+                }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Stands in for the touch hint, which wraps onto two lines on a phone. */}
+        <div className="flex h-[39px] flex-col justify-center gap-1.5">
+          <Skeleton className="h-3 w-full" />
+          <Skeleton className="h-3 w-2/5" />
+        </div>
       </div>
+
+      <div
+        aria-hidden
+        className="bg-surface border-border-grid rounded-card hidden overflow-hidden border sm:block"
+      >
+        <div
+          className="border-border-grid flex border-b"
+          style={{ height: `${HEADER_REM}rem` }}
+        >
+          <div className="border-border-grid w-axis flex-none border-r" />
+          {Array.from({ length: DAYS_IN_WEEK }, (_, column) => (
+            <div
+              key={column}
+              className="border-border-grid-half flex min-w-[5.5rem] flex-1 items-center justify-center border-l"
+            >
+              <Skeleton
+                className="h-2.5 w-14"
+                style={{ animationDelay: `${column * 90}ms` }}
+              />
+            </div>
+          ))}
+        </div>
+        <div className="flex" style={{ height: `${SLOT_COUNT * ROW_REM}rem` }}>
+          <div className="border-border-grid w-axis flex-none border-r" />
+          {Array.from({ length: DAYS_IN_WEEK }, (_, column) => (
+            <div
+              key={column}
+              className="border-border-grid-half relative min-w-[5.5rem] flex-1 border-l"
+            >
+              <Skeleton
+                className="absolute right-[3px] left-[3px]"
+                style={{
+                  top: `${(2 + column) * ROW_REM}rem`,
+                  height: `${2 * ROW_REM}rem`,
+                  animationDelay: `${column * 90}ms`,
+                }}
+              />
+              <Skeleton
+                className="absolute right-[3px] left-[3px]"
+                style={{
+                  top: `${(10 + (column % 4)) * ROW_REM}rem`,
+                  height: `${3 * ROW_REM}rem`,
+                  animationDelay: `${column * 90}ms`,
+                }}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
     </div>
   );
 }
@@ -195,7 +287,11 @@ export default async function RoomPage({
 }) {
   const { id } = await params;
   const { week, day, slot, slotEnd, booking } = await searchParams;
-  const [t, locale] = await Promise.all([getTranslations("schedule"), getLocale()]);
+  const [t, tRooms, locale] = await Promise.all([
+    getTranslations("schedule"),
+    getTranslations("rooms"),
+    getLocale(),
+  ]);
 
   // Independent of each other, so they travel together rather than in a queue.
   const [room, user, rooms] = await Promise.all([
@@ -244,64 +340,143 @@ export default async function RoomPage({
     WEEK_START_DAY,
   );
   const isCurrentWeek = weekStart.toISODate() === currentWeek.toISODate();
+  const roomLabel = tRooms("roomLine", {
+    name: room.name,
+    floor: room.floor,
+    capacity: room.capacity,
+  });
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-5">
       <WeekShortcuts
         previousHref={`/rooms/${room.id}?week=${previousWeek}`}
         nextHref={`/rooms/${room.id}?week=${nextWeek}`}
       />
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold text-slate-900">{room.name}</h1>
+      {/* The room list takes width, not height: that is what leaves room for all
+          twenty rows on a laptop screen. Floor and capacity are visible at the
+          moment of choosing, so nothing has to be remembered. Below lg it turns
+          into a scrolling row of the same chips. */}
+      <nav
+        aria-label={tRooms("title")}
+        // A long list of rooms must not decide how tall the page is — the whole
+        // week fitting a laptop screen is the point. So on wide screens it gets
+        // its own scroll and stays put while the grid is read.
+        className="lg:bg-surface lg:border-border-grid lg:rounded-card w-full shrink-0 lg:sticky lg:top-4 lg:max-h-[calc(100vh-6rem)] lg:w-59 lg:overflow-y-auto lg:border lg:p-3"
+      >
+        <p className="text-text-tertiary hidden px-2 pb-2 text-xs font-semibold tracking-wide uppercase lg:block">
+          {tRooms("title")}
+        </p>
+        {/* Below lg the strip runs to both edges of the screen instead of
+            stopping inside the page padding: a chip cut off by the window reads
+            as "scroll me", the same chip cut off 16px early reads as broken. */}
+        <ul className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0 lg:pb-0">
+          {rooms.map((option) => {
+            const isCurrent = option.id === room.id;
 
-        <div className="flex items-center gap-2">
-          <LinkButton
-            href={`/rooms/${room.id}?week=${previousWeek}`}
-            aria-label={t("previousWeek")}
-          >
-            ←
-          </LinkButton>
-          <LinkButton href={`/rooms/${room.id}`} active={isCurrentWeek}>
-            {t("today")}
-          </LinkButton>
-          <LinkButton
-            href={`/rooms/${room.id}?week=${nextWeek}`}
-            aria-label={t("nextWeek")}
-          >
-            →
-          </LinkButton>
-        </div>
-      </div>
-
-      <p className="text-sm text-slate-600">{formatWeekRange(weekStart, locale)}</p>
-
-      {/* Plain links instead of a select: switching rooms keeps the week and
-          needs no client-side JavaScript. */}
-      <nav className="flex flex-wrap gap-2">
-        {rooms.map((option) => (
-          <LinkButton
-            key={option.id}
-            href={`/rooms/${option.id}?week=${weekStart.toISODate()}`}
-            active={option.id === room.id}
-          >
-            {option.name}
-          </LinkButton>
-        ))}
+            return (
+              <li key={option.id} className="shrink-0 lg:shrink">
+                <Link
+                  href={`/rooms/${option.id}?week=${weekStart.toISODate()}`}
+                  aria-current={isCurrent ? "page" : undefined}
+                  className={`focus-ring rounded-control flex min-h-11 flex-col justify-center gap-0.5 border px-2.5 py-1.5 no-underline transition lg:min-h-0 ${
+                    isCurrent
+                      ? "border-accent-own-booking bg-accent-own-surface shadow-[inset_3px_0_0_var(--color-accent-own-booking)]"
+                      : "border-border-grid bg-surface hover:border-border-control lg:border-transparent lg:bg-transparent"
+                  }`}
+                >
+                  <span
+                    className={`text-sm leading-tight ${
+                      isCurrent
+                        ? "text-accent-own-ink font-bold"
+                        : "text-text-primary font-medium"
+                    }`}
+                  >
+                    {option.name}
+                  </span>
+                  <span className="text-text-tertiary font-mono text-xs sm:text-[11px] whitespace-nowrap">
+                    {tRooms("roomMeta", {
+                      floor: option.floor,
+                      capacity: option.capacity,
+                    })}
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
       </nav>
 
-      <div id={SCHEDULE_ANCHOR_ID}>
-        <Suspense key={weekStart.toISODate()} fallback={await ScheduleSkeleton()}>
-          <Schedule
-            roomId={room.id}
-            userId={user?.id}
-            weekStart={weekStart}
-            selectedDay={resolveSelectedDay(weekStart, day)}
-            selectedSlot={slot}
-            selectedSlotEnd={slotEnd}
-            selectedBookingId={selectedBooking?.id}
-          />
-        </Suspense>
+      <div className="flex min-w-0 flex-1 flex-col gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex min-w-0 flex-col">
+            <h1 className="truncate text-[17px] font-semibold tracking-tight">
+              {roomLabel}
+            </h1>
+            <span className="text-text-tertiary font-mono text-xs">
+              {formatWeekRange(weekStart, locale)}
+            </span>
+          </div>
+
+          <span className="hidden flex-1 sm:block" />
+
+          {/* Below sm the day view carries its own arrows and its strip of
+              seven days, so a second set of week arrows would be two
+              navigations for one grid. Only "Today" survives, because that is
+              the one jump the day arrows cannot make. */}
+          <div className="border-border-grid bg-surface rounded-control flex overflow-hidden border">
+            <Link
+              href={`/rooms/${room.id}?week=${previousWeek}`}
+              // The arrow carries no words, so the label a screen reader gets is
+              // also the one the pointer gets.
+              aria-label={t("previousWeek")}
+              title={t("previousWeek")}
+              className="focus-ring-inset text-text-secondary hover:bg-surface-muted hover:text-text-primary hidden h-8 w-[34px] items-center justify-center no-underline transition sm:flex"
+            >
+              <span aria-hidden="true">←</span>
+            </Link>
+            <Link
+              href={`/rooms/${room.id}`}
+              aria-current={isCurrentWeek ? "page" : undefined}
+              className={`focus-ring-inset border-border-grid hover:bg-surface-muted flex h-11 items-center px-3 text-[13px] font-medium no-underline transition sm:h-8 sm:border-r sm:border-l ${
+                isCurrentWeek
+                  ? "bg-accent-own-surface text-accent-own-ink"
+                  : "text-text-primary"
+              }`}
+            >
+              {t("today")}
+            </Link>
+            <Link
+              href={`/rooms/${room.id}?week=${nextWeek}`}
+              aria-label={t("nextWeek")}
+              title={t("nextWeek")}
+              className="focus-ring-inset text-text-secondary hover:bg-surface-muted hover:text-text-primary hidden h-8 w-[34px] items-center justify-center no-underline transition sm:flex"
+            >
+              <span aria-hidden="true">→</span>
+            </Link>
+          </div>
+
+          <TimeZoneNotice />
+        </div>
+
+        {/* The legend sits outside the boundary, next to the grid rather than
+            inside it: it needs no data, so it should not blink or move. */}
+        <div id={SCHEDULE_ANCHOR_ID} className="flex flex-col gap-2.5">
+          <Suspense key={weekStart.toISODate()} fallback={await ScheduleSkeleton()}>
+            <Schedule
+              roomId={room.id}
+              userId={user?.id}
+              canBook={user?.emailVerified ?? false}
+              weekStart={weekStart}
+              selectedDay={resolveSelectedDay(weekStart, day)}
+              selectedSlot={slot}
+              selectedSlotEnd={slotEnd}
+              selectedBookingId={selectedBooking?.id}
+            />
+          </Suspense>
+
+          <ScheduleLegend />
+        </div>
       </div>
 
       {/* Outside the Suspense boundary so the success toast survives the
