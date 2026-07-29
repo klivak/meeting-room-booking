@@ -92,7 +92,8 @@
     "timezoneNotice": "Your timezone. Room hours are {from}–{to} ({officeZone}).",
     "recurring": "weekly",
     "pastWeek": "past week",
-    "pastDay": "This day is already over — you can only book future time."
+    "pastDay": "This day is already over — you can only book future time.",
+    "slotPast": "This time has passed"
   },
   "shortcuts": {
     "title": "Keyboard shortcuts",

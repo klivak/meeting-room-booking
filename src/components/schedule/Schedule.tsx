@@ -837,6 +837,12 @@ export function Schedule({
     // Red while the range is still being dragged, not only after the save is
     // refused: by then the user has already typed a title.
     const clashes = selectionClashes(startsAt.toJSDate(), endsAt.toJSDate());
+    // The same rule creation applies on the server: the start has to be strictly
+    // later than now. Said here so the range is refused before a title is typed.
+    // Only once the clock is known — on the server render it is not, and a range
+    // wrongly called past would be worse than one called nothing at all.
+    const inPast = now !== null && +startsAt <= now;
+    const refused = clashes || inPast;
 
     return (
       <div
@@ -851,22 +857,22 @@ export function Schedule({
       >
         <div
           className={`rounded-booking flex h-full items-center justify-center border-2 border-dashed ${
-            clashes
+            refused
               ? "border-danger bg-danger-surface/75"
               : "border-accent-own-booking bg-accent-own-surface/70"
           }`}
         >
           <span
             className={`rounded-booking border px-1.5 py-0.5 font-mono text-xs sm:text-[11px] xl:text-xs font-semibold ${
-              clashes
+              refused
                 ? "border-danger bg-surface text-danger-ink"
                 : "border-accent-own-booking bg-surface text-accent-own-ink"
             }`}
           >
-            {clashes ? (
+            {refused ? (
               <>
                 <span aria-hidden="true">✕ </span>
-                {t("taken")}
+                {clashes ? t("taken") : t("slotPast")}
               </>
             ) : (
               <>
