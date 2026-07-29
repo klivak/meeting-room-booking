@@ -16,9 +16,12 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 # NEXT_PUBLIC_* values are inlined into the client bundle while building, so the
-# first weekday has to be known here and cannot be changed at startup.
+# first weekday and the demo button have to be known here and cannot be changed
+# at startup.
 ARG NEXT_PUBLIC_WEEK_START_DAY=1
 ENV NEXT_PUBLIC_WEEK_START_DAY=$NEXT_PUBLIC_WEEK_START_DAY
+ARG NEXT_PUBLIC_DEMO_LOGIN=false
+ENV NEXT_PUBLIC_DEMO_LOGIN=$NEXT_PUBLIC_DEMO_LOGIN
 # Collecting page data imports the route modules, and they validate the server
 # configuration on import. The values only have to exist: nothing connects to a
 # database during a build, and the real ones arrive from compose at startup.

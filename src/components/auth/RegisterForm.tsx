@@ -4,9 +4,14 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { PasswordField } from "@/components/auth/PasswordField";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { MAX_NAME_LENGTH, MAX_PASSWORD_LENGTH } from "@/lib/domain/auth";
+import {
+  MAX_NAME_LENGTH,
+  MAX_PASSWORD_LENGTH,
+  MIN_PASSWORD_LENGTH,
+} from "@/lib/domain/auth";
 
 type ApiError = {
   code: string;
@@ -19,6 +24,8 @@ export function RegisterForm() {
   const t = useTranslations("auth");
   const [error, setError] = useState<ApiError | null>(null);
   const [pending, setPending] = useState(false);
+  // Controlled so the length of the password can be shown while it is typed.
+  const [password, setPassword] = useState("");
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -32,7 +39,7 @@ export function RegisterForm() {
       body: JSON.stringify({
         name: formData.get("name"),
         email: formData.get("email"),
-        password: formData.get("password"),
+        password,
       }),
     }).catch(() => null);
 
@@ -76,6 +83,7 @@ export function RegisterForm() {
         label={t("name")}
         autoComplete="name"
         maxLength={MAX_NAME_LENGTH}
+        autoFocus
         required
         error={fieldError("name")}
       />
@@ -88,15 +96,34 @@ export function RegisterForm() {
         required
         error={fieldError("email")}
       />
-      <Input
+      <PasswordField
         id="password"
         name="password"
-        type="password"
         label={t("password")}
         autoComplete="new-password"
         maxLength={MAX_PASSWORD_LENGTH}
         required
+        value={password}
+        onChange={(event) => setPassword(event.target.value)}
         error={fieldError("password")}
+        // The rule, then the progress towards it. Learning about the eight
+        // characters from a refused submit is learning it too late; the server
+        // still checks it, this only says it sooner.
+        labelSuffix={
+          <span
+            className={`font-mono text-[11px] ${
+              password.length >= MIN_PASSWORD_LENGTH
+                ? "text-success-ink"
+                : "text-text-tertiary"
+            }`}
+          >
+            {password.length === 0
+              ? t("passwordHint", { min: MIN_PASSWORD_LENGTH })
+              : password.length < MIN_PASSWORD_LENGTH
+                ? `${password.length}/${MIN_PASSWORD_LENGTH}`
+                : `✓ ${password.length}`}
+          </span>
+        }
       />
 
       <Button type="submit" size="lg" className="mt-1 w-full" disabled={pending}>

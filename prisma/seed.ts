@@ -2,6 +2,7 @@ import "dotenv/config";
 
 import { DateTime } from "luxon";
 
+import { DEMO_ACCOUNTS } from "../src/lib/demoAccounts";
 import { normalizeEmail } from "../src/lib/domain/auth";
 import { OFFICE_TZ } from "../src/lib/domain/constants";
 import { getWeekStart } from "../src/lib/domain/week";
@@ -20,10 +21,8 @@ const ROOMS = [
   { name: "Дністер", floor: 1, capacity: 4 },
 ];
 
-const USERS = [
-  { name: "Аліса Тест", email: "alice@example.com", password: "password123" },
-  { name: "Богдан Демо", email: "bob@example.com", password: "password123" },
-];
+// Shared with the sign-in screen, which offers them as a one-click fill.
+const USERS = DEMO_ACCOUNTS;
 
 // Demo bookings, positioned relative to the current week so the data never
 // goes stale. dayOffset counts days from Monday of this week: 0-4 land on the

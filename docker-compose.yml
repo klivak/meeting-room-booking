@@ -27,6 +27,7 @@ services:
         # Inlined into the client bundle while building, so it belongs here and
         # not in the environment below.
         NEXT_PUBLIC_WEEK_START_DAY: ${NEXT_PUBLIC_WEEK_START_DAY:-1}
+        NEXT_PUBLIC_DEMO_LOGIN: ${NEXT_PUBLIC_DEMO_LOGIN:-false}
     container_name: meeting-room-booking-app
     restart: unless-stopped
     depends_on:
