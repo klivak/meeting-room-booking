@@ -20,12 +20,16 @@ type CancelBookingButtonProps = {
 };
 
 /**
- * Cancels a booking after an explicit confirmation.
+ * Cancels a booking after an explicit confirmation, and offers to take it back.
  *
- * Undo would be fewer clicks, but this action has an effect outside the app: the
- * moment the slot is free someone else can take it, and "Restore" would stop
- * working within seconds. A promise the interface cannot keep is worse than one
- * extra click, so the dialog stays.
+ * The dialog comes first and stays: the moment the slot is free someone else can
+ * take it, so an undo is a shortcut and never a guarantee. That is also why the
+ * undo asks the server rather than assuming — if the slot went in those few
+ * seconds, it says so instead of quietly doing nothing.
+ *
+ * A whole series gets no undo. Restoring one occurrence is a question with one
+ * answer; restoring eight of them, some of which may have been taken while the
+ * toast was on screen, is not something a single button can honestly promise.
  */
 export function CancelBookingButton({
   bookingId,
@@ -73,11 +77,39 @@ export function CancelBookingButton({
       return;
     }
 
-    showToast(scope === "series" ? t("seriesDone") : t("done"));
+    if (scope === "series") {
+      showToast(t("seriesDone"));
+    } else {
+      showToast(t("done"), { label: t("undo"), run: restore });
+    }
 
     if (redirectTo) {
       router.replace(redirectTo);
     }
+    router.refresh();
+  }
+
+  /** Asks for the cancellation back; the slot may be gone, and then it says so. */
+  async function restore() {
+    const response = await fetch(`/api/bookings/${bookingId}/restore`, {
+      method: "POST",
+    }).catch(() => null);
+
+    if (response?.status === 401) {
+      router.replace("/login");
+      return;
+    }
+
+    if (!response?.ok) {
+      const body = await response?.json().catch(() => null);
+      showToast(body?.error?.message ?? t("undoFailed"));
+      return;
+    }
+
+    showToast(t("undone"));
+
+    // The row is gone from "upcoming" after the cancel, so coming back is a
+    // navigation as much as a refresh; whichever page called this shows it again.
     router.refresh();
   }
 

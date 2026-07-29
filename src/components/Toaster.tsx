@@ -2,14 +2,20 @@
 
 import { useSyncExternalStore } from "react";
 
-import { readNoToast, readToast, subscribeToToast } from "@/components/toast";
+import {
+  dismissToast,
+  readNoToast,
+  readToast,
+  subscribeToToast,
+} from "@/components/toast";
 
-// Confirmation of an action that already happened. It never carries the only
-// way to do something, because it disappears after four seconds.
+// Confirmation of an action that already happened. It never carries the only way
+// to do something, because it disappears on its own: the undo it may offer is a
+// shortcut for something the interface can also do the long way.
 export function Toaster() {
-  const message = useSyncExternalStore(subscribeToToast, readToast, readNoToast);
+  const toast = useSyncExternalStore(subscribeToToast, readToast, readNoToast);
 
-  if (!message) {
+  if (!toast) {
     return null;
   }
 
@@ -24,7 +30,19 @@ export function Toaster() {
       >
         ✓
       </span>
-      <span className="text-[13px] leading-snug font-medium">{message}</span>
+      <span className="text-[13px] leading-snug font-medium">{toast.message}</span>
+      {toast.action ? (
+        <button
+          type="button"
+          onClick={() => {
+            dismissToast();
+            toast.action?.run();
+          }}
+          className="focus-ring rounded-control text-surface ml-1 shrink-0 border border-current/40 px-2 py-1 text-[13px] font-semibold underline-offset-2 hover:underline"
+        >
+          {toast.action.label}
+        </button>
+      ) : null}
     </div>
   );
 }

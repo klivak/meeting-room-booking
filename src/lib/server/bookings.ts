@@ -41,7 +41,7 @@ async function lockRoom(tx: Prisma.TransactionClient, roomId: string) {
 /** Active booking of the room that overlaps [startsAt, endsAt), if any. */
 async function findClash(
   tx: Prisma.TransactionClient,
-  input: BookingWrite & { excludeId?: string },
+  input: { roomId: string; startsAt: Date; endsAt: Date; excludeId?: string },
 ) {
   return tx.booking.findFirst({
     // Same comparison as intervalsOverlap, expressed as a query. Canceled rows
@@ -131,6 +131,37 @@ export async function createBookingSeries(
     }
 
     return { created, conflicts: [] };
+  });
+}
+
+/**
+ * Takes the cancellation back, or returns null when someone has taken the slot
+ * in the meantime — which is the whole reason this cannot be a plain update.
+ * A canceled booking stops blocking its slot the instant it is canceled, so the
+ * room has to be locked and the overlap checked again, exactly as for a new one.
+ */
+export async function restoreBooking(id: string, roomId: string) {
+  return prisma.$transaction(async (tx) => {
+    await lockRoom(tx, roomId);
+
+    const booking = await tx.booking.findFirst({
+      where: { id, canceledAt: { not: null } },
+      select: { startsAt: true, endsAt: true },
+    });
+
+    if (!booking) {
+      return null;
+    }
+
+    if (await findClash(tx, { roomId, excludeId: id, ...booking })) {
+      return null;
+    }
+
+    return tx.booking.update({
+      where: { id },
+      data: { canceledAt: null },
+      select: BOOKING_FIELDS,
+    });
   });
 }
 

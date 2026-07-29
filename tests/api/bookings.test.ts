@@ -252,6 +252,60 @@ describe("cancelling a booking", () => {
   });
 });
 
+describe("taking a cancellation back", () => {
+  const restore = (id: string, cookie: string) =>
+    api<ErrorBody>(`/api/bookings/${id}/restore`, { method: "POST", cookie });
+
+  it("puts the booking back and blocks the slot again", async () => {
+    const created = await book(alice.cookie, { roomId, title: "Своя", ...slot(10) });
+    await api(`/api/bookings/${created.body.id}`, {
+      method: "DELETE",
+      cookie: alice.cookie,
+    });
+
+    expect((await restore(created.body.id, alice.cookie)).status).toBe(200);
+
+    expect(
+      (await testPrisma.booking.findUniqueOrThrow({ where: { id: created.body.id } }))
+        .canceledAt,
+    ).toBeNull();
+    // Back in the overlap check, which is the point of restoring it at all.
+    expect((await book(bob.cookie, { roomId, title: "Після", ...slot(10) })).status).toBe(
+      409,
+    );
+  });
+
+  it("refuses when the slot was taken in the meantime", async () => {
+    const created = await book(alice.cookie, { roomId, title: "Своя", ...slot(10) });
+    await api(`/api/bookings/${created.body.id}`, {
+      method: "DELETE",
+      cookie: alice.cookie,
+    });
+
+    // Exactly the race the undo cannot promise its way out of.
+    expect((await book(bob.cookie, { roomId, title: "Чужа", ...slot(10) })).status).toBe(
+      201,
+    );
+
+    const refused = await restore(created.body.id, alice.cookie);
+    expect(refused.status).toBe(409);
+    expect(refused.body.error.code).toBe("SLOT_TAKEN");
+  });
+
+  it("refuses someone else's booking and one that was never cancelled", async () => {
+    const created = await book(alice.cookie, { roomId, title: "Аліси", ...slot(10) });
+
+    // Still active: there is no cancellation to take back.
+    expect((await restore(created.body.id, alice.cookie)).status).toBe(404);
+
+    await api(`/api/bookings/${created.body.id}`, {
+      method: "DELETE",
+      cookie: alice.cookie,
+    });
+    expect((await restore(created.body.id, bob.cookie)).status).toBe(403);
+  });
+});
+
 describe("reading bookings", () => {
   it("shows other people's bookings with their author and no ownership", async () => {
     await book(bob.cookie, { roomId, title: "Богданова", ...slot(10) });

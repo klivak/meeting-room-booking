@@ -139,7 +139,7 @@
   "cancel": {
     "cancel": "Cancel booking",
     "question": "Cancel “{title}”?",
-    "explanation": "The slot frees up for everyone else and you get a notification. Restoring it means creating a new booking.",
+    "explanation": "The slot frees up for everyone else. For a few seconds afterwards you can still take it back — as long as nobody has claimed the slot.",
     "seriesExplanation": "This is one occurrence of a weekly series. Choose what to cancel — the slot frees up for everyone else.",
     "no": "No",
     "yes": "Yes, cancel it",
@@ -148,7 +148,10 @@
     "canceling": "Cancelling…",
     "failed": "Could not cancel it — the booking is still there. Please try again.",
     "done": "Booking cancelled · the slot is free",
-    "seriesDone": "Series cancelled · the slots are free"
+    "seriesDone": "Series cancelled · the slots are free",
+    "undo": "Undo",
+    "undone": "Booking restored",
+    "undoFailed": "Could not restore the booking"
   },
   "notifications": {
     "title": "Notifications",
