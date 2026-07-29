@@ -35,6 +35,39 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false);
   // Ids already announced, so reopening the app does not toast the same warning twice.
   const announced = useRef(new Set<string>());
+  const container = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+
+  // A dropdown has to close the two ways every dropdown closes: a press outside
+  // it and Escape. The same arrangement as the header menu.
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (!container.current?.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+        // The panel is gone, so the focus goes back to the bell that opened it
+        // rather than being left on the document.
+        trigger.current?.focus();
+      }
+    };
+
+    window.addEventListener("pointerdown", onPointerDown);
+    window.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      window.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
 
   useEffect(() => {
     let cancelled = false;
@@ -87,8 +120,9 @@ export function NotificationBell() {
   }
 
   return (
-    <div className="relative">
+    <div ref={container} className="relative">
       <button
+        ref={trigger}
         type="button"
         onClick={toggle}
         aria-label={

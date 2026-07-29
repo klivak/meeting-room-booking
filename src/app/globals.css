@@ -73,10 +73,22 @@
   --animate-sheet: sheet-up 300ms ease-out both;
 }
 
+/* Stated rather than left to the system: the switch in the header can put a
+   light page on a machine whose preference is dark, and the browser's own
+   widgets have to follow the page, not the machine. */
+[data-theme="light"] {
+  color-scheme: light;
+}
+
 /* The dark half of every token. Pairing them here rather than sprinkling dark:
    prefixes through the components is what keeps a component from having to know
    the theme exists at all. */
 [data-theme="dark"] {
+  /* The browser paints its own widgets from this, not from our tokens: without
+     it the calendar button inside <input type="date"> stays a black glyph on a
+     dark field, and the scrollbars stay light. */
+  color-scheme: dark;
+
   --color-surface: oklch(0.232 0.014 264);
   --color-surface-muted: oklch(0.268 0.014 264);
   --color-surface-sunken: oklch(0.185 0.012 264);
