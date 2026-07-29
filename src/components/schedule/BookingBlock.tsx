@@ -36,6 +36,20 @@ type BookingBlockProps = {
    * of it is shown as the clash it is.
    */
   interactive: boolean;
+  /**
+   * Present only where the viewer may reshape the booking. It turns the block
+   * into a handle for moving it and gives it two edges for resizing it; without
+   * it the block is exactly the link it always was.
+   */
+  onGrab?: (mode: "move" | "start" | "end", event: React.PointerEvent) => void;
+  /** Keyboard equivalent of the same two gestures. */
+  onKeyDown?: (event: React.KeyboardEvent) => void;
+  /** Swallows the click that follows a drag, which is not a click on the block. */
+  onClick?: (event: React.MouseEvent) => void;
+  /** True while this block is the one being dragged. */
+  isDragging?: boolean;
+  /** True while the dragged shape runs into another booking. */
+  invalid?: boolean;
   style: React.CSSProperties;
 };
 
@@ -82,6 +96,11 @@ export function BookingBlock({
   href,
   isSelected,
   interactive,
+  onGrab,
+  onKeyDown,
+  onClick,
+  isDragging,
+  invalid,
   style,
 }: BookingBlockProps) {
   const t = useTranslations("schedule");
@@ -90,7 +109,13 @@ export function BookingBlock({
     compact ? "flex-row items-center gap-1.5 py-0 pr-1 pl-1.5" : "flex-col gap-0.5 py-1 pr-1.5 pl-2"
   } ${STATES[state]} ${
     isSelected ? "outline-focus-ring outline-2 outline-offset-1" : ""
-  } ${interactive ? "" : "pointer-events-none"}`;
+  } ${interactive ? "" : "pointer-events-none"} ${
+    onGrab ? "cursor-grab" : ""
+  } ${isDragging ? "cursor-grabbing shadow-panel z-10 select-none" : ""} ${
+    // Red only while the drag is in the air: releasing here is refused, and the
+    // block says so before the release rather than after it.
+    invalid ? "border-danger bg-danger-surface text-danger-ink" : ""
+  }`;
 
   // Short bookings clip their title, so the full details live in the tooltip.
   const tooltip = `${booking.title} · ${booking.user.name} · ${range}${
@@ -152,6 +177,30 @@ export function BookingBlock({
   // Without a link the booking is visible but offers no action at all, which is
   // the UI half of the ownership rule. Someone else's block also has no hover
   // state and stays out of the tab order, so it never looks pressable.
+  // Pointer-only affordances: a screen reader reshapes the booking with the keys
+  // the block itself handles, so these two strips are noise to it.
+  const handles = onGrab ? (
+    <>
+      <span
+        aria-hidden="true"
+        // Stopped here, or the block underneath would start a move as well.
+        onPointerDown={(event) => {
+          event.stopPropagation();
+          onGrab("start", event);
+        }}
+        className="absolute inset-x-0 top-0 h-1.5 cursor-ns-resize"
+      />
+      <span
+        aria-hidden="true"
+        onPointerDown={(event) => {
+          event.stopPropagation();
+          onGrab("end", event);
+        }}
+        className="absolute inset-x-0 bottom-0 h-1.5 cursor-ns-resize"
+      />
+    </>
+  ) : null;
+
   return href ? (
     <Link
       href={href}
@@ -160,8 +209,17 @@ export function BookingBlock({
       className={`${className} hover:brightness-[0.98]`}
       style={style}
       title={tooltip}
+      // The browser's own link dragging would fight the grab below.
+      draggable={false}
+      // Alt + arrow moves this booking, so the week navigation has to leave the
+      // combination alone while the block has the focus.
+      data-reshapable={onGrab ? true : undefined}
+      onPointerDown={onGrab ? (event) => onGrab("move", event) : undefined}
+      onKeyDown={onKeyDown}
+      onClick={onClick}
     >
       {content}
+      {handles}
     </Link>
   ) : (
     <div role="note" aria-label={label} className={className} style={style} title={tooltip}>

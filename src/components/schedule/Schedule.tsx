@@ -25,7 +25,11 @@ import {
   readViewerTimeZone,
 } from "@/components/viewerTimeZone";
 import { WEEK_START_DAY } from "@/lib/config";
-import { OFFICE_TZ, SLOT_MINUTES } from "@/lib/domain/constants";
+import {
+  MAX_DURATION_MINUTES,
+  OFFICE_TZ,
+  SLOT_MINUTES,
+} from "@/lib/domain/constants";
 import {
   DAYS_IN_WEEK,
   SLOT_COUNT,
@@ -77,6 +81,90 @@ function subscribeToMinuteTick(onChange: () => void) {
 
 const readNow = () => nowSnapshot;
 const readNoNow = () => null;
+
+// The longest booking the rules allow, in grid rows. Dragging is clamped to it,
+// so the pointer cannot even draw a shape the server would refuse.
+const MAX_ROWS = MAX_DURATION_MINUTES / SLOT_MINUTES;
+
+/**
+ * A booking being reshaped by pointer or key: which one, which gesture, and the
+ * rows it covers as of the last pointer position. The block is drawn from this
+ * instead of from its saved times until the save comes back.
+ */
+type BookingDrag = {
+  id: string;
+  mode: "move" | "start" | "end";
+  dayIndex: number;
+  rowStart: number;
+  rowEnd: number;
+  /** Rows between the grabbed point and the top of the block, for a move. */
+  grabOffset: number;
+  /** Stays false for a click that never went anywhere, which must open the form. */
+  moved: boolean;
+};
+
+/** Keeps a value inside a range; the grid clamps rather than refuses. */
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+/**
+ * Rows the gesture puts the booking on. Every mode keeps the result a legal
+ * shape on its own — inside the day, at least one slot long and at most four
+ * hours — so the preview never shows something that cannot be saved.
+ */
+function dragToRows(
+  drag: BookingDrag,
+  row: number,
+): { rowStart: number; rowEnd: number } {
+  if (drag.mode === "move") {
+    const span = drag.rowEnd - drag.rowStart;
+    const rowStart = clamp(row - drag.grabOffset, 0, SLOT_COUNT - span);
+
+    return { rowStart, rowEnd: rowStart + span };
+  }
+
+  if (drag.mode === "start") {
+    return {
+      rowStart: clamp(row, drag.rowEnd - MAX_ROWS, drag.rowEnd - 1),
+      rowEnd: drag.rowEnd,
+    };
+  }
+
+  return {
+    rowStart: drag.rowStart,
+    rowEnd: clamp(row + 1, drag.rowStart + 1, drag.rowStart + MAX_ROWS),
+  };
+}
+
+/**
+ * Day column and row under the pointer. Read from the document rather than from
+ * pointer events on the cells: during a drag the block itself is under the
+ * pointer, so the cells never see it.
+ */
+function cellUnderPointer(
+  clientX: number,
+  clientY: number,
+): { dayIndex: number; row: number } | null {
+  const column = document
+    .elementFromPoint(clientX, clientY)
+    ?.closest<HTMLElement>("[data-day-index]");
+
+  if (!column) {
+    return null;
+  }
+
+  const rect = column.getBoundingClientRect();
+
+  return {
+    dayIndex: Number(column.dataset.dayIndex),
+    row: clamp(
+      Math.floor((clientY - rect.top) / (rect.height / SLOT_COUNT)),
+      0,
+      SLOT_COUNT - 1,
+    ),
+  };
+}
 
 /** Picks the phrasing the duration needs: minutes only, whole hours, or both. */
 function durationLabel(
@@ -147,6 +235,19 @@ export function Schedule({
   // keys, so the grid costs one stop instead of a hundred and forty.
   const [focusCell, setFocusCell] = useState({ column: 0, row: 0 });
 
+  // A booking being dragged, and the shape a finished drag is waiting on the
+  // server to confirm. Both draw the block where the user put it rather than
+  // where it is still saved, which is what makes the gesture feel immediate.
+  const [bookingDrag, setBookingDrag] = useState<BookingDrag | null>(null);
+  const [pendingShape, setPendingShape] = useState<{
+    id: string;
+    startsAt: string;
+    endsAt: string;
+  } | null>(null);
+  // Set on a drag that actually moved something, so the click that follows the
+  // release does not also open the form.
+  const suppressClick = useRef(false);
+
   // The range just picked, held until the address catches up. Picking a slot is
   // a navigation, and the server needs a moment to answer it; without this the
   // grid keeps showing the previous selection for that moment, which reads as a
@@ -160,6 +261,20 @@ export function Schedule({
   // Once the address carries the new range, the local copy has done its job.
   // Adjusting state during the render is what React prescribes here: an effect
   // would show one frame of the stale selection first.
+  // Same idea for a dragged booking: the shape is held until the refreshed
+  // bookings carry it, and dropped the moment they do.
+  if (
+    pendingShape &&
+    bookings.some(
+      (booking) =>
+        booking.id === pendingShape.id &&
+        booking.startsAt === pendingShape.startsAt &&
+        booking.endsAt === pendingShape.endsAt,
+    )
+  ) {
+    setPendingShape(null);
+  }
+
   const urlSelection = `${selectedSlot ?? ""}|${selectedSlotEnd ?? ""}`;
   const [lastUrlSelection, setLastUrlSelection] = useState(urlSelection);
   if (urlSelection !== lastUrlSelection) {
@@ -212,6 +327,114 @@ export function Schedule({
       `/rooms/${roomId}?week=${weekParam}&slot=${encodeURIComponent(start)}&slotEnd=${encodeURIComponent(end)}`,
       { scroll: false },
     );
+  };
+
+  /**
+   * Saves a booking reshaped on the grid. Only the times travel: dragging is
+   * about when, never about what. The server applies exactly the same rules it
+   * applies to the form — this asks, it does not decide — so a refusal comes
+   * back as its own message and the block returns to where it was saved.
+   */
+  const saveShape = async (id: string, targetDay: number, rows: {
+    rowStart: number;
+    rowEnd: number;
+  }) => {
+    const startsAt = getSlotStart(days[targetDay], rows.rowStart).toUTC().toISO() ?? "";
+    const endsAt = getSlotStart(days[targetDay], rows.rowEnd).toUTC().toISO() ?? "";
+
+    setPendingShape({ id, startsAt, endsAt });
+
+    const response = await fetch(`/api/bookings/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ startsAt, endsAt }),
+    }).catch(() => null);
+
+    if (response?.ok) {
+      showToast(t("moved"));
+      router.refresh();
+      return;
+    }
+
+    // Back to the saved shape at once: leaving the block where the pointer put
+    // it would claim a move that did not happen.
+    setPendingShape(null);
+
+    const body = await response?.json().catch(() => null);
+    showToast(body?.error?.message ?? t("moveFailed"));
+  };
+
+  /**
+   * Starts a pointer gesture on one of the viewer's own bookings. Mouse only,
+   * for the same reason the cells are: on a touch screen a drag across the grid
+   * is how the day is swiped and how the page is scrolled.
+   */
+  const grabBooking = (
+    booking: BookingView,
+    placement: { dayIndex: number; rowStart: number; rowSpan: number },
+    mode: "move" | "start" | "end",
+    event: React.PointerEvent,
+  ) => {
+    if (event.pointerType !== "mouse" || event.button !== 0) {
+      return;
+    }
+
+    const rect = event.currentTarget.getBoundingClientRect();
+    const grabbedRow = Math.floor(
+      (event.clientY - rect.top) / (rect.height / placement.rowSpan),
+    );
+
+    event.preventDefault();
+    suppressClick.current = false;
+    setBookingDrag({
+      id: booking.id,
+      mode,
+      dayIndex: placement.dayIndex,
+      rowStart: placement.rowStart,
+      rowEnd: placement.rowStart + placement.rowSpan,
+      grabOffset: mode === "move" ? clamp(grabbedRow, 0, placement.rowSpan - 1) : 0,
+      moved: false,
+    });
+  };
+
+  /**
+   * The keyboard half of the same two gestures, so reshaping a booking is not a
+   * mouse-only feature: Alt moves it, Shift changes how long it runs.
+   */
+  const nudgeBooking = (
+    booking: BookingView,
+    placement: { dayIndex: number; rowStart: number; rowSpan: number },
+    event: React.KeyboardEvent,
+  ) => {
+    const vertical =
+      event.key === "ArrowUp" ? -1 : event.key === "ArrowDown" ? 1 : 0;
+    const horizontal =
+      event.key === "ArrowLeft" ? -1 : event.key === "ArrowRight" ? 1 : 0;
+
+    const span = placement.rowSpan;
+    let dayIndex = placement.dayIndex;
+    let rowStart = placement.rowStart;
+    let rowEnd = placement.rowStart + span;
+
+    if (event.altKey && (vertical !== 0 || horizontal !== 0)) {
+      rowStart = clamp(rowStart + vertical, 0, SLOT_COUNT - span);
+      rowEnd = rowStart + span;
+      dayIndex = clamp(dayIndex + horizontal, 0, DAYS_IN_WEEK - 1);
+    } else if (event.shiftKey && vertical !== 0) {
+      rowEnd = clamp(rowEnd + vertical, rowStart + 1, rowStart + MAX_ROWS);
+      // The last row of the day is the ceiling for the end as well.
+      rowEnd = Math.min(rowEnd, SLOT_COUNT);
+    } else {
+      return;
+    }
+
+    if (dayIndex === placement.dayIndex && rowStart === placement.rowStart && rowEnd === placement.rowStart + span) {
+      return;
+    }
+
+    // Both combinations are the browser's own scrolling otherwise.
+    event.preventDefault();
+    void saveShape(booking.id, dayIndex, { rowStart, rowEnd });
   };
 
   /**
@@ -364,24 +587,105 @@ export function Schedule({
     return () => window.removeEventListener("pointerup", finish);
   });
 
+  // The same arrangement for a booking being reshaped: the pointer is followed
+  // on the window, because it leaves the block the moment the drag begins.
+  useEffect(() => {
+    if (!bookingDrag) {
+      return;
+    }
+
+    const move = (event: PointerEvent) => {
+      const cell = cellUnderPointer(event.clientX, event.clientY);
+      if (!cell) {
+        return;
+      }
+
+      const rows = dragToRows(bookingDrag, cell.row);
+      // A move follows the pointer across the week; a resize belongs to the day
+      // the booking is already on.
+      const dayIndex =
+        bookingDrag.mode === "move" ? cell.dayIndex : bookingDrag.dayIndex;
+
+      if (
+        rows.rowStart === bookingDrag.rowStart &&
+        rows.rowEnd === bookingDrag.rowEnd &&
+        dayIndex === bookingDrag.dayIndex
+      ) {
+        return;
+      }
+
+      suppressClick.current = true;
+      setBookingDrag({ ...bookingDrag, ...rows, dayIndex, moved: true });
+    };
+
+    const finish = () => {
+      setBookingDrag(null);
+
+      // A grab that went nowhere is a click, and a click on a booking opens it.
+      if (bookingDrag.moved) {
+        void saveShape(bookingDrag.id, bookingDrag.dayIndex, bookingDrag);
+      }
+    };
+
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", finish);
+
+    return () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", finish);
+    };
+  });
+
+  /**
+   * Where a booking is being put right now, if it is being put anywhere: the
+   * rows under the pointer while it is dragged, and the rows it was dropped on
+   * until the server confirms them. Everything else is drawn from its saved
+   * times.
+   */
+  const shapeOf = (booking: BookingView) => {
+    if (bookingDrag?.id === booking.id) {
+      return {
+        dayIndex: bookingDrag.dayIndex,
+        rowStart: bookingDrag.rowStart,
+        rowSpan: bookingDrag.rowEnd - bookingDrag.rowStart,
+      };
+    }
+
+    if (pendingShape?.id === booking.id) {
+      return placeBooking(
+        {
+          startsAt: new Date(pendingShape.startsAt),
+          endsAt: new Date(pendingShape.endsAt),
+        },
+        weekStartDateTime,
+      );
+    }
+
+    return null;
+  };
+
   const placements = bookings
     .map((booking) => ({
       booking,
-      placement: placeBooking(
-        { startsAt: new Date(booking.startsAt), endsAt: new Date(booking.endsAt) },
-        weekStartDateTime,
-      ),
+      placement:
+        shapeOf(booking) ??
+        placeBooking(
+          { startsAt: new Date(booking.startsAt), endsAt: new Date(booking.endsAt) },
+          weekStartDateTime,
+        ),
     }))
     .filter((entry) => entry.placement !== null);
 
   /** One booking, placed into whichever column is drawing it. */
   const renderBooking = (
     booking: BookingView,
-    placement: { rowStart: number; rowSpan: number },
+    placement: { dayIndex: number; rowStart: number; rowSpan: number },
     rowHeight: string,
     keyPrefix: string,
     /** True where one row is too short for two lines, which is the week view. */
     singleRowIsTight: boolean,
+    /** False in the day view, which has one column and nowhere to drag across. */
+    draggable: boolean,
   ) => {
     // A finished booking can no longer be edited or canceled, so it offers no
     // action even to its author.
@@ -391,6 +695,11 @@ export function Schedule({
         ? "own"
         : "finished"
       : "other";
+
+    // Reshaping is editing, so it needs everything editing needs: the booking
+    // has to be the viewer's own, still open, and the address confirmed.
+    const canReshape = isEditable && canBook && draggable;
+    const isDragging = bookingDrag?.id === booking.id;
 
     return (
       <BookingBlock
@@ -409,6 +718,42 @@ export function Schedule({
         }
         isSelected={booking.id === selectedBookingId}
         interactive={drag === null}
+        onGrab={
+          canReshape
+            ? (mode, event) => grabBooking(booking, placement, mode, event)
+            : undefined
+        }
+        onKeyDown={
+          canReshape ? (event) => nudgeBooking(booking, placement, event) : undefined
+        }
+        // A release that ends a drag also fires a click on the link underneath,
+        // and opening the form on top of the move just made is not what the
+        // gesture asked for.
+        onClick={
+          canReshape
+            ? (event) => {
+                if (suppressClick.current) {
+                  event.preventDefault();
+                  suppressClick.current = false;
+                }
+              }
+            : undefined
+        }
+        isDragging={isDragging}
+        // The same half-open rule the selection uses, so a drag onto an occupied
+        // stretch says so before it is released rather than after the server
+        // refuses it.
+        invalid={
+          isDragging &&
+          selectionClashes(
+            getSlotStart(days[placement.dayIndex], placement.rowStart).toJSDate(),
+            getSlotStart(
+              days[placement.dayIndex],
+              placement.rowStart + placement.rowSpan,
+            ).toJSDate(),
+            booking.id,
+          )
+        }
         style={{
           top: rowSpan(placement.rowStart, rowHeight),
           // The 2px gap plus each block's own border is what makes 10:00–11:00
@@ -459,12 +804,16 @@ export function Schedule({
    * Whether the picked range runs into a booking that is already there. It is
    * the same half-open rule the server applies, so the grid and the API agree;
    * the server still has the final word, this only says it sooner. The booking
-   * being edited is left out, or it would clash with itself.
+   * being edited or dragged is left out, or it would clash with itself.
    */
-  const selectionClashes = (start: Date, end: Date): boolean =>
+  const selectionClashes = (
+    start: Date,
+    end: Date,
+    exceptId = selectedBookingId,
+  ): boolean =>
     bookings.some(
       (booking) =>
-        booking.id !== selectedBookingId &&
+        booking.id !== exceptId &&
         intervalsOverlap(start, end, new Date(booking.startsAt), new Date(booking.endsAt)),
     );
 
@@ -661,6 +1010,7 @@ export function Schedule({
                       DAY_ROW_H,
                       "day",
                       false,
+                      false,
                     ),
                   )}
                 {renderSelection(dayIndex, day, DAY_ROW_H)}
@@ -756,6 +1106,9 @@ export function Schedule({
               {days.map((option, index) => (
                 <div
                   key={option.toISODate()}
+                  // Read back while a booking is dragged, to say which day and
+                  // which row the pointer is over.
+                  data-day-index={index}
                   className={`border-border-grid-half relative flex min-w-[5.5rem] flex-1 flex-col border-l ${
                     option.toISODate() === todayIso ? "bg-today-column" : ""
                   }`}
@@ -780,6 +1133,7 @@ export function Schedule({
                         entry.placement!,
                         ROW_H,
                         "week",
+                        true,
                         true,
                       ),
                     )}

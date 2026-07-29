@@ -14,7 +14,8 @@ setup("sign in as the seeded user", async ({ page }) => {
   await page.goto("/login");
 
   await page.getByLabel("Пошта").fill(EMAIL);
-  await page.getByLabel("Пароль").fill(PASSWORD);
+  // Exact, or it also matches the "показати пароль" button inside the field.
+  await page.getByLabel("Пароль", { exact: true }).fill(PASSWORD);
   await page.getByRole("button", { name: "Увійти" }).click();
 
   // The room list is the screen a successful sign-in lands on.

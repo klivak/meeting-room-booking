@@ -32,6 +32,12 @@ export function WeekShortcuts({ previousHref, nextHref }: WeekShortcutsProps) {
         return;
       }
 
+      // A focused booking of the viewer's own takes Alt + arrow for itself: the
+      // same combination moves it a day earlier or later.
+      if (target?.closest("[data-reshapable]")) {
+        return;
+      }
+
       // Alt + arrow is the browser's own back and forward, and here it has to
       // mean the previous and next week instead.
       if (event.key === "ArrowLeft") {

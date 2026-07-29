@@ -13,9 +13,10 @@ import { cell, goToNextWeek, openRoom, removeTestBookings } from "./helpers";
 const TITLE = "Перевірка дизайну";
 const KEYBOARD_TITLE = "Перевірка з клавіатури";
 const OVERLAP_TITLE = "Спроба перекрити";
+const MOVE_TITLE = "Перевірка перетягування";
 
 test.beforeEach(async ({ page }) => {
-  await removeTestBookings(page, [TITLE, KEYBOARD_TITLE, OVERLAP_TITLE]);
+  await removeTestBookings(page, [TITLE, KEYBOARD_TITLE, OVERLAP_TITLE, MOVE_TITLE]);
 });
 
 type Cell = ReturnType<typeof cell>;
@@ -87,6 +88,53 @@ test("books a dragged range, refuses to double-book it, then cancels it", async 
 
   await cancelBooking(page, TITLE);
   await expect(page.getByText(TITLE, { exact: true })).toHaveCount(0);
+});
+
+test("moves and resizes an own booking on the grid itself", async ({ page }) => {
+  await openRoom(page);
+  await goToNextWeek(page);
+
+  // Sunday, 13:00 to 14:30 again: the same three rows the seed never touches.
+  await dragOver(page, cell(page, 6, 8), cell(page, 6, 10));
+  const panel = page.getByRole("dialog", { name: "Нове бронювання" });
+  await panel.getByLabel("Назва").fill(MOVE_TITLE);
+  await panel.getByRole("button", { name: "Забронювати" }).click();
+  await expect(page.getByRole("status")).toContainText("Бронювання створено");
+
+  const booked = page.getByRole("link", { name: new RegExp(MOVE_TITLE) }).first();
+  await expect(booked).toBeVisible();
+
+  // An hour earlier by dragging the block itself. One row is one half hour, so
+  // two rows up is 12:00, and the duration comes along unchanged.
+  const rowHeight = (await cell(page, 6, 0).boundingBox())!.height;
+  const box = (await booked.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 - 2 * rowHeight, {
+    steps: 6,
+  });
+  await page.mouse.up();
+
+  await expect(page.getByRole("status")).toContainText("Бронювання перенесено");
+  await expect(
+    page.getByRole("link", { name: new RegExp(`${MOVE_TITLE}, 12:00–13:30`) }),
+  ).toBeVisible();
+
+  // The same two gestures from the keyboard: Alt moves it, Shift changes how
+  // long it runs. Dragging must not be the only way to reshape a booking.
+  await page.getByRole("link", { name: new RegExp(MOVE_TITLE) }).first().focus();
+  await page.keyboard.press("Alt+ArrowDown");
+  await expect(
+    page.getByRole("link", { name: new RegExp(`${MOVE_TITLE}, 12:30–14:00`) }),
+  ).toBeVisible();
+
+  await page.getByRole("link", { name: new RegExp(MOVE_TITLE) }).first().focus();
+  await page.keyboard.press("Shift+ArrowDown");
+  await expect(
+    page.getByRole("link", { name: new RegExp(`${MOVE_TITLE}, 12:30–14:30`) }),
+  ).toBeVisible();
+
+  await cancelBooking(page, MOVE_TITLE);
 });
 
 test("leaves a colleague's booking inert", async ({ page }) => {
