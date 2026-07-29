@@ -113,6 +113,28 @@
     0 22px 50px -14px oklch(0.08 0.02 264 / 0.7), 0 2px 6px oklch(0.08 0.02 264 / 0.45);
 }
 
+/* A taller half hour once there is room for one. A 185px wide column at a 28px
+   row is a long thin sliver, and that is what the week becomes on a large
+   monitor, where the columns take all the width the page allows and the rows
+   take none of the height.
+
+   Keyed to the height as well as the width on purpose: the whole week fitting a
+   screen without the page scrolling is worth more than the proportion, and a
+   1280x800 laptop is wide enough for the first step but not tall enough for it.
+   The row lives here rather than in a Tailwind class because the grid positions
+   every block with calc() over it, and only the stylesheet knows the screen. */
+@media (min-width: 1280px) and (min-height: 900px) {
+  :root {
+    --spacing-slot: 2rem; /* 32px */
+  }
+}
+
+@media (min-width: 1536px) and (min-height: 1000px) {
+  :root {
+    --spacing-slot: 2.25rem; /* 36px */
+  }
+}
+
 /* A light band sweeping across the placeholder: it reads as "loading" better
    than a pulse, because it moves in one direction instead of blinking. */
 @utility skeleton {

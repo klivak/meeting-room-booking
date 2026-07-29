@@ -10,9 +10,10 @@ import {
   SCHEDULE_ANCHOR_ID,
 } from "@/components/schedule/BookingPanel";
 import {
-  DAY_ROW_REM,
+  DAY_ROW_H,
   HEADER_REM,
-  ROW_REM,
+  ROW_H,
+  rowSpan,
 } from "@/components/schedule/geometry";
 import { Schedule as ScheduleGrid } from "@/components/schedule/Schedule";
 import { ScheduleLegend } from "@/components/schedule/ScheduleLegend";
@@ -190,21 +191,21 @@ async function ScheduleSkeleton() {
         </div>
 
         <div className="bg-surface border-border-grid rounded-card overflow-hidden border">
-          <div className="flex" style={{ height: `${SLOT_COUNT * DAY_ROW_REM}rem` }}>
+          <div className="flex" style={{ height: rowSpan(SLOT_COUNT, DAY_ROW_H) }}>
             <div className="border-border-grid w-13 flex-none border-r" />
             <div className="relative min-w-0 flex-1">
               <Skeleton
                 className="absolute right-[3px] left-[3px]"
                 style={{
-                  top: `${2 * DAY_ROW_REM}rem`,
-                  height: `${2 * DAY_ROW_REM}rem`,
+                  top: rowSpan(2, DAY_ROW_H),
+                  height: rowSpan(2, DAY_ROW_H),
                 }}
               />
               <Skeleton
                 className="absolute right-[3px] left-[3px]"
                 style={{
-                  top: `${10 * DAY_ROW_REM}rem`,
-                  height: `${3 * DAY_ROW_REM}rem`,
+                  top: rowSpan(10, DAY_ROW_H),
+                  height: rowSpan(3, DAY_ROW_H),
                   animationDelay: "90ms",
                 }}
               />
@@ -240,7 +241,7 @@ async function ScheduleSkeleton() {
             </div>
           ))}
         </div>
-        <div className="flex" style={{ height: `${SLOT_COUNT * ROW_REM}rem` }}>
+        <div className="flex" style={{ height: rowSpan(SLOT_COUNT, ROW_H) }}>
           <div className="border-border-grid w-axis flex-none border-r" />
           {Array.from({ length: DAYS_IN_WEEK }, (_, column) => (
             <div
@@ -250,16 +251,16 @@ async function ScheduleSkeleton() {
               <Skeleton
                 className="absolute right-[3px] left-[3px]"
                 style={{
-                  top: `${(2 + column) * ROW_REM}rem`,
-                  height: `${2 * ROW_REM}rem`,
+                  top: rowSpan(2 + column, ROW_H),
+                  height: rowSpan(2, ROW_H),
                   animationDelay: `${column * 90}ms`,
                 }}
               />
               <Skeleton
                 className="absolute right-[3px] left-[3px]"
                 style={{
-                  top: `${(10 + (column % 4)) * ROW_REM}rem`,
-                  height: `${3 * ROW_REM}rem`,
+                  top: rowSpan(10 + (column % 4), ROW_H),
+                  height: rowSpan(3, ROW_H),
                   animationDelay: `${column * 90}ms`,
                 }}
               />
@@ -362,7 +363,9 @@ export default async function RoomPage({
         // A long list of rooms must not decide how tall the page is — the whole
         // week fitting a laptop screen is the point. So on wide screens it gets
         // its own scroll and stays put while the grid is read.
-        className="lg:bg-surface lg:border-border-grid lg:rounded-card w-full shrink-0 lg:sticky lg:top-4 lg:max-h-[calc(100vh-6rem)] lg:w-59 lg:overflow-y-auto lg:border lg:p-3"
+        // Wider on a large screen, where the width would otherwise all go to the
+        // day columns and stretch every half hour into a sliver.
+        className="lg:bg-surface lg:border-border-grid lg:rounded-card w-full shrink-0 lg:sticky lg:top-4 lg:max-h-[calc(100vh-6rem)] lg:w-59 2xl:w-72 lg:overflow-y-auto lg:border lg:p-3"
       >
         <p className="text-text-tertiary hidden px-2 pb-2 text-xs font-semibold tracking-wide uppercase lg:block">
           {tRooms("title")}
@@ -394,7 +397,7 @@ export default async function RoomPage({
                   >
                     {option.name}
                   </span>
-                  <span className="text-text-tertiary font-mono text-xs sm:text-[11px] whitespace-nowrap">
+                  <span className="text-text-tertiary font-mono text-xs sm:text-[11px] xl:text-xs whitespace-nowrap">
                     {tRooms("roomMeta", {
                       floor: option.floor,
                       capacity: option.capacity,

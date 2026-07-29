@@ -202,7 +202,9 @@ export default async function MyBookingsPage({
   const t = await getTranslations("myBookings");
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-4">
+    // The same measure as the room list: two pages of one application should not
+    // change how wide their content is when you move between them.
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
       <div className="flex flex-wrap items-end gap-4">
         <h1 className="text-[22px] font-semibold tracking-tight">{t("title")}</h1>
 

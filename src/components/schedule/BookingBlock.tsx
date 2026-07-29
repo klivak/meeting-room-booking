@@ -122,7 +122,7 @@ export function BookingBlock({
 
   const content = compact ? (
     <>
-      <span className="flex-none font-mono text-xs sm:text-[11px] leading-tight font-semibold">
+      <span className="flex-none font-mono text-xs sm:text-[11px] xl:text-xs leading-tight font-semibold">
         {start}
       </span>
       <span className="min-w-0 flex-1 truncate text-xs leading-tight font-semibold">
@@ -133,7 +133,9 @@ export function BookingBlock({
   ) : (
     <>
       <span className="flex w-full flex-none items-center gap-1">
-        <span className="font-mono text-xs sm:text-[11px] leading-tight font-semibold">{range}</span>
+        <span className="font-mono text-xs sm:text-[11px] xl:text-xs leading-tight font-semibold">
+          {range}
+        </span>
         <span className="flex-1" />
         {marks}
       </span>
