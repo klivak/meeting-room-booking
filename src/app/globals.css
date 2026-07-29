@@ -69,6 +69,7 @@
   --animate-wave: wave 1400ms linear infinite;
   --animate-rise: rise 200ms ease-out both;
   --animate-toast: toast-in 160ms ease-out both;
+  --animate-swap: swap-in 220ms ease-out both;
   --animate-sheet: sheet-up 300ms ease-out both;
 }
 
@@ -209,6 +210,20 @@
   from {
     opacity: 0;
     transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Switching rooms replaces the whole week at once. Without a beat of motion the
+   grid looks identical for a moment and it is unclear whether the click landed;
+   the slide comes from the side the room list sits on. */
+@keyframes swap-in {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
   }
   to {
     opacity: 1;

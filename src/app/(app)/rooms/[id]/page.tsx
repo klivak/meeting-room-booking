@@ -405,7 +405,13 @@ export default async function RoomPage({
         </ul>
       </nav>
 
-      <div className="flex min-w-0 flex-1 flex-col gap-3">
+      {/* Keyed by the room so React remounts this column when another room is
+          picked — that is what replays the animation. The week arrows keep the
+          same key, so paging through weeks stays still. */}
+      <div
+        key={room.id}
+        className="animate-swap flex min-w-0 flex-1 flex-col gap-3"
+      >
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex min-w-0 flex-col">
             <h1 className="truncate text-[17px] font-semibold tracking-tight">
