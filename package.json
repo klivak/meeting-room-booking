@@ -20,6 +20,12 @@
     "db:up": "docker compose up -d",
     "db:down": "docker compose down"
   },
+  "browserslist": [
+    "chrome >= 111",
+    "edge >= 111",
+    "firefox >= 128",
+    "safari >= 16.4"
+  ],
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
