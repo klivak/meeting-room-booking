@@ -21,7 +21,13 @@ export function LogoutButton() {
   }
 
   return (
-    <Button variant="ghost" onClick={handleLogout} disabled={pending}>
+    <Button
+      variant="secondary"
+      size="sm"
+      className="min-w-0"
+      onClick={handleLogout}
+      disabled={pending}
+    >
       {pending ? t("loggingOut") : t("logout")}
     </Button>
   );

@@ -12,14 +12,19 @@ type MoreBookingsProps = {
   initialCursor: string;
   now: string;
   scope: "upcoming" | "past";
+  /** Rows the server rendered, so the end note can name the real total. */
+  loaded: number;
 };
 
 /**
  * "Show more" for either tab. The server renders the first page; every next one
  * is fetched by cursor, which is what keeps rows from being duplicated or
  * skipped when two bookings share a start time.
+ *
+ * A failed page does not disturb the rows already on screen: they are still
+ * true, and re-rendering them would lose the reader's place.
  */
-export function MoreBookings({ initialCursor, now, scope }: MoreBookingsProps) {
+export function MoreBookings({ initialCursor, now, scope, loaded }: MoreBookingsProps) {
   const router = useRouter();
   const t = useTranslations("myBookings");
   const [items, setItems] = useState<MyBooking[]>([]);
@@ -56,25 +61,30 @@ export function MoreBookings({ initialCursor, now, scope }: MoreBookingsProps) {
   return (
     <>
       {items.length > 0 ? (
-        <ul className="flex flex-col gap-2">
+        <ul className="flex flex-col">
           {items.map((booking) => (
             <BookingRow key={booking.id} booking={booking} now={now} />
           ))}
         </ul>
       ) : null}
 
-      {cursor ? (
-        <div className="flex flex-col items-start gap-2">
-          {failed ? (
-            <p role="alert" className="text-sm text-red-600">
-              {t("loadFailed")}
-            </p>
-          ) : null}
-          <Button variant="ghost" onClick={loadMore} disabled={pending}>
-            {pending ? t("loadingMore") : t("showMore")}
+      <div className="border-border-grid bg-surface-muted flex flex-col items-center gap-2 border-t p-4">
+        {failed ? (
+          <p role="alert" className="text-danger-ink text-[13px]">
+            {t("loadFailed")}
+          </p>
+        ) : null}
+
+        {cursor ? (
+          <Button variant="secondary" onClick={loadMore} disabled={pending}>
+            {pending ? t("loadingMore") : failed ? t("retry") : t("showMore")}
           </Button>
-        </div>
-      ) : null}
+        ) : (
+          <p className="text-text-tertiary text-[13px]">
+            {t("endOfList", { count: loaded + items.length })}
+          </p>
+        )}
+      </div>
     </>
   );
 }

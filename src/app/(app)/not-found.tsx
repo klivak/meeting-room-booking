@@ -9,13 +9,12 @@ export default async function AppNotFound() {
   const t = await getTranslations("errors");
 
   return (
-    <div className="flex flex-col items-start gap-3 rounded-xl border border-slate-200 bg-white p-6">
-      <p className="text-sm font-medium text-slate-500">404</p>
-      <h1 className="text-lg font-semibold text-slate-900">{t("appNotFoundTitle")}</h1>
-      <p className="text-sm text-slate-600">
+    <div className="border-border-grid bg-surface rounded-card mx-auto flex w-full max-w-[420px] flex-col items-center gap-2.5 border px-7 py-10 text-center">
+      <h1 className="text-[17px] font-semibold">{t("appNotFoundTitle")}</h1>
+      <p className="text-text-secondary max-w-[36ch] text-[13px] leading-relaxed">
         {t("appNotFoundText")}
       </p>
-      <LinkButton href="/" variant="primary">
+      <LinkButton href="/" className="mt-1">
         {t("appNotFoundAction")}
       </LinkButton>
     </div>

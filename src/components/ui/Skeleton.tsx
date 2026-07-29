@@ -1,5 +1,5 @@
 // Placeholder block shown while data loads. A skeleton rather than a spinner,
-// so the layout does not jump once the content arrives.
+// and always in the shape of the real content, so nothing jumps once it arrives.
 export function Skeleton({
   className,
   style,
@@ -7,10 +7,5 @@ export function Skeleton({
   className?: string;
   style?: React.CSSProperties;
 }) {
-  return (
-    <div
-      className={`skeleton rounded-lg ${className ?? ""}`}
-      style={style}
-    />
-  );
+  return <div className={`skeleton rounded-control ${className ?? ""}`} style={style} />;
 }

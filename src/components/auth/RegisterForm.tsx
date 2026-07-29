@@ -56,8 +56,16 @@ export function RegisterForm() {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
+      {/* Above the form: "this address is already registered" is not a fault of
+          any single field the user is looking at. */}
       {generalError ? (
-        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
+        <p
+          role="alert"
+          className="bg-danger-surface border-danger text-danger-ink rounded-control flex gap-2 border px-3 py-2.5 text-[13px] leading-snug"
+        >
+          <span aria-hidden="true" className="font-bold">
+            !
+          </span>
           {generalError}
         </p>
       ) : null}
@@ -91,7 +99,7 @@ export function RegisterForm() {
         error={fieldError("password")}
       />
 
-      <Button type="submit" disabled={pending}>
+      <Button type="submit" size="lg" className="mt-1 w-full" disabled={pending}>
         {pending ? t("signingUp") : t("signUp")}
       </Button>
     </form>

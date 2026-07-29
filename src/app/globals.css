@@ -1,49 +1,192 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* Dark mode is driven by an attribute rather than the media query alone, so the
+   header switch can override the system preference. An inline script in the
+   root layout resolves "system" to light or dark before the first paint. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@theme {
+  --font-sans: var(--font-commissioner), "Segoe UI", system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+
+  /* Surfaces and lines. The grid lines are deliberately light: they are
+     decoration, and 160 of them at control contrast would read as a table. */
+  --color-surface: #fff;
+  --color-surface-muted: oklch(0.968 0.004 262);
+  --color-surface-sunken: oklch(0.975 0.003 262);
+  --color-surface-raised: oklch(0.945 0.005 262);
+  --color-border-grid: oklch(0.902 0.006 262);
+  --color-border-grid-half: oklch(0.945 0.005 262);
+  --color-border-control: oklch(0.6 0.014 264); /* 3.0:1 — WCAG 1.4.11 */
+
+  /* Text: three levels, all at or above 4.5:1 on --color-surface. The tertiary
+     level is darker than the usual slate-500, which sits at 3:1 and fails. */
+  --color-text-primary: oklch(0.245 0.014 264); /* 12.3:1 */
+  --color-text-secondary: oklch(0.415 0.014 264); /*  6.0:1 */
+  --color-text-tertiary: oklch(0.49 0.013 264); /*  4.6:1 */
+
+  /* Bookings. */
+  --color-accent-own-booking: oklch(0.485 0.135 262);
+  --color-accent-own-ink: oklch(0.365 0.115 262);
+  --color-accent-own-surface: oklch(0.955 0.022 262);
+  --color-accent-own-past: oklch(0.66 0.055 262);
+  --color-accent-own-on: #fff;
+  --color-booking-other-hatch: oklch(0.855 0.01 262);
+
+  /* States. */
+  --color-danger: oklch(0.495 0.19 25);
+  --color-danger-ink: oklch(0.43 0.16 25);
+  --color-danger-surface: oklch(0.963 0.022 25);
+  --color-success: oklch(0.5 0.098 162);
+  --color-success-ink: oklch(0.38 0.08 162);
+  --color-success-surface: oklch(0.945 0.04 162);
+  --color-warning-ink: oklch(0.42 0.09 75);
+  --color-warning-surface: oklch(0.965 0.045 85);
+  --color-warning-border: oklch(0.84 0.075 80);
+  --color-now-line: oklch(0.545 0.2 25);
+  --color-now-label: oklch(0.45 0.18 25);
+  --color-today-column: oklch(0.972 0.014 262);
+  --color-focus-ring: oklch(0.52 0.14 262);
+  --color-skeleton: oklch(0.93 0.006 262);
+  --color-skeleton-highlight: oklch(0.965 0.004 262);
+
+  /* Grid geometry — fixed by the domain, not by taste. */
+  --spacing-slot: 1.75rem; /* 28px — one half hour on a desktop */
+  --spacing-slot-touch: 3rem; /* 48px — one half hour on a phone */
+  --spacing-axis: 4rem; /* the time column */
+
+  --radius-booking: 4px;
+  --radius-control: 6px;
+  --radius-card: 10px;
+  --radius-panel: 14px;
+
+  /* Only two levels above zero: grid → floating panel → modal and toast. */
+  --shadow-panel:
+    0 6px 18px -6px oklch(0.3 0.03 262 / 0.28), 0 1px 2px oklch(0.3 0.03 262 / 0.1);
+  --shadow-modal:
+    0 22px 50px -14px oklch(0.28 0.03 262 / 0.42), 0 2px 6px oklch(0.28 0.03 262 / 0.12);
+
+  --animate-wave: wave 1400ms linear infinite;
+  --animate-rise: rise 200ms ease-out both;
+  --animate-toast: toast-in 160ms ease-out both;
+  --animate-sheet: sheet-up 300ms ease-out both;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --animate-shimmer: shimmer 1.6s linear infinite;
-  --animate-rise: rise 0.35s ease-out both;
+/* The dark half of every token. Pairing them here rather than sprinkling dark:
+   prefixes through the components is what keeps a component from having to know
+   the theme exists at all. */
+[data-theme="dark"] {
+  --color-surface: oklch(0.232 0.014 264);
+  --color-surface-muted: oklch(0.268 0.014 264);
+  --color-surface-sunken: oklch(0.185 0.012 264);
+  --color-surface-raised: oklch(0.3 0.015 264);
+  --color-border-grid: oklch(0.328 0.014 264);
+  --color-border-grid-half: oklch(0.28 0.013 264);
+  --color-border-control: oklch(0.53 0.016 264);
+  --color-text-primary: oklch(0.955 0.004 264);
+  --color-text-secondary: oklch(0.775 0.012 264);
+  --color-text-tertiary: oklch(0.66 0.014 264);
+  --color-accent-own-booking: oklch(0.68 0.13 262);
+  --color-accent-own-ink: oklch(0.86 0.07 262);
+  --color-accent-own-surface: oklch(0.32 0.055 262);
+  --color-accent-own-past: oklch(0.52 0.055 264);
+  --color-accent-own-on: oklch(0.18 0.03 262);
+  --color-booking-other-hatch: oklch(0.4 0.016 264);
+  --color-danger: oklch(0.66 0.17 25);
+  --color-danger-ink: oklch(0.85 0.09 25);
+  --color-danger-surface: oklch(0.31 0.06 25);
+  --color-success: oklch(0.7 0.11 162);
+  --color-success-ink: oklch(0.88 0.07 162);
+  --color-success-surface: oklch(0.3 0.05 162);
+  --color-warning-ink: oklch(0.87 0.07 80);
+  --color-warning-surface: oklch(0.315 0.045 80);
+  --color-warning-border: oklch(0.45 0.07 80);
+  --color-now-line: oklch(0.68 0.18 25);
+  --color-now-label: oklch(0.6 0.19 25);
+  --color-today-column: oklch(0.258 0.02 262);
+  --color-focus-ring: oklch(0.72 0.13 262);
+  --color-skeleton: oklch(0.28 0.013 264);
+  --color-skeleton-highlight: oklch(0.33 0.014 264);
+  --shadow-panel:
+    0 6px 18px -6px oklch(0.1 0.02 264 / 0.55), 0 1px 2px oklch(0.1 0.02 264 / 0.4);
+  --shadow-modal:
+    0 22px 50px -14px oklch(0.08 0.02 264 / 0.7), 0 2px 6px oklch(0.08 0.02 264 / 0.45);
 }
 
-/* A light band sweeping across the placeholder: reads as "loading" better than
-   a pulse, because it moves in one direction instead of blinking. The band is
-   wider than the element, so the sweep enters and leaves off-screen. */
+/* A light band sweeping across the placeholder: it reads as "loading" better
+   than a pulse, because it moves in one direction instead of blinking. */
 @utility skeleton {
-  background-color: var(--color-slate-200);
+  background-color: var(--color-skeleton);
   background-image: linear-gradient(
     90deg,
-    transparent 25%,
-    rgba(255, 255, 255, 0.8) 50%,
-    transparent 75%
+    var(--color-skeleton) 30%,
+    var(--color-skeleton-highlight) 50%,
+    var(--color-skeleton) 70%
   );
-  background-repeat: no-repeat;
-  background-size: 250% 100%;
-  animation: var(--animate-shimmer);
+  background-size: 260% 100%;
+  animation: var(--animate-wave);
 }
 
-@keyframes shimmer {
+/* An inline link inside a sentence. Tailwind's preflight strips link styling,
+   and a link in running text still has to look like one. */
+@utility text-link {
+  color: var(--color-accent-own-booking);
+  font-weight: 600;
+
+  &:hover {
+    color: var(--color-accent-own-ink);
+    text-decoration: underline;
+  }
+}
+
+/* One focus ring for the whole application, in three offsets: away from the
+   element for buttons and cards, tight for fields, and inside for grid cells,
+   where an outside ring would be painted over by the neighbouring cell. */
+@utility focus-ring {
+  &:focus-visible {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+@utility focus-ring-tight {
+  &:focus-visible {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: 1px;
+  }
+}
+
+@utility focus-ring-inset {
+  &:focus-visible {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: -2px;
+  }
+}
+
+/* Diagonal stripes on someone else's booking. The whole point is that ownership
+   survives a grayscale screenshot and red-green colour blindness, so it is a
+   texture rather than a second shade of the same hue. */
+@utility hatch {
+  background-image: repeating-linear-gradient(
+    135deg,
+    transparent 0 5px,
+    var(--color-booking-other-hatch) 5px 6px
+  );
+}
+
+@keyframes wave {
   from {
-    background-position: 150% 0;
+    background-position: -140% 0;
   }
   to {
-    background-position: -150% 0;
+    background-position: 240% 0;
   }
 }
 
-/* Content appears with a short lift instead of popping in. */
 @keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -51,8 +194,28 @@
   }
 }
 
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
 /* Motion is decoration here, so it is dropped entirely when the user asks for
-   less of it; the placeholders and content stay fully visible. */
+   less of it; every state and shadow stays exactly where it was. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -63,15 +226,30 @@
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+body {
+  background: var(--color-surface-sunken);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+}
+
+/* Tailwind's reset leaves buttons on the default arrow, which reads as "not
+   clickable". Links already get the hand from the browser; this gives it to
+   every other control. It sits in @layer base so an explicit cursor utility
+   still wins — the drag handle keeps its grab cursor, a disabled button its
+   not-allowed one. */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary,
+  select,
+  label[for],
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled) {
+    cursor: pointer;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Times, dates and counters line up in columns only with tabular figures. */
+.font-mono {
+  font-variant-numeric: tabular-nums;
 }

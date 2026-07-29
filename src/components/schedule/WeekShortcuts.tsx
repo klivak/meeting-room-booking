@@ -9,17 +9,18 @@ type WeekShortcutsProps = {
 };
 
 /**
- * Left and right arrows move between weeks, the way a calendar does.
+ * Alt + left and right move between weeks, the way a calendar does.
  *
- * Typing into a field is left alone: a shortcut that eats the arrow keys inside
- * an input would make the booking form unusable.
+ * Alt rather than the bare arrows: inside the grid the plain arrow keys move the
+ * focus from cell to cell, which is what makes a time range pickable without a
+ * mouse. Typing into a field is left alone entirely.
  */
 export function WeekShortcuts({ previousHref, nextHref }: WeekShortcutsProps) {
   const router = useRouter();
 
   useEffect(() => {
     function handle(event: KeyboardEvent) {
-      if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
+      if (!event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
         return;
       }
 
@@ -31,9 +32,13 @@ export function WeekShortcuts({ previousHref, nextHref }: WeekShortcutsProps) {
         return;
       }
 
+      // Alt + arrow is the browser's own back and forward, and here it has to
+      // mean the previous and next week instead.
       if (event.key === "ArrowLeft") {
+        event.preventDefault();
         router.push(previousHref);
       } else if (event.key === "ArrowRight") {
+        event.preventDefault();
         router.push(nextHref);
       }
     }

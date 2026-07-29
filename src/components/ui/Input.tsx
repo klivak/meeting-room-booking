@@ -1,31 +1,43 @@
 type InputProps = React.ComponentProps<"input"> & {
   label: string;
   error?: string;
+  /** Extra content on the label line, such as a character counter. */
+  labelSuffix?: React.ReactNode;
 };
 
 // Text input with its label and field-level error message. The error lives next
 // to the input because that is where the user is looking when it appears.
-export function Input({ label, error, id, className, ...props }: InputProps) {
+export function Input({
+  label,
+  error,
+  labelSuffix,
+  id,
+  className,
+  ...props
+}: InputProps) {
   const errorId = error ? `${id}-error` : undefined;
 
   return (
-    <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-sm font-medium text-slate-700">
-        {label}
-      </label>
+    <div className="flex flex-col gap-1">
+      <span className="flex items-baseline gap-2">
+        <label htmlFor={id} className="text-text-secondary text-xs font-semibold">
+          {label}
+        </label>
+        {labelSuffix ? <span className="ml-auto">{labelSuffix}</span> : null}
+      </span>
       <input
         id={id}
         aria-invalid={error ? true : undefined}
         aria-describedby={errorId}
-        className={`min-h-11 rounded-lg border px-3 py-2 text-slate-900 outline-none transition sm:min-h-0 focus:ring-2 ${
+        className={`focus-ring-tight bg-surface text-text-primary rounded-control min-h-11 border px-3 text-sm transition sm:min-h-[38px] ${
           error
-            ? "border-red-400 focus:ring-red-200"
-            : "border-slate-300 focus:border-slate-400 focus:ring-slate-200"
+            ? "border-danger focus-visible:border-danger"
+            : "border-border-control hover:border-text-tertiary focus-visible:border-accent-own-booking"
         } ${className ?? ""}`}
         {...props}
       />
       {error ? (
-        <p id={errorId} className="text-sm text-red-600">
+        <p id={errorId} className="text-danger-ink text-xs leading-snug">
           {error}
         </p>
       ) : null}

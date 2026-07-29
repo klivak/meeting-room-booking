@@ -5,26 +5,26 @@ import Link from "next/link";
 // keeps middle-click and "open in new tab" working.
 
 type LinkButtonProps = React.ComponentProps<typeof Link> & {
-  variant?: "primary" | "ghost";
+  variant?: "primary" | "secondary";
   active?: boolean;
 };
 
 export function LinkButton({
-  variant = "ghost",
+  variant = "secondary",
   active = false,
   className,
   ...props
 }: LinkButtonProps) {
   const style =
     active || variant === "primary"
-      ? "border-slate-900 bg-slate-900 text-white hover:bg-slate-800"
-      : "border-slate-300 text-slate-700 hover:bg-slate-100";
+      ? "border-accent-own-booking bg-accent-own-booking text-accent-own-on hover:brightness-110"
+      : "border-border-control bg-surface text-text-secondary hover:text-text-primary";
 
   return (
     <Link
       aria-current={active ? "page" : undefined}
       // Matches Button: a finger-sized target on a phone, compact on a desktop.
-      className={`inline-flex min-h-11 items-center rounded-lg border px-4 py-2 text-sm font-medium transition sm:min-h-0 focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 focus-visible:outline-none ${style} ${
+      className={`focus-ring inline-flex min-h-11 items-center justify-center rounded-control border px-4 text-[13px] font-semibold no-underline transition active:translate-y-px sm:min-h-[38px] ${style} ${
         className ?? ""
       }`}
       {...props}

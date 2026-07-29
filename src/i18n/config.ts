@@ -15,6 +15,13 @@ export const LOCALE_LABELS: Record<Locale, string> = {
   en: "English",
 };
 
+// Two letters for the switch in the header. Ukrainian is "UA" rather than the
+// ISO "UK", because in a header next to "EN" that reads as United Kingdom.
+export const LOCALE_SHORT_LABELS: Record<Locale, string> = {
+  uk: "UA",
+  en: "EN",
+};
+
 export function isLocale(value: string | undefined): value is Locale {
   return LOCALES.includes((value ?? "") as Locale);
 }

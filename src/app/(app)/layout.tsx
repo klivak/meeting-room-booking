@@ -19,17 +19,20 @@ export default async function AppLayout({
   }
 
   return (
-    <div className="flex min-h-full flex-col bg-slate-50">
+    <div className="bg-surface-sunken flex min-h-full flex-col">
       {/* First stop for a keyboard, so the grid full of cells can be jumped over. */}
       <a
         href="#main"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-lg focus:bg-slate-900 focus:px-4 focus:py-2 focus:text-sm focus:text-white"
+        className="focus:bg-accent-own-booking focus:text-accent-own-on sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-90 focus:rounded-control focus:px-4 focus:py-2 focus:text-sm focus:font-semibold"
       >
         {t("skipToContent")}
       </a>
       <Header user={user} />
-      {user.emailVerified ? null : <VerificationBanner />}
-      <main id="main" className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
+      {user.emailVerified ? null : <VerificationBanner email={user.email} />}
+      {/* Tighter vertically than horizontally on purpose: the twenty half-hour
+          rows of a week have to fit a 1366×768 laptop without the page
+          scrolling, and every 8px of padding is 8px taken from the grid. */}
+      <main id="main" className="mx-auto w-full max-w-[1560px] flex-1 px-4 py-4">
         {children}
       </main>
       <Toaster />

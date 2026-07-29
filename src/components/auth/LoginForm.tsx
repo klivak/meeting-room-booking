@@ -55,8 +55,16 @@ export function LoginForm() {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
+      {/* Above the form, not beside a field: "wrong email or password" is about
+          the pair, and pointing at one of them would be a guess. */}
       {generalError ? (
-        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
+        <p
+          role="alert"
+          className="bg-danger-surface border-danger text-danger-ink rounded-control flex gap-2 border px-3 py-2.5 text-[13px] leading-snug"
+        >
+          <span aria-hidden="true" className="font-bold">
+            !
+          </span>
           {generalError}
         </p>
       ) : null}
@@ -80,7 +88,7 @@ export function LoginForm() {
         error={fieldError("password")}
       />
 
-      <Button type="submit" disabled={pending}>
+      <Button type="submit" size="lg" className="mt-1 w-full" disabled={pending}>
         {pending ? t("signingIn") : t("signIn")}
       </Button>
     </form>

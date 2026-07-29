@@ -28,6 +28,8 @@ type BookingRowProps = {
   booking: MyBooking;
   /** Server time, so the "running now" badge is decided once, not per render. */
   now: string;
+  /** The next meeting, marked because "when is it" is why this page is opened. */
+  highlight?: boolean;
   actions?: React.ReactNode;
 };
 
@@ -36,7 +38,7 @@ type BookingRowProps = {
  * while the link points at the office week that contains the booking — the same
  * week the grid would open.
  */
-export function BookingRow({ booking, now, actions }: BookingRowProps) {
+export function BookingRow({ booking, now, highlight = false, actions }: BookingRowProps) {
   const t = useTranslations("myBookings");
   const tSchedule = useTranslations("schedule");
   // Month names and weekday names follow the chosen language, not the office.
@@ -57,23 +59,46 @@ export function BookingRow({ booking, now, actions }: BookingRowProps) {
   ).toISODate();
 
   return (
-    <li className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4">
+    <li
+      className={`border-border-grid-half flex flex-wrap items-center gap-3 border-b px-4 py-3.5 last:border-b-0 sm:flex-nowrap sm:gap-4 sm:px-5 ${
+        highlight
+          ? "bg-accent-own-surface shadow-[inset_3px_0_0_var(--color-accent-own-booking)]"
+          : ""
+      }`}
+    >
       <Link
         href={`/rooms/${booking.room.id}?week=${week}`}
-        className="min-w-0 flex-1 rounded focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 focus-visible:outline-none"
+        className="focus-ring min-w-0 flex-1 rounded text-inherit no-underline"
       >
-        <span className="flex flex-wrap items-center gap-2">
-          <span className="font-medium text-slate-900">{booking.title}</span>
+        <span className="flex min-w-0 flex-wrap items-center gap-1.5">
+          <span className="truncate text-[15px] font-semibold tracking-tight">
+            {booking.title}
+          </span>
           {isRunning ? <Badge tone="success">{t("running")}</Badge> : null}
-          {booking.isRecurring ? <Badge>{tSchedule("recurring")}</Badge> : null}
+          {booking.isRecurring ? (
+            <Badge>
+              <span aria-hidden="true" className="mr-0.5">
+                ↻
+              </span>
+              {tSchedule("recurring")}
+            </Badge>
+          ) : null}
         </span>
-        <span className="mt-1 block text-sm text-slate-600">
-          {start.toFormat("ccc, d MMMM")} · {start.toFormat("HH:mm")}–
-          {end.toFormat("HH:mm")} · {booking.room.name}
+        <span className="text-text-tertiary mt-0.5 block text-[13px]">
+          {booking.room.name}
         </span>
       </Link>
 
-      {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
+      {/* Time and date in their own column: what this page is really scanned for
+          is the clock, so it lines up rather than sitting inside a sentence. */}
+      <span className="flex flex-none flex-col items-start sm:w-[170px] sm:items-end">
+        <span className="font-mono text-sm font-semibold">
+          {start.toFormat("HH:mm")} – {end.toFormat("HH:mm")}
+        </span>
+        <span className="text-text-tertiary text-xs">{start.toFormat("ccc, dd.MM")}</span>
+      </span>
+
+      {actions ? <span className="flex flex-none gap-2">{actions}</span> : null}
     </li>
   );
 }

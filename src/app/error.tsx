@@ -11,8 +11,8 @@ export default function RootError({ reset }: { error: Error; reset: () => void }
   const t = useTranslations("errors");
 
   return (
-    <div className="mx-auto flex min-h-full w-full max-w-sm flex-col justify-center px-4 py-12">
-      <ErrorState message={t("pageFailed")} onRetry={reset} />
+    <div className="mx-auto flex min-h-full w-full max-w-[420px] flex-col justify-center px-4 py-12">
+      <ErrorState title={t("pageFailedTitle")} message={t("pageFailed")} onRetry={reset} />
     </div>
   );
 }

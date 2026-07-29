@@ -1,19 +1,24 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import { revalidatePath } from "next/cache";
 
-import { LOCALES, LOCALE_LABELS } from "@/i18n/config";
+import { LOCALES, LOCALE_LABELS, LOCALE_SHORT_LABELS } from "@/i18n/config";
 import { setLocale } from "@/i18n/actions";
 
 /**
  * Language switcher. Plain forms with a server action, so it works without
- * client-side JavaScript and needs no state of its own.
+ * client-side JavaScript and needs no state of its own. The two halves sit in
+ * one bordered group, which is what makes it read as a switch rather than as
+ * two unrelated buttons.
  */
 export async function LocaleSwitcher() {
   const current = await getLocale();
   const t = await getTranslations("app");
 
   return (
-    <div className="flex items-center gap-1" aria-label={t("language")}>
+    <div
+      aria-label={t("language")}
+      className="border-border-grid rounded-control flex overflow-hidden border"
+    >
       {LOCALES.map((locale) => (
         <form
           key={locale}
@@ -23,18 +28,19 @@ export async function LocaleSwitcher() {
             // Everything is rendered per language, so the whole tree is stale.
             revalidatePath("/", "layout");
           }}
+          className="border-border-grid flex [&:not(:first-child)]:border-l"
         >
           <button
             type="submit"
             aria-current={locale === current ? "true" : undefined}
             title={LOCALE_LABELS[locale]}
-            className={`rounded px-1.5 py-1 text-xs font-medium uppercase transition focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-none ${
+            className={`focus-ring-inset flex min-h-11 items-center px-2.5 font-mono text-xs font-semibold transition sm:min-h-[30px] ${
               locale === current
-                ? "bg-slate-900 text-white"
-                : "text-slate-600 hover:bg-slate-100"
+                ? "bg-accent-own-booking text-accent-own-on"
+                : "text-text-secondary hover:bg-surface-muted"
             }`}
           >
-            {locale}
+            {LOCALE_SHORT_LABELS[locale]}
           </button>
         </form>
       ))}
