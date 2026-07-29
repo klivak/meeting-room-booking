@@ -211,6 +211,52 @@ function BookingForm({
     };
   }, [selectedRoomId, weekStartIso]);
 
+  // Which rooms have nothing over the range currently picked. Asked of the
+  // server rather than derived from what the grid holds, because the grid only
+  // holds one room — and the whole point of the question is the other five.
+  const [freeRoomIds, setFreeRoomIds] = useState<string[] | null>(null);
+  const rangeStartIso = day.isValid
+    ? (getSlotStart(day, startIndex).toUTC().toISO() ?? "")
+    : "";
+  const rangeEndIso = day.isValid
+    ? (getSlotStart(day, endIndex).toUTC().toISO() ?? "")
+    : "";
+
+  useEffect(() => {
+    if (!rangeStartIso || !rangeEndIso) {
+      return;
+    }
+
+    let current = true;
+    const query = new URLSearchParams({
+      startsAt: rangeStartIso,
+      endsAt: rangeEndIso,
+      ...(booking ? { exclude: booking.id } : {}),
+    });
+
+    fetch(`/api/rooms/free?${query}`)
+      .then((response) => (response.ok ? response.json() : []))
+      .then((items: RoomOption[]) => {
+        if (current) {
+          setFreeRoomIds(items.map((item) => item.id));
+        }
+      })
+      // A suggestion that fails to load is not worth an error message either.
+      .catch(() => undefined);
+
+    return () => {
+      current = false;
+    };
+  }, [rangeStartIso, rangeEndIso, booking]);
+
+  // Everything free at that time except the room already picked: offering the
+  // current one back is not an answer to "where else".
+  const alternatives = freeRoomIds
+    ? rooms.filter(
+        (room) => room.id !== selectedRoomId && freeRoomIds.includes(room.id),
+      )
+    : [];
+
   // The booking being edited is excluded, or it would clash with itself.
   const clashes =
     day.isValid &&
@@ -583,6 +629,39 @@ function BookingForm({
                 <span aria-hidden="true">✕</span>
                 {t("clash")}
               </p>
+            ) : null}
+
+            {/* The answer to "then where?", offered only when that question is
+                actually being asked. Listing five free rooms next to a range
+                nobody objected to would be noise; next to a clash it turns a
+                tour of the six rooms into one click, with the day and the time
+                kept as they are. */}
+            {clashes && alternatives.length > 0 ? (
+              <div className="flex flex-col gap-1.5">
+                <span className="text-text-tertiary text-xs font-semibold">
+                  {t("freeInstead")}
+                </span>
+                <span className="flex flex-wrap gap-1.5">
+                  {alternatives.map((room) => (
+                    <button
+                      key={room.id}
+                      type="button"
+                      onClick={() => setSelectedRoomId(room.id)}
+                      title={t("roomOption", {
+                        name: room.name,
+                        floor: room.floor,
+                        capacity: room.capacity,
+                      })}
+                      className="focus-ring border-border-grid bg-surface hover:border-accent-own-booking text-text-primary rounded-control flex items-center gap-1.5 border px-2 py-1 text-[13px] font-medium transition"
+                    >
+                      {room.name}
+                      <span className="text-text-tertiary font-mono text-[11px]">
+                        {room.capacity}
+                      </span>
+                    </button>
+                  ))}
+                </span>
+              </div>
             ) : null}
 
             <p className="bg-surface-muted text-text-secondary rounded-control flex items-center gap-2 px-2.5 py-2 text-[13px]">

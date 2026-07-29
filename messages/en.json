@@ -100,6 +100,7 @@
     "start": "Start",
     "end": "End",
     "clash": "This time is already taken by another booking. Pick another time, day or room.",
+    "freeInstead": "Free at this time:",
     "duration": "Duration:",
     "maxDuration": "max {hours} h",
     "titleField": "Title",

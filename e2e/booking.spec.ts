@@ -78,6 +78,13 @@ test("books a dragged range, refuses to double-book it, then cancels it", async 
   await cell(page, 6, 7).click();
   const second = page.getByRole("dialog", { name: "Нове бронювання" });
   await second.getByLabel("Кінець").selectOption({ label: "14:00 · 1 год 30 хв" });
+
+  // The clash is named while the range is still being picked, and it comes with
+  // the rooms that are free at exactly that time — one click away from the tour
+  // of all six.
+  await expect(second.getByText("Цей час уже зайнятий іншим бронюванням")).toBeVisible();
+  await expect(second.getByRole("button", { name: /Говерла/ })).toBeVisible();
+
   await second.getByLabel("Назва").fill(OVERLAP_TITLE);
   await second.getByRole("button", { name: "Забронювати" }).click();
 
