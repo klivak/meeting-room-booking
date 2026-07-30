@@ -17,14 +17,14 @@ export function LinkButton({
 }: LinkButtonProps) {
   const style =
     active || variant === "primary"
-      ? "border-accent-own-booking bg-accent-own-booking text-accent-own-on hover:brightness-110"
-      : "border-border-control bg-surface text-text-secondary hover:text-text-primary";
+      ? "border-transparent bg-accent-own-booking text-accent-own-on shadow-rest hover:shadow-panel"
+      : "border-border-control bg-surface text-text-primary hover:bg-surface-muted";
 
   return (
     <Link
       aria-current={active ? "page" : undefined}
       // Matches Button: a finger-sized target on a phone, compact on a desktop.
-      className={`focus-ring inline-flex min-h-11 items-center justify-center rounded-control border px-4 text-[13px] font-semibold no-underline transition active:translate-y-px sm:min-h-[38px] ${style} ${
+      className={`focus-ring rounded-control inline-flex min-h-11 items-center justify-center gap-[7px] border px-4 text-[13px] font-semibold no-underline transition active:scale-[0.985] sm:min-h-[38px] ${style} ${
         className ?? ""
       }`}
       {...props}

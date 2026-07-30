@@ -3,19 +3,23 @@ type ButtonProps = React.ComponentProps<"button"> & {
   size?: keyof typeof SIZES;
 };
 
+// The primary action is the only one that leaves the surface: it carries a
+// resting shadow and lifts on hover. Everything else stays flat, so a screen
+// with five controls still has exactly one obvious next step.
 const VARIANTS = {
   primary:
-    "border border-accent-own-booking bg-accent-own-booking text-accent-own-on hover:brightness-110",
+    "border-transparent bg-accent-own-booking text-accent-own-on shadow-rest hover:shadow-panel",
   // The default for anything that is not the main action of its group.
   secondary:
-    "border border-border-control bg-surface text-text-secondary hover:text-text-primary",
-  ghost: "border border-transparent text-text-secondary hover:bg-surface-muted",
+    "border-border-control bg-surface text-text-primary hover:bg-surface-muted",
+  ghost: "border-transparent text-text-secondary hover:bg-surface-muted",
   // Outlined, so a destructive action never looks like the routine one. The
   // filled version exists only inside the confirmation dialog, where the user
   // has already said what they are about to do.
   danger:
-    "border border-danger bg-transparent text-danger-ink hover:bg-danger-surface",
-  dangerSolid: "border border-danger bg-danger text-white hover:brightness-110",
+    "border-danger bg-transparent text-danger-ink hover:bg-danger-surface",
+  dangerSolid:
+    "border-transparent bg-danger text-white shadow-rest hover:shadow-panel",
 };
 
 // One height on a phone (44px, roughly what a finger needs) and a compact one
@@ -43,8 +47,10 @@ export function Button({
       type={type}
       disabled={disabled}
       // The minimum width keeps a button from shrinking to its text when the
-      // label gets short in English ("Book" against "Забронювати").
-      className={`focus-ring inline-flex min-w-[88px] items-center justify-center rounded-control font-semibold transition active:translate-y-px disabled:cursor-not-allowed disabled:opacity-[0.55] ${
+      // label gets short in English ("Book" against "Забронювати"). Pressing
+      // shrinks the button instead of nudging it down: at a 10px radius a
+      // translate reads as a wobble, a scale reads as a press.
+      className={`focus-ring rounded-control inline-flex min-w-[96px] items-center justify-center gap-[7px] border font-semibold transition active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-[0.45] ${
         SIZES[size]
       } ${VARIANTS[variant]} ${className ?? ""}`}
       {...props}

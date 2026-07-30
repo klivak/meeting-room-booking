@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
-import { Commissioner, JetBrains_Mono } from "next/font/google";
+import { JetBrains_Mono, Manrope } from "next/font/google";
 
 import { THEME_STORAGE_KEY } from "@/components/theme";
 
 import "./globals.css";
 
-// Commissioner draws Cyrillic as a first-class script: at the 11-12px used on
-// the grid axis and inside booking blocks, a font whose "Щ" and "ґ" are narrower
+// Manrope draws Cyrillic as a first-class script: at the 11-12px used on the
+// grid axis and inside booking blocks, a font whose "Щ" and "ґ" are narrower
 // than its Latin costs real legibility.
-const commissioner = Commissioner({
-  variable: "--font-commissioner",
+const manrope = Manrope({
+  variable: "--font-manrope",
   subsets: ["latin", "cyrillic"],
   // Not "swap": a font that arrives after the first paint shifts every label on
   // the grid, and the grid is the whole screen.
@@ -58,7 +58,7 @@ export default async function RootLayout({
       // Light until the script above says otherwise; without it the very first
       // paint of a dark-theme user would be white.
       data-theme="light"
-      className={`${commissioner.variable} ${jetBrainsMono.variable} h-full antialiased`}
+      className={`${manrope.variable} ${jetBrainsMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>

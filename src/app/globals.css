@@ -5,72 +5,89 @@
    root layout resolves "system" to light or dark before the first paint. */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
+/* "Ательє часу": one neutral scale tinted green, one jade accent and one warm
+   "now" signal. Depth comes from hairlines and soft shadows rather than boxes.
+   The values are the handoff palette verbatim, in hex, so a swatch picked off a
+   mockup and a swatch picked off the running app are the same number. */
 @theme {
-  --font-sans: var(--font-commissioner), "Segoe UI", system-ui, sans-serif;
+  --font-sans: var(--font-manrope), "Segoe UI", system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
 
   /* Surfaces and lines. The grid lines are deliberately light: they are
      decoration, and 160 of them at control contrast would read as a table. */
-  --color-surface: #fff;
-  --color-surface-muted: oklch(0.968 0.004 262);
-  --color-surface-sunken: oklch(0.975 0.003 262);
-  --color-surface-raised: oklch(0.945 0.005 262);
-  --color-border-grid: oklch(0.902 0.006 262);
-  --color-border-grid-half: oklch(0.945 0.005 262);
-  --color-border-control: oklch(0.6 0.014 264); /* 3.0:1 — WCAG 1.4.11 */
+  --color-surface: #ffffff;
+  --color-surface-muted: #f0f3f2;
+  --color-surface-sunken: #f6f8f7;
+  --color-surface-raised: #e7ecea;
+  --color-border-grid: #d0d7d4; /* the hour line */
+  --color-border-grid-half: #e3e8e6; /* the half-hour hairline */
+  --color-border-control: #8b9793; /* 3.0:1 — WCAG 1.4.11 */
 
   /* Text: three levels, all at or above 4.5:1 on --color-surface. The tertiary
      level is darker than the usual slate-500, which sits at 3:1 and fails. */
-  --color-text-primary: oklch(0.245 0.014 264); /* 12.3:1 */
-  --color-text-secondary: oklch(0.415 0.014 264); /*  6.0:1 */
-  --color-text-tertiary: oklch(0.49 0.013 264); /*  4.6:1 */
+  --color-text-primary: #0e1614;
+  --color-text-secondary: #41504c;
+  --color-text-tertiary: #68766f;
 
-  /* Bookings. */
-  --color-accent-own-booking: oklch(0.485 0.135 262);
-  --color-accent-own-ink: oklch(0.365 0.115 262);
-  --color-accent-own-surface: oklch(0.955 0.022 262);
-  --color-accent-own-past: oklch(0.66 0.055 262);
-  --color-accent-own-on: #fff;
-  --color-booking-other-hatch: oklch(0.855 0.01 262);
+  /* Bookings. The author colour is a different hue from the accent on purpose:
+     someone else's booking must not read as a paler version of your own. */
+  --color-accent-own-booking: #0b7a66;
+  --color-accent-own-ink: #075c4c;
+  --color-accent-own-surface: #e2f4f0;
+  --color-accent-own-past: #93b4ac;
+  --color-accent-own-on: #ffffff;
+  --color-booking-other-author: #2f6db0;
+  --color-booking-other-hatch: #c9d2ce;
 
   /* States. */
-  --color-danger: oklch(0.495 0.19 25);
-  --color-danger-ink: oklch(0.43 0.16 25);
-  --color-danger-surface: oklch(0.963 0.022 25);
-  --color-success: oklch(0.5 0.098 162);
-  --color-success-ink: oklch(0.38 0.08 162);
-  --color-success-surface: oklch(0.945 0.04 162);
-  --color-warning-ink: oklch(0.42 0.09 75);
-  --color-warning-surface: oklch(0.965 0.045 85);
-  --color-warning-border: oklch(0.84 0.075 80);
-  --color-now-line: oklch(0.545 0.2 25);
-  --color-now-label: oklch(0.45 0.18 25);
-  --color-today-column: oklch(0.972 0.014 262);
-  --color-focus-ring: oklch(0.52 0.14 262);
-  --color-skeleton: oklch(0.93 0.006 262);
-  --color-skeleton-highlight: oklch(0.965 0.004 262);
+  --color-danger: #c0342b;
+  --color-danger-ink: #98261f;
+  --color-danger-surface: #fcedea;
+  --color-success: #0b7a66;
+  --color-success-ink: #075c4c;
+  --color-success-surface: #e2f4f0;
+  --color-warning-ink: #8a5a0b;
+  --color-warning-surface: #fdf3e0;
+  --color-warning-border: #ead5a4;
+  --color-now-line: #de5137;
+  --color-now-label: #b23d26;
+  --color-today-column: #edf6f4;
+  --color-focus-ring: #0b7a66;
+  --color-skeleton: #e6ebe9;
+  --color-skeleton-highlight: #f2f5f4;
 
   /* Grid geometry — fixed by the domain, not by taste. */
   --spacing-slot: 1.75rem; /* 28px — one half hour on a desktop */
   --spacing-slot-touch: 3rem; /* 48px — one half hour on a phone */
   --spacing-axis: 4rem; /* the time column */
 
-  --radius-booking: 4px;
-  --radius-control: 6px;
-  --radius-card: 10px;
-  --radius-panel: 14px;
+  --radius-booking: 6px;
+  --radius-control: 10px;
+  --radius-card: 16px;
+  --radius-panel: 22px;
 
-  /* Only two levels above zero: grid → floating panel → modal and toast. */
+  /* Three levels above zero: at rest → floating panel → modal and toast. */
+  --shadow-rest:
+    0 1px 2px rgb(14 22 20 / 0.08), 0 1px 1px rgb(14 22 20 / 0.05);
   --shadow-panel:
-    0 6px 18px -6px oklch(0.3 0.03 262 / 0.28), 0 1px 2px oklch(0.3 0.03 262 / 0.1);
+    0 8px 24px -8px rgb(14 22 20 / 0.18), 0 2px 6px rgb(14 22 20 / 0.06);
   --shadow-modal:
-    0 22px 50px -14px oklch(0.28 0.03 262 / 0.42), 0 2px 6px oklch(0.28 0.03 262 / 0.12);
+    0 32px 64px -20px rgb(14 22 20 / 0.32), 0 4px 12px rgb(14 22 20 / 0.1);
+
+  /* Four durations and three curves, so nothing invents its own timing. */
+  --ease-out-soft: cubic-bezier(0.2, 0.8, 0.3, 1);
+  --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
   --animate-wave: wave 1400ms linear infinite;
-  --animate-rise: rise 200ms ease-out both;
-  --animate-toast: toast-in 160ms ease-out both;
-  --animate-swap: swap-in 220ms ease-out both;
-  --animate-sheet: sheet-up 300ms ease-out both;
+  --animate-rise: rise 240ms var(--ease-out-soft) both;
+  --animate-block: block-in 240ms var(--ease-out-soft) both;
+  --animate-panel: panel-in 240ms var(--ease-out-soft) both;
+  --animate-toast: toast-in 240ms var(--ease-spring) both;
+  --animate-now: now-draw 380ms var(--ease-out-soft) both;
+  --animate-pop: pop 240ms var(--ease-spring) both;
+  --animate-swap: swap-in 220ms var(--ease-out-soft) both;
+  --animate-sheet: sheet-up 300ms var(--ease-out-soft) both;
 }
 
 /* Stated rather than left to the system: the switch in the header can put a
@@ -89,41 +106,45 @@
      dark field, and the scrollbars stay light. */
   color-scheme: dark;
 
-  --color-surface: oklch(0.232 0.014 264);
-  --color-surface-muted: oklch(0.268 0.014 264);
-  --color-surface-sunken: oklch(0.185 0.012 264);
-  --color-surface-raised: oklch(0.3 0.015 264);
-  --color-border-grid: oklch(0.328 0.014 264);
-  --color-border-grid-half: oklch(0.28 0.013 264);
-  --color-border-control: oklch(0.53 0.016 264);
-  --color-text-primary: oklch(0.955 0.004 264);
-  --color-text-secondary: oklch(0.775 0.012 264);
-  --color-text-tertiary: oklch(0.66 0.014 264);
-  --color-accent-own-booking: oklch(0.68 0.13 262);
-  --color-accent-own-ink: oklch(0.86 0.07 262);
-  --color-accent-own-surface: oklch(0.32 0.055 262);
-  --color-accent-own-past: oklch(0.52 0.055 264);
-  --color-accent-own-on: oklch(0.18 0.03 262);
-  --color-booking-other-hatch: oklch(0.4 0.016 264);
-  --color-danger: oklch(0.66 0.17 25);
-  --color-danger-ink: oklch(0.85 0.09 25);
-  --color-danger-surface: oklch(0.31 0.06 25);
-  --color-success: oklch(0.7 0.11 162);
-  --color-success-ink: oklch(0.88 0.07 162);
-  --color-success-surface: oklch(0.3 0.05 162);
-  --color-warning-ink: oklch(0.87 0.07 80);
-  --color-warning-surface: oklch(0.315 0.045 80);
-  --color-warning-border: oklch(0.45 0.07 80);
-  --color-now-line: oklch(0.68 0.18 25);
-  --color-now-label: oklch(0.6 0.19 25);
-  --color-today-column: oklch(0.258 0.02 262);
-  --color-focus-ring: oklch(0.72 0.13 262);
-  --color-skeleton: oklch(0.28 0.013 264);
-  --color-skeleton-highlight: oklch(0.33 0.014 264);
+  --color-surface: #131917;
+  --color-surface-muted: #1a2220;
+  --color-surface-sunken: #0b100f;
+  --color-surface-raised: #232c29;
+  --color-border-grid: #2d3835;
+  --color-border-grid-half: #222b29;
+  --color-border-control: #5f6d69;
+  --color-text-primary: #ecf1ef;
+  --color-text-secondary: #a7b3af;
+  --color-text-tertiary: #7c8a85;
+  --color-accent-own-booking: #37cfae;
+  --color-accent-own-ink: #9beeda;
+  --color-accent-own-surface: #0f3831;
+  --color-accent-own-past: #516c65;
+  --color-accent-own-on: #04120f;
+  --color-booking-other-author: #6ba8e0;
+  --color-booking-other-hatch: #39443f;
+  --color-danger: #ef6a5c;
+  --color-danger-ink: #ffb4a9;
+  --color-danger-surface: #391c18;
+  --color-success: #37cfae;
+  --color-success-ink: #9beeda;
+  --color-success-surface: #0f3831;
+  --color-warning-ink: #e9c98a;
+  --color-warning-surface: #332712;
+  --color-warning-border: #584821;
+  --color-now-line: #ff7b5c;
+  --color-now-label: #e86546;
+  --color-today-column: #14211e;
+  --color-focus-ring: #37cfae;
+  --color-skeleton: #1e2624;
+  --color-skeleton-highlight: #28322f;
+  /* On a near-black canvas a tinted shadow is invisible, so the dark half drops
+     the hue and buys separation with opacity instead. */
+  --shadow-rest: 0 1px 3px rgb(0 0 0 / 0.55);
   --shadow-panel:
-    0 6px 18px -6px oklch(0.1 0.02 264 / 0.55), 0 1px 2px oklch(0.1 0.02 264 / 0.4);
+    0 10px 30px -8px rgb(0 0 0 / 0.7), 0 2px 8px rgb(0 0 0 / 0.55);
   --shadow-modal:
-    0 22px 50px -14px oklch(0.08 0.02 264 / 0.7), 0 2px 6px oklch(0.08 0.02 264 / 0.45);
+    0 40px 80px -20px rgb(0 0 0 / 0.8), 0 6px 16px rgb(0 0 0 / 0.7);
 }
 
 /* A taller half hour once there is room for one. A 185px wide column at a 28px
@@ -204,8 +225,8 @@
 @utility hatch {
   background-image: repeating-linear-gradient(
     135deg,
-    transparent 0 5px,
-    var(--color-booking-other-hatch) 5px 6px
+    var(--color-booking-other-hatch) 0 1px,
+    var(--color-surface) 1px 7px
   );
 }
 
@@ -246,10 +267,58 @@
 @keyframes toast-in {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(16px);
   }
   to {
     opacity: 1;
+    transform: none;
+  }
+}
+
+/* A booking block grows out of the row it belongs to rather than fading in
+   anywhere, so the eye keeps the slot it was already looking at. */
+@keyframes block-in {
+  from {
+    opacity: 0;
+    transform: scaleY(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* A modal interrupts, so it arrives from the centre outwards rather than
+   sliding in from an edge the way a non-modal panel does. */
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The "now" line is drawn from the time axis outwards, which is the direction
+   the day runs in; appearing all at once reads as a border, not as a clock. */
+@keyframes now-draw {
+  from {
+    transform: scaleX(0);
+  }
+  to {
     transform: none;
   }
 }
