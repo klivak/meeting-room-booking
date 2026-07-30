@@ -1,5 +1,6 @@
 "use client";
 
+import { Eye, EyeOff } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
@@ -33,24 +34,11 @@ export function PasswordField({ value, ...props }: PasswordFieldProps) {
           title={revealed ? t("hidePassword") : t("showPassword")}
           className="focus-ring-tight text-text-tertiary hover:text-text-primary hover:bg-surface-muted rounded-control flex h-9 w-10 items-center justify-center transition"
         >
-          {/* Drawn rather than an emoji, for the same reason as the bell: an
-              emoji is coloured by the system font and ignores the theme. */}
-          <svg
-            aria-hidden="true"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-[18px] w-[18px]"
-          >
-            <path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12" />
-            <circle cx="12" cy="12" r="2.6" />
-            {/* The stroke through the eye is the whole difference between the
-                two states, so it is the only thing that appears. */}
-            {revealed ? <path d="M4 20 20 4" /> : null}
-          </svg>
+          {revealed ? (
+            <EyeOff aria-hidden="true" className="size-[18px]" />
+          ) : (
+            <Eye aria-hidden="true" className="size-[18px]" />
+          )}
         </button>
       }
     />

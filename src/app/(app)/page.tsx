@@ -1,3 +1,4 @@
+import { DoorOpen } from "lucide-react";
 import { DateTime } from "luxon";
 import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
@@ -135,9 +136,13 @@ async function RoomsList({ capacityMin }: { capacityMin?: number }) {
                 target for the most common action on this screen. */}
             <Link
               href={`/rooms/${room.id}`}
-              className="focus-ring border-border-grid bg-surface rounded-card hover:border-accent-own-booking hover:shadow-panel flex flex-col gap-2.5 border p-4 text-inherit no-underline transition"
+              className="focus-ring border-border-grid bg-surface rounded-card shadow-rest hover:border-accent-own-booking hover:shadow-panel flex flex-col gap-2.5 border p-4 text-inherit no-underline transition hover:-translate-y-0.5"
             >
               <span className="flex items-baseline gap-2">
+                <DoorOpen
+                  aria-hidden="true"
+                  className="text-text-tertiary size-4 self-center"
+                />
                 <span className="text-[17px] font-semibold tracking-tight">
                   {room.name}
                 </span>

@@ -29,7 +29,14 @@ export function RoomAvailability({ availability }: { availability: RoomAvailabil
     readOfficeTimeZone,
   );
 
-  const free = availability.kind === "free" || availability.kind === "freeFrom";
+  // Three tones, not two: "free from 17:00" is neither the green "go now" nor
+  // the grey "not today", and the middle answer is the one worth acting on fast.
+  const tone =
+    availability.kind === "free"
+      ? "text-success"
+      : availability.kind === "freeFrom"
+        ? "text-warning-ink"
+        : "text-text-tertiary";
 
   const text =
     availability.kind === "free"
@@ -43,16 +50,11 @@ export function RoomAvailability({ availability }: { availability: RoomAvailabil
           : t("dayOver");
 
   return (
-    <span className="flex items-center gap-2">
+    <span className={`flex items-center gap-1.5 text-xs font-semibold ${tone}`}>
       {/* The dot is a second, redundant signal, not the only one: the sentence
           next to it already says everything. */}
-      <span
-        aria-hidden="true"
-        className={`h-2 w-2 shrink-0 rounded-full ${
-          free ? "bg-success" : "bg-border-control"
-        }`}
-      />
-      <span className="text-text-secondary text-[13px]">{text}</span>
+      <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-current" />
+      {text}
     </span>
   );
 }

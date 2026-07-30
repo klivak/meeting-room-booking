@@ -1,5 +1,6 @@
 "use client";
 
+import { Repeat } from "lucide-react";
 import { DateTime } from "luxon";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
@@ -77,9 +78,7 @@ export function BookingRow({ booking, now, highlight = false, actions }: Booking
           {isRunning ? <Badge tone="success">{t("running")}</Badge> : null}
           {booking.isRecurring ? (
             <Badge>
-              <span aria-hidden="true" className="mr-0.5">
-                ↻
-              </span>
+              <Repeat aria-hidden="true" className="mr-1 size-3" />
               {tSchedule("recurring")}
             </Badge>
           ) : null}
