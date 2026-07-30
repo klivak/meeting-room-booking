@@ -1,5 +1,6 @@
 "use client";
 
+import { Bell, BellRing } from "lucide-react";
 import { DateTime } from "luxon";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
@@ -129,36 +130,28 @@ export function NotificationBell() {
           items.length > 0 ? t("bellCount", { count: items.length }) : t("bellEmpty")
         }
         aria-expanded={open}
-        className={`focus-ring text-text-secondary hover:text-text-primary rounded-control relative flex h-11 w-11 items-center justify-center transition sm:h-9 sm:w-9 ${
-          open ? "bg-surface-muted" : ""
+        className={`focus-ring border-border-grid text-text-secondary hover:text-text-primary rounded-control relative flex h-11 w-11 shrink-0 items-center justify-center border transition sm:h-9 sm:w-9 ${
+          open ? "bg-surface-muted text-text-primary" : "bg-surface"
         }`}
       >
-        {/* A drawn bell rather than 🔔: the emoji is coloured by the system font
-            and would survive the grayscale check as the only spot of colour. */}
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="h-[18px] w-[18px]"
-        >
-          <path d="M18 8a6 6 0 0 0-12 0c0 6-3 7-3 7h18s-3-1-3-7" />
-          <path d="M13.7 21a2 2 0 0 1-3.4 0" />
-        </svg>
+        {/* The ringing bell once something is waiting, the still one otherwise:
+            the shape says "new" before the counter is read. */}
+        {items.length > 0 ? (
+          <BellRing aria-hidden="true" className="size-[18px]" />
+        ) : (
+          <Bell aria-hidden="true" className="size-[18px]" />
+        )}
         {items.length > 0 ? (
           // The 2px border is the surface colour, so the counter stays readable
           // whatever it happens to sit on.
-          <span className="bg-danger border-surface absolute top-1.5 right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full border-2 px-1 font-mono text-[10px] leading-none font-semibold text-white sm:top-0.5 sm:right-0.5">
+          <span className="bg-now-line border-surface absolute top-1 right-1 flex h-4 min-w-4 items-center justify-center rounded-full border-2 px-1 font-mono text-[10px] leading-none font-semibold text-white sm:-top-1 sm:-right-1">
             {items.length}
           </span>
         ) : null}
       </button>
 
       {open ? (
-        <div className="border-border-grid bg-surface rounded-card shadow-modal animate-rise absolute right-0 z-40 mt-1 w-80 overflow-hidden border">
+        <div className="border-border-grid bg-surface rounded-card shadow-modal animate-panel absolute right-0 z-40 mt-1 w-80 overflow-hidden border">
           <p className="border-border-grid border-b px-4 py-3 text-[13px] font-semibold">
             {t("title")}
           </p>

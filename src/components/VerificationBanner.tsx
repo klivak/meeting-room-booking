@@ -1,5 +1,6 @@
 "use client";
 
+import { CircleCheck, TriangleAlert } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
@@ -44,10 +45,8 @@ export function VerificationBanner({ email }: { email: string }) {
   if (result === "sent") {
     return (
       <div className="border-success bg-success-surface text-success-ink border-b">
-        <p className="mx-auto max-w-[1560px] px-4 py-3 text-[13px] leading-relaxed">
-          <span aria-hidden="true" className="mr-2 font-bold">
-            ✓
-          </span>
+        <p className="mx-auto flex max-w-[1560px] items-center gap-2.5 px-4 py-3 text-[13px] leading-relaxed">
+          <CircleCheck aria-hidden="true" className="size-4 flex-none" />
           {t("resendDone", { email })}
         </p>
       </div>
@@ -57,9 +56,7 @@ export function VerificationBanner({ email }: { email: string }) {
   return (
     <div className="border-warning-border bg-warning-surface text-warning-ink border-b">
       <div className="mx-auto flex max-w-[1560px] flex-wrap items-center gap-3 px-4 py-3">
-        <span aria-hidden="true" className="font-bold">
-          !
-        </span>
+        <TriangleAlert aria-hidden="true" className="size-4 flex-none" />
         <p className="flex-1 text-[13px] leading-relaxed">
           {t("verifyBanner", { email })}
           {result === "failed" ? ` ${t("resendFailed")}` : ""}

@@ -1,5 +1,6 @@
 "use client";
 
+import { CircleCheck, Undo2 } from "lucide-react";
 import { useSyncExternalStore } from "react";
 
 import {
@@ -22,15 +23,12 @@ export function Toaster() {
   return (
     <div
       role="status"
-      className="bg-text-primary text-surface shadow-modal animate-toast rounded-control fixed right-5 bottom-5 z-80 flex max-w-[340px] items-center gap-2.5 px-3.5 py-3"
+      // A card rather than an inverted bar: it sits over the grid, and the one
+      // dark rectangle on the screen read as an error whatever it said.
+      className="bg-surface border-border-grid text-text-primary shadow-modal animate-toast rounded-card fixed right-5 bottom-5 z-80 flex max-w-[360px] items-center gap-3 border px-3.5 py-3"
     >
-      <span
-        aria-hidden="true"
-        className="bg-success flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white"
-      >
-        ✓
-      </span>
-      <span className="text-[13px] leading-snug font-medium">{toast.message}</span>
+      <CircleCheck aria-hidden="true" className="text-success size-[18px] shrink-0" />
+      <span className="flex-1 text-[13px] leading-snug font-medium">{toast.message}</span>
       {toast.action ? (
         <button
           type="button"
@@ -38,8 +36,9 @@ export function Toaster() {
             dismissToast();
             toast.action?.run();
           }}
-          className="focus-ring rounded-control text-surface ml-1 shrink-0 border border-current/40 px-2 py-1 text-[13px] font-semibold underline-offset-2 hover:underline"
+          className="focus-ring rounded-control border-border-control text-text-secondary hover:bg-surface-muted hover:text-text-primary flex shrink-0 items-center gap-1.5 border px-3 py-1.5 text-xs font-semibold transition"
         >
+          <Undo2 aria-hidden="true" className="size-3.5" />
           {toast.action.label}
         </button>
       ) : null}

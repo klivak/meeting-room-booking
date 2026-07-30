@@ -1,5 +1,6 @@
 "use client";
 
+import { RotateCw, WifiOff } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/Button";
@@ -18,14 +19,22 @@ export function ErrorState({
   const t = useTranslations("errors");
 
   return (
-    <div className="border-danger bg-surface rounded-card flex flex-col items-start gap-2 border p-6">
-      <p className="text-danger-ink text-[15px] font-semibold">
-        {title ?? t("loadFailedTitle")}
-      </p>
+    <div className="border-border-grid bg-surface rounded-card shadow-rest flex flex-col items-center gap-2.5 border p-8 text-center">
+      {/* The badge names the failure before the sentence does; danger-tinted
+          rather than a red border round the whole card, which reads as "this
+          block is broken" instead of "the load is". */}
+      <span
+        aria-hidden="true"
+        className="bg-danger-surface text-danger mb-1 flex size-15 items-center justify-center rounded-full"
+      >
+        <WifiOff className="size-[30px]" />
+      </span>
+      <p className="text-[17px] font-semibold">{title ?? t("loadFailedTitle")}</p>
       <p className="text-text-secondary max-w-[44ch] text-[13px] leading-relaxed">
         {message ?? t("loadFailed")}
       </p>
-      <Button className="mt-1" onClick={onRetry}>
+      <Button className="mt-2" onClick={onRetry}>
+        <RotateCw aria-hidden="true" className="size-4" />
         {t("retry")}
       </Button>
     </div>
