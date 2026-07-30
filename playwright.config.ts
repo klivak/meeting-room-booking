@@ -6,7 +6,11 @@ import { defineConfig, devices } from "@playwright/test";
 //
 // Vitest still owns correctness: `npm test` is the suite that has to be green.
 
-const BASE_URL = "http://localhost:3000";
+// Overridable for the same reason TEST_PORT is: port 3000 is the default for
+// every Node project on the machine, and reuseExistingServer below will happily
+// screenshot whatever else is already answering on it.
+const PORT = process.env.E2E_PORT ?? "3000";
+const BASE_URL = `http://localhost:${PORT}`;
 
 /** Session cookie captured once by auth.setup.ts and reused by every spec. */
 export const STORAGE_STATE = "e2e/.auth/user.json";
@@ -40,7 +44,7 @@ export default defineConfig({
   },
 
   webServer: {
-    command: "npm run dev",
+    command: `npm run dev -- --port ${PORT}`,
     url: `${BASE_URL}/login`,
     // A server already running by hand is reused rather than fought with.
     reuseExistingServer: true,
