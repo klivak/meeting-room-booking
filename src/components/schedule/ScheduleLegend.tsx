@@ -13,15 +13,15 @@ export async function ScheduleLegend() {
       <span className="text-text-tertiary text-[13px]">{t("hint")}</span>
       <span className="bg-border-grid h-4 w-px" />
       <span className="text-text-secondary flex items-center gap-1.5 text-xs">
-        <span className="border-accent-own-booking bg-accent-own-surface rounded-booking h-3.5 w-5.5 border shadow-[inset_3px_0_0_var(--color-accent-own-booking)]" />
+        <span className="border-accent-own-booking bg-accent-own-surface h-3.5 w-5.5 rounded-[3px] border shadow-[inset_3px_0_0_var(--color-accent-own-booking),var(--shadow-rest)]" />
         {t("mine")}
       </span>
       <span className="text-text-secondary flex items-center gap-1.5 text-xs">
-        <span className="border-border-control bg-surface-muted hatch rounded-booking h-3.5 w-5.5 border" />
+        <span className="border-border-grid hatch h-3.5 w-5.5 rounded-[3px] border shadow-[inset_3px_0_0_var(--color-booking-other-author)]" />
         {t("others")}
       </span>
       <span className="text-text-secondary flex items-center gap-1.5 text-xs">
-        <span className="border-accent-own-past text-accent-own-past rounded-booking flex h-3.5 w-5.5 items-center justify-center border border-dashed text-[9px]">
+        <span className="border-accent-own-past text-accent-own-past flex h-3.5 w-5.5 rounded-[3px] items-center justify-center border border-dashed text-[9px]">
           ✓
         </span>
         {t("mineFinished")}

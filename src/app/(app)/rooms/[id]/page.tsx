@@ -1,3 +1,4 @@
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DateTime } from "luxon";
 import { getLocale, getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
@@ -444,7 +445,7 @@ export default async function RoomPage({
               title={t("previousWeek")}
               className="focus-ring-inset text-text-secondary hover:bg-surface-muted hover:text-text-primary hidden h-8 w-[34px] items-center justify-center no-underline transition sm:flex"
             >
-              <span aria-hidden="true">←</span>
+              <ChevronLeft aria-hidden="true" className="size-[18px]" />
             </Link>
             <Link
               href={`/rooms/${room.id}`}
@@ -463,7 +464,7 @@ export default async function RoomPage({
               title={t("nextWeek")}
               className="focus-ring-inset text-text-secondary hover:bg-surface-muted hover:text-text-primary hidden h-8 w-[34px] items-center justify-center no-underline transition sm:flex"
             >
-              <span aria-hidden="true">→</span>
+              <ChevronRight aria-hidden="true" className="size-[18px]" />
             </Link>
           </div>
 

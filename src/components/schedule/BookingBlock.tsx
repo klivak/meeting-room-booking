@@ -1,5 +1,6 @@
 "use client";
 
+import { Check, Repeat } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 
@@ -58,17 +59,21 @@ type BookingBlockProps = {
 // that is over. All three survive a grayscale screenshot and deuteranopia,
 // which colour alone would not.
 const STATES: Record<BookingState, string> = {
-  own: "border-accent-own-booking bg-accent-own-surface text-accent-own-ink shadow-[inset_3px_0_0_var(--color-accent-own-booking)]",
+  own: "border-accent-own-booking bg-accent-own-surface text-accent-own-ink shadow-[inset_3px_0_0_var(--color-accent-own-booking),var(--shadow-rest)]",
+  // A booking that is over gets no fill and no shadow: it is still on the grid
+  // for reference, but it must not compete with the part of the day left to book.
   finished:
     "border-dashed border-accent-own-past bg-surface text-accent-own-past shadow-[inset_3px_0_0_var(--color-accent-own-past)]",
+  // The left bar is a different hue from the accent, not a paler one, so that
+  // "someone else booked this" never reads as "a faded version of yours".
   other:
-    "border-border-control bg-surface-muted hatch text-text-secondary cursor-default",
+    "border-border-grid hatch text-text-secondary cursor-default shadow-[inset_3px_0_0_var(--color-booking-other-author),var(--shadow-rest)]",
 };
 
 const CHIPS: Record<BookingState, string> = {
   own: "bg-accent-own-booking text-accent-own-on",
   finished: "bg-surface-raised text-text-tertiary",
-  other: "bg-surface-raised text-text-secondary",
+  other: "bg-booking-other-author text-white",
 };
 
 /**
@@ -105,7 +110,9 @@ export function BookingBlock({
 }: BookingBlockProps) {
   const t = useTranslations("schedule");
 
-  const className = `focus-ring-tight rounded-booking absolute right-[3px] left-[3px] flex overflow-hidden border no-underline transition ${
+  // The block grows out of its own row rather than fading in from nowhere, so
+  // the eye keeps the slot it was already looking at.
+  const className = `focus-ring-tight rounded-booking animate-block origin-top absolute right-[4px] left-[4px] flex overflow-hidden border no-underline transition ${
     compact ? "flex-row items-center gap-1.5 py-0 pr-1 pl-1.5" : "flex-col gap-0.5 py-1 pr-1.5 pl-2"
   } ${STATES[state]} ${
     isSelected ? "outline-focus-ring outline-2 outline-offset-1" : ""
@@ -125,20 +132,20 @@ export function BookingBlock({
   const marks = (
     <span className="flex flex-none items-center gap-1">
       {booking.isRecurring ? (
-        <span title={t("recurring")} className="text-xs leading-none opacity-80 sm:text-[11px]">
-          <span aria-hidden="true">↻</span>
+        <span title={t("recurring")} className="leading-none opacity-80">
+          <Repeat aria-hidden="true" className="size-3.5" />
           <span className="sr-only">{t("recurring")}</span>
         </span>
       ) : null}
       {state === "finished" ? (
-        <span title={t("finished")} className="text-xs leading-none sm:text-[11px]">
-          <span aria-hidden="true">✓</span>
+        <span title={t("finished")} className="leading-none">
+          <Check aria-hidden="true" className="size-3.5" />
           <span className="sr-only">{t("finished")}</span>
         </span>
       ) : null}
       <span
         aria-hidden="true"
-        className={`rounded-booking px-[3px] py-[2px] font-mono text-[11px] leading-none sm:text-[10px] font-semibold tracking-[0.02em] ${CHIPS[state]}`}
+        className={`flex size-4 items-center justify-center rounded-full font-mono text-[9px] leading-none font-bold ${CHIPS[state]}`}
       >
         {booking.isMine ? t("youShort") : initials(booking.user.name)}
       </span>
@@ -206,7 +213,9 @@ export function BookingBlock({
       href={href}
       scroll={false}
       aria-label={label}
-      className={`${className} hover:brightness-[0.98]`}
+      // Only a booking you can act on lifts: the hover is the affordance, so
+      // someone else's block must not have it.
+      className={`${className} hover:-translate-y-px hover:shadow-panel`}
       style={style}
       title={tooltip}
       // The browser's own link dragging would fight the grab below.

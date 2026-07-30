@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronLeft, ChevronRight, Plus, X } from "lucide-react";
 import { DateTime } from "luxon";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
@@ -12,6 +13,7 @@ import {
   type BookingState,
   type BookingView,
 } from "@/components/schedule/BookingBlock";
+import { DayRibbon } from "@/components/schedule/DayRibbon";
 import {
   DAY_ROW_H,
   HEADER_REM,
@@ -43,6 +45,10 @@ import {
 } from "@/lib/domain/grid";
 import { intervalsOverlap } from "@/lib/domain/overlap";
 import { getWeekStart } from "@/lib/domain/week";
+
+// Shared by every day with nothing booked, so the ribbon does not allocate
+// seven empty sets on each render.
+const EMPTY_DAY: ReadonlySet<number> = new Set<number>();
 
 export type { BookingView };
 
@@ -553,7 +559,10 @@ export function Schedule({
           day: cellDay.setLocale(locale).toFormat("cccc dd.MM"),
           time: labels[rowIndex],
         })}
-        className={`focus-ring-inset group relative flex items-center justify-center border-t transition ${
+        // w-full is not decoration: a <button> sizes to its content, and every
+        // child here is absolutely positioned, so without it the cell collapses
+        // to zero width wherever its parent is not a flex container.
+        className={`focus-ring-inset group relative flex w-full items-center justify-center border-t transition ${
           // A full line between hours, a lighter one inside them: that contrast
           // is what stops twenty equal rows from reading as a spreadsheet.
           rowIndex === 0
@@ -561,12 +570,20 @@ export function Schedule({
             : isHour
               ? "border-t-border-grid"
               : "border-t-border-grid-half"
-        } ${canBook ? "hover:bg-surface-muted cursor-pointer" : "cursor-default"}`}
+        } ${canBook ? "cursor-pointer" : "cursor-default"}`}
         style={{ height: rowHeight }}
       >
-        {/* The hovered cell names its own time: the axis is far away once the
-            pointer is deep inside the week. */}
-        <span className="text-text-tertiary pointer-events-none font-mono text-xs sm:text-[11px] xl:text-xs opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100">
+        {/* The hovered cell names its own time and shows the shape of the
+            booking it would make: the axis is far away once the pointer is deep
+            inside the week, and a bare highlight does not say "click to book". */}
+        <span
+          className={`rounded-booking pointer-events-none absolute inset-x-1 inset-y-[2px] flex items-center justify-center gap-1 font-mono text-xs opacity-0 transition-opacity sm:text-[11px] xl:text-xs ${
+            canBook
+              ? "border-accent-own-booking bg-accent-own-surface text-accent-own-ink border-[1.5px] border-dashed font-semibold group-hover:opacity-100 group-focus-visible:opacity-100"
+              : "text-text-tertiary group-focus-visible:opacity-100"
+          }`}
+        >
+          {canBook ? <Plus aria-hidden="true" className="size-3" /> : null}
           {labels[rowIndex]}
         </span>
       </button>
@@ -871,7 +888,7 @@ export function Schedule({
           >
             {refused ? (
               <>
-                <span aria-hidden="true">✕ </span>
+                <X aria-hidden="true" className="size-3.5" />
                 {clashes ? t("taken") : t("slotPast")}
               </>
             ) : (
@@ -938,6 +955,16 @@ export function Schedule({
 
   const isWeekEmpty = placements.length === 0;
 
+  // Which half hours of each day are taken, for the strip in the week header.
+  const busyByDay = new Map<number, Set<number>>();
+  for (const { placement } of placements) {
+    const busy = busyByDay.get(placement!.dayIndex) ?? new Set<number>();
+    for (let row = placement!.rowStart; row < placement!.rowStart + placement!.rowSpan; row += 1) {
+      busy.add(row);
+    }
+    busyByDay.set(placement!.dayIndex, busy);
+  }
+
   return (
     <div className="flex flex-col gap-2.5">
       {/* Single day: a phone has no room for seven columns. */}
@@ -949,7 +976,7 @@ export function Schedule({
             title={t("previousDay")}
             className="focus-ring border-border-grid text-text-secondary rounded-control flex h-11 w-11 shrink-0 items-center justify-center border no-underline"
           >
-            <span aria-hidden="true">←</span>
+            <ChevronLeft aria-hidden="true" className="size-[18px]" />
           </Link>
           <span className="flex min-w-0 flex-1 flex-col items-center">
             <span className="truncate text-[15px] font-semibold">
@@ -965,7 +992,7 @@ export function Schedule({
             title={t("nextDay")}
             className="focus-ring border-border-grid text-text-secondary rounded-control flex h-11 w-11 shrink-0 items-center justify-center border no-underline"
           >
-            <span aria-hidden="true">→</span>
+            <ChevronRight aria-hidden="true" className="size-[18px]" />
           </Link>
         </div>
 
@@ -1061,7 +1088,7 @@ export function Schedule({
       <div
         role="group"
         aria-label={t("weekGrid")}
-        className="bg-surface border-border-grid rounded-card hidden overflow-auto border sm:block"
+        className="bg-surface border-border-grid rounded-card shadow-rest hidden overflow-auto border sm:block"
       >
         {/* 64px of time axis plus seven 88px days. Wider than that and the week
             no longer fits a 768px tablet, which is the width where the seven
@@ -1069,7 +1096,7 @@ export function Schedule({
         <div className="flex min-w-[42.5rem] flex-col">
           <div className="bg-surface sticky top-0 z-12 flex shadow-[0_1px_0_var(--color-border-grid)]">
             <div className="bg-surface border-border-grid sticky left-0 z-13 w-axis flex-none border-r" />
-            {days.map((option) => {
+            {days.map((option, index) => {
               const isToday = option.toISODate() === todayIso;
 
               return (
@@ -1079,7 +1106,7 @@ export function Schedule({
                   // shares one baseline, and the pair as a whole sits in the
                   // middle of the row. items-baseline alone hangs both labels
                   // from the top edge.
-                  className={`border-border-grid-half relative flex min-w-[5.5rem] flex-1 items-center justify-center border-l px-1.5 ${
+                  className={`border-border-grid-half relative flex min-w-[5.5rem] flex-1 items-center justify-center border-l px-2 ${
                     isToday ? "bg-today-column" : ""
                   } ${isPastDay(option) ? "opacity-55" : ""}`}
                   style={{ height: `${HEADER_REM}rem` }}
@@ -1104,13 +1131,18 @@ export function Schedule({
                       {option.toFormat("dd.MM")}
                     </span>
                   </span>
+                  <DayRibbon
+                    busy={busyByDay.get(index) ?? EMPTY_DAY}
+                    slotCount={SLOT_COUNT}
+                    className="absolute inset-x-2 bottom-1"
+                  />
                   {/* Out of the flow: in the row it widened the today column's
                       label group and pushed its text off the centre the other
                       six days line up on. */}
                   {isToday ? (
                     <span
                       aria-hidden="true"
-                      className="bg-now-line absolute top-1/2 right-2 h-1.5 w-1.5 -translate-y-1/2 rounded-full"
+                      className="bg-now-line absolute top-2 right-2 h-1.5 w-1.5 rounded-full"
                     />
                   ) : null}
                 </div>
@@ -1174,7 +1206,9 @@ export function Schedule({
                 className="pointer-events-none absolute inset-x-0 z-14"
                 style={{ top: rowSpan(nowMarker.ratio * SLOT_COUNT, ROW_H) }}
               >
-                <div className="border-now-line ml-axis border-t-2" />
+                {/* Drawn from the axis outwards, the direction the day runs in;
+                    appearing all at once would read as a border. */}
+                <div className="border-now-line ml-axis animate-now origin-left border-t-2" />
                 <span className="w-axis absolute -top-2.5 left-0 pr-1 text-right">
                   <span className="bg-now-label rounded-booking px-1 py-px font-mono text-xs sm:text-[11px] xl:text-xs font-semibold text-white">
                     {DateTime.fromMillis(now).setZone(timeZone).toFormat("HH:mm")}

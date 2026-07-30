@@ -8,6 +8,9 @@
 // globals.css). Everything the grid positions is a calc() over one of them.
 export const ROW_H = "var(--spacing-slot)";
 export const DAY_ROW_H = "var(--spacing-slot-touch)";
+// Unchanged by the occupancy strip on purpose: the strip is drawn against the
+// bottom edge of the header rather than stacked under the label, because the
+// whole week has to keep fitting a 1366x768 laptop without the page scrolling.
 export const HEADER_REM = 2.125;
 
 /** Height of a whole number of grid rows, as a CSS length. */
