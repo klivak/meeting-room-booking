@@ -1,8 +1,10 @@
 "use client";
 
+import { Monitor, Moon, Sun } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useSyncExternalStore } from "react";
 
+import { IconButton } from "@/components/ui/IconButton";
 import {
   THEMES,
   readSystemTheme,
@@ -12,12 +14,10 @@ import {
   type Theme,
 } from "@/components/theme";
 
-// Symbols rather than an icon set: the application already speaks in ← → ✕ ↻,
-// and one more dependency for three glyphs is not worth its weight.
-const SYMBOLS: Record<Theme, string> = {
-  system: "◐",
-  light: "☀",
-  dark: "☾",
+const ICONS: Record<Theme, typeof Sun> = {
+  system: Monitor,
+  light: Sun,
+  dark: Moon,
 };
 
 /**
@@ -28,20 +28,16 @@ const SYMBOLS: Record<Theme, string> = {
 export function ThemeToggle() {
   const t = useTranslations("app");
   const theme = useSyncExternalStore(subscribeToTheme, readTheme, readSystemTheme);
+  const Icon = ICONS[theme];
 
   return (
-    <button
-      type="button"
+    <IconButton
       onClick={() => setTheme(THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length])}
       // The label names the current mode, not the next one: a screen reader user
       // needs to know where they are before deciding to press.
-      aria-label={t(`theme.${theme}`)}
-      title={t(`theme.${theme}`)}
-      className="focus-ring border-border-grid text-text-secondary hover:border-border-control hover:text-text-primary rounded-control flex h-11 w-11 items-center justify-center border transition sm:h-9 sm:w-9"
+      label={t(`theme.${theme}`)}
     >
-      <span aria-hidden="true" className="text-[15px] leading-none">
-        {SYMBOLS[theme]}
-      </span>
-    </button>
+      <Icon aria-hidden="true" className="size-[18px]" />
+    </IconButton>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { Menu } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 /**
@@ -58,14 +59,10 @@ export function HeaderMenu({
         aria-expanded={open}
         aria-haspopup="menu"
         className={`focus-ring border-border-grid text-text-secondary hover:text-text-primary rounded-control flex h-11 w-11 items-center justify-center border transition ${
-          open ? "bg-surface-muted" : ""
+          open ? "bg-surface-muted" : "bg-surface"
         }`}
       >
-        <span aria-hidden="true" className="flex flex-col gap-[3px]">
-          <span className="bg-current block h-[2px] w-4 rounded-full" />
-          <span className="bg-current block h-[2px] w-4 rounded-full" />
-          <span className="bg-current block h-[2px] w-4 rounded-full" />
-        </span>
+        <Menu aria-hidden="true" className="size-5" />
       </button>
 
       {open ? (

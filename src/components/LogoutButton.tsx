@@ -1,5 +1,6 @@
 "use client";
 
+import { LogOut } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -28,6 +29,7 @@ export function LogoutButton() {
       onClick={handleLogout}
       disabled={pending}
     >
+      <LogOut aria-hidden="true" className="size-4" />
       {pending ? t("loggingOut") : t("logout")}
     </Button>
   );

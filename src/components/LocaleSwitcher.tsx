@@ -34,7 +34,7 @@ export async function LocaleSwitcher() {
             type="submit"
             aria-current={locale === current ? "true" : undefined}
             title={LOCALE_LABELS[locale]}
-            className={`focus-ring-inset flex min-h-11 items-center px-2.5 font-mono text-xs font-semibold transition sm:min-h-[30px] ${
+            className={`focus-ring-inset flex min-h-11 items-center px-2.5 font-mono text-xs font-semibold transition sm:min-h-9 ${
               locale === current
                 ? "bg-accent-own-booking text-accent-own-on"
                 : "text-text-secondary hover:bg-surface-muted"
