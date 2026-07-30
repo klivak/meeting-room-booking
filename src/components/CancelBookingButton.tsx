@@ -1,5 +1,6 @@
 "use client";
 
+import { CalendarX } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
@@ -127,7 +128,7 @@ export function CancelBookingButton({
 
       {confirming ? (
         <div
-          className="fixed inset-0 z-70 flex items-center justify-center bg-[oklch(0.24_0.02_264/0.45)] p-6"
+          className="fixed inset-0 z-70 flex items-center justify-center bg-[rgb(14_22_20/0.45)] p-6"
           onClick={(event) => {
             if (event.currentTarget === event.target && !pending) {
               closeDialog();
@@ -163,15 +164,25 @@ export function CancelBookingButton({
             role="alertdialog"
             aria-modal="true"
             aria-labelledby="cancel-booking-title"
-            className="rounded-panel bg-surface border-border-control shadow-modal animate-rise w-full max-w-[420px] overflow-hidden border"
+            className="rounded-panel bg-surface border-border-grid shadow-modal animate-pop w-full max-w-[420px] overflow-hidden border"
           >
-            <div className="flex flex-col gap-2 px-5 pt-4.5 pb-3.5">
-              <h2
-                id="cancel-booking-title"
-                className="text-[17px] leading-snug font-semibold tracking-tight"
-              >
-                {t("question", { title })}
-              </h2>
+            <div className="flex flex-col gap-3 px-5 pt-5 pb-3.5">
+              {/* The badge says "destructive" before the sentence is read; the
+                  wording then says exactly what is about to be destroyed. */}
+              <span className="flex items-center gap-3">
+                <span
+                  aria-hidden="true"
+                  className="bg-danger-surface text-danger flex size-10 flex-none items-center justify-center rounded-full"
+                >
+                  <CalendarX className="size-[22px]" />
+                </span>
+                <h2
+                  id="cancel-booking-title"
+                  className="text-[17px] leading-snug font-semibold tracking-tight"
+                >
+                  {t("question", { title })}
+                </h2>
+              </span>
               <p className="text-text-secondary text-sm leading-relaxed">
                 {isRecurring ? t("seriesExplanation") : t("explanation")}
               </p>

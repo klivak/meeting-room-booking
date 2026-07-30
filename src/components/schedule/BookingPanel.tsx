@@ -1,5 +1,6 @@
 "use client";
 
+import { CircleAlert, Repeat, X } from "lucide-react";
 import { DateTime } from "luxon";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -480,7 +481,7 @@ function BookingForm({
       // No backdrop above the sm breakpoint: the point of the panel is that the
       // schedule stays readable while it is open. On a phone there is no room
       // for both, so it covers the screen as before.
-      className="fixed inset-0 z-50 flex items-end justify-center bg-[oklch(0.24_0.02_264/0.5)] sm:pointer-events-none sm:inset-auto sm:top-20 sm:right-6 sm:block sm:bg-transparent"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-[rgb(14_22_20/0.5)] sm:pointer-events-none sm:inset-auto sm:top-20 sm:right-6 sm:block sm:bg-transparent"
       style={panelStyle}
       onClick={(event) => {
         // Only the phone overlay closes on a tap outside it.
@@ -495,7 +496,7 @@ function BookingForm({
         aria-modal="false"
         aria-labelledby="booking-form-title"
         // The sheet scrolls instead of pushing its buttons out of reach.
-        className="rounded-panel bg-surface border-border-control shadow-modal animate-sheet sm:animate-rise flex max-h-[92vh] w-full flex-col overflow-hidden rounded-b-none border sm:pointer-events-auto sm:max-h-[85vh] sm:w-[364px] sm:rounded-b-panel"
+        className="rounded-panel bg-surface border-border-grid shadow-modal animate-sheet sm:animate-panel flex max-h-[92vh] w-full flex-col overflow-hidden rounded-b-none border sm:pointer-events-auto sm:max-h-[85vh] sm:w-[364px] sm:rounded-b-panel"
         // Escape means "Close" here as much as it does in the cancel dialog. The
         // panel is not modal, so it only answers when the focus is inside it —
         // which it is, the title field takes it as the panel opens.
@@ -538,7 +539,7 @@ function BookingForm({
             aria-label={t("closeLabel")}
             className="focus-ring text-text-tertiary hover:bg-surface-raised hover:text-text-primary rounded-control flex h-11 w-11 items-center justify-center transition sm:h-7 sm:w-7"
           >
-            <span aria-hidden="true">✕</span>
+            <X aria-hidden="true" className="size-4" />
           </button>
         </div>
 
@@ -553,16 +554,14 @@ function BookingForm({
                 role="alert"
                 className="bg-danger-surface border-danger text-danger-ink rounded-control flex gap-2 border px-3 py-2.5 text-[13px] leading-snug"
               >
-                <span aria-hidden="true" className="font-bold">
-                  !
-                </span>
+                <CircleAlert aria-hidden="true" className="mt-0.5 size-4 flex-none" />
                 {generalError}
               </p>
             ) : null}
 
             {booking?.seriesId ? (
               <p className="bg-warning-surface border-warning-border text-warning-ink rounded-control border px-3 py-2.5 text-[13px] leading-snug">
-                <span aria-hidden="true">↻ </span>
+                <Repeat aria-hidden="true" className="mr-1.5 inline size-3.5 align-[-2px]" />
                 {t("seriesNote")}
               </p>
             ) : null}
@@ -666,7 +665,7 @@ function BookingForm({
                 aria-live="polite"
                 className="border-danger bg-danger-surface text-danger-ink rounded-control flex items-start gap-2 border px-2.5 py-2 text-[13px]"
               >
-                <span aria-hidden="true">✕</span>
+                <X aria-hidden="true" className="mt-0.5 size-3.5 flex-none" />
                 {t("clash")}
               </p>
             ) : null}
@@ -752,7 +751,7 @@ function BookingForm({
                   className="accent-accent-own-booking focus-ring h-4 w-4"
                 />
                 <label htmlFor="repeat" className="flex-1 text-[13px]">
-                  <span aria-hidden="true">↻ </span>
+                  <Repeat aria-hidden="true" className="mr-1.5 inline size-3.5 align-[-2px]" />
                   {t("repeat")}
                 </label>
 
