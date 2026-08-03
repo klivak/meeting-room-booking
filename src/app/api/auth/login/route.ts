@@ -27,6 +27,8 @@ export async function POST(request: Request) {
   // Keyed by address and caller: guessing one account from many machines and
   // many accounts from one machine both run into it. bcrypt already makes each
   // attempt slow; this puts a ceiling on how many can be tried.
+  // The address half collapses to a constant unless TRUST_PROXY is set, so
+  // without a proxy in front the ceiling is per account — see clientAddress.
   const key = `login:${email}:${clientAddress(request)}`;
   if (isRateLimited(key, MAX_FAILED_LOGINS, LOGIN_WINDOW_MS)) {
     return await tooManyAttemptsError();

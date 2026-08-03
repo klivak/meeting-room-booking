@@ -12,6 +12,13 @@ const envSchema = z.object({
     .string()
     .min(16, "SESSION_SECRET must be at least 16 characters long"),
   NOTIFY_BEFORE_MINUTES: z.coerce.number().int().positive().default(10),
+  // Whether a reverse proxy in front of the app rewrites X-Forwarded-For. With
+  // nothing in front, that header is written by whoever is sending the request,
+  // so believing it would let one caller look like a thousand.
+  TRUST_PROXY: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((value) => value === "true"),
 });
 
 function loadEnv() {
