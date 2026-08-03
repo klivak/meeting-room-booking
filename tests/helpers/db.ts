@@ -2,11 +2,9 @@ import { PrismaPg } from "@prisma/adapter-pg";
 
 import { PrismaClient } from "@/generated/prisma/client";
 
-// Integration tests run against their own database so a failing test can never
-// wipe the data a developer is looking at in the dev database.
-export const TEST_DATABASE_URL =
-  process.env.TEST_DATABASE_URL ??
-  "postgresql://postgres:postgres@localhost:5432/meeting_room_booking_test?schema=public";
+import { TEST_DATABASE_URL } from "./testDatabaseUrl";
+
+export { TEST_DATABASE_URL };
 
 export const testPrisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString: TEST_DATABASE_URL }),
