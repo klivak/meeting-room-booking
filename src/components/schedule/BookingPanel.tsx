@@ -169,6 +169,12 @@ function BookingForm({
   const isWide = useSyncExternalStore(subscribeToWideScreen, readWide, readNotWide);
 
   const day = DateTime.fromISO(date, { zone: OFFICE_TZ });
+  // The date field can be cleared or left half typed, and the slot labels do
+  // not depend on which day it is — 09:00 is 09:00. Drawing them from today
+  // while the field is empty keeps them readable; from an invalid DateTime
+  // Luxon would print "Invalid DateTime" into all twenty options of both
+  // selects. Everything that actually decides something still checks day.isValid.
+  const labelDay = day.isValid ? day : DateTime.now().setZone(OFFICE_TZ);
   const endBounds = getEndSlotBounds(startIndex);
   const durationMinutes = (endIndex - startIndex) * SLOT_MINUTES;
 
@@ -301,6 +307,18 @@ function BookingForm({
         code: titleError.code,
         message: tApi(titleError.code, titleError.values),
         field: "title",
+      });
+      return;
+    }
+
+    // Without a date there is nothing to send: getSlotStart would build an
+    // invalid DateTime and toISO() an empty string, which the server would
+    // refuse with a message about the format rather than about the field.
+    if (!day.isValid) {
+      setError({
+        code: "VALIDATION_ERROR",
+        message: tApi("TIME_INVALID"),
+        field: "date",
       });
       return;
     }
@@ -604,8 +622,17 @@ function BookingForm({
                   type="date"
                   value={date}
                   onChange={(event) => setDate(event.target.value)}
-                  className={`${SELECT_CLASS} font-mono text-[13px]`}
+                  aria-invalid={fieldError("date") ? true : undefined}
+                  aria-describedby={fieldError("date") ? "date-error" : undefined}
+                  className={`${SELECT_CLASS} font-mono text-[13px] ${
+                    fieldError("date") ? "border-danger" : ""
+                  }`}
                 />
+                {fieldError("date") ? (
+                  <p id="date-error" role="alert" className="text-danger-ink text-xs">
+                    {fieldError("date")}
+                  </p>
+                ) : null}
               </div>
 
               <div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -623,7 +650,7 @@ function BookingForm({
                 >
                   {Array.from({ length: SLOT_COUNT }, (_, index) => (
                     <option key={index} value={index}>
-                      {getSlotLabel(day, index, timeZone)}
+                      {getSlotLabel(labelDay, index, timeZone)}
                     </option>
                   ))}
                 </select>
@@ -649,7 +676,7 @@ function BookingForm({
                     (_, offset) => endBounds.min + offset,
                   ).map((index) => (
                     <option key={index} value={index}>
-                      {getSlotLabel(day, index, timeZone)} ·{" "}
+                      {getSlotLabel(labelDay, index, timeZone)} ·{" "}
                       {durationLabel((index - startIndex) * SLOT_MINUTES, tDuration)}
                     </option>
                   ))}
