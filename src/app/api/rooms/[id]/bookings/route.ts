@@ -6,7 +6,8 @@ import { prisma } from "@/lib/server/db";
 import { getCurrentUser } from "@/lib/server/session";
 
 const querySchema = z.object({
-  weekStart: z.iso.datetime({ offset: true }),
+  // A dictionary key, not a sentence: see the note in bookingInput.
+  weekStart: z.iso.datetime({ offset: true, message: "TIME_INVALID" }),
 });
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;

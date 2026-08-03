@@ -8,7 +8,9 @@ import { getCurrentUser } from "@/lib/server/session";
 const PAGE_SIZE = 20;
 
 const querySchema = z.object({
-  scope: z.enum(["upcoming", "past"]).default("upcoming"),
+  scope: z
+    .enum(["upcoming", "past"], { message: "SCOPE_INVALID" })
+    .default("upcoming"),
   cursor: z.string().optional(),
 });
 

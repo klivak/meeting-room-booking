@@ -112,7 +112,16 @@ export async function validationError(error: ZodError) {
   const issue = error.issues[0];
   const field = issue.path.length > 0 ? String(issue.path[0]) : undefined;
 
-  return apiError(400, "VALIDATION_ERROR", issue.message, {
+  // Keys are written in SCREAMING_SNAKE_CASE by convention. Anything else is
+  // Zod's own English sentence, which reaches this point only when a schema
+  // forgot its key — and must not be handed to the user as if it were the
+  // wording. The generic message is worse than a precise one and better than
+  // an untranslated one.
+  const key = /^[A-Z][A-Z0-9_]*$/.test(issue.message)
+    ? issue.message
+    : "VALIDATION_ERROR";
+
+  return apiError(400, "VALIDATION_ERROR", key, {
     field,
     // A schema cannot carry values with its key, so every limit a schema
     // message might mention is offered here. The names differ per rule, so a

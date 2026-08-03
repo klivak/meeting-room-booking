@@ -6,7 +6,11 @@ import { MAX_OCCURRENCES, MIN_OCCURRENCES } from "./recurrence";
 // timestamps arrive as ISO strings; an explicit offset is accepted because it
 // still names exactly one instant, which is all the server stores.
 
-const isoInstant = z.iso.datetime({ offset: true });
+// Every message here is a key of the api dictionary, never a sentence:
+// validationError feeds issue.message straight into t(). A schema left with
+// Zod's own wording would put English into a response meant to be shown to the
+// user as it is.
+const isoInstant = z.iso.datetime({ offset: true, message: "TIME_INVALID" });
 
 export const createBookingSchema = z.object({
   roomId: z.string().min(1, "ROOM_REQUIRED"),
@@ -17,8 +21,8 @@ export const createBookingSchema = z.object({
   // Total number of weekly occurrences, the first one included. Absent means a
   // single booking.
   repeatWeeks: z.coerce
-    .number()
-    .int()
+    .number("REPEAT_INVALID")
+    .int("REPEAT_INVALID")
     .min(MIN_OCCURRENCES, "REPEAT_TOO_FEW")
     .max(MAX_OCCURRENCES, "REPEAT_TOO_MANY")
     .optional(),

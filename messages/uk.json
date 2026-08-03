@@ -221,7 +221,12 @@
     "PASSWORD_REQUIRED": "Введіть пароль",
     "ROOM_REQUIRED": "Оберіть кімнату",
     "REPEAT_TOO_FEW": "Мінімум {minRepeat} повторення",
-    "REPEAT_TOO_MANY": "Максимум {maxRepeat} повторень"
+    "REPEAT_TOO_MANY": "Максимум {maxRepeat} повторень",
+    "VALIDATION_ERROR": "Некоректні дані запиту — перевірте заповнені поля",
+    "TIME_INVALID": "Некоректний час — оберіть слот у сітці",
+    "REPEAT_INVALID": "Некоректна кількість повторень",
+    "SCOPE_INVALID": "Невідомий розділ списку",
+    "CAPACITY_INVALID": "Некоректна місткість у фільтрі"
   },
   "duration": {
     "minutes": "{count} хв",

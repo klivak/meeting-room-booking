@@ -7,7 +7,11 @@ import { getCurrentUser } from "@/lib/server/session";
 
 const querySchema = z.object({
   // "Seats at least N": omitted means no filter at all.
-  capacityMin: z.coerce.number().int().positive().optional(),
+  capacityMin: z.coerce
+    .number("CAPACITY_INVALID")
+    .int("CAPACITY_INVALID")
+    .positive("CAPACITY_INVALID")
+    .optional(),
 });
 
 // The schedule is visible to signed-in users only, so even the room list is

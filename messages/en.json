@@ -221,7 +221,12 @@
     "PASSWORD_REQUIRED": "Enter the password",
     "ROOM_REQUIRED": "Choose a room",
     "REPEAT_TOO_FEW": "At least {minRepeat} occurrences",
-    "REPEAT_TOO_MANY": "At most {maxRepeat} occurrences"
+    "REPEAT_TOO_MANY": "At most {maxRepeat} occurrences",
+    "VALIDATION_ERROR": "The request data is not valid — check the fields you filled in",
+    "TIME_INVALID": "That time is not valid — pick a slot on the grid",
+    "REPEAT_INVALID": "Invalid number of repetitions",
+    "SCOPE_INVALID": "Unknown list section",
+    "CAPACITY_INVALID": "Invalid capacity filter"
   },
   "duration": {
     "minutes": "{count} min",

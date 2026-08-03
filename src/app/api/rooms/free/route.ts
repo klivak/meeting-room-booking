@@ -6,8 +6,9 @@ import { prisma } from "@/lib/server/db";
 import { getCurrentUser } from "@/lib/server/session";
 
 const querySchema = z.object({
-  startsAt: z.iso.datetime({ offset: true }),
-  endsAt: z.iso.datetime({ offset: true }),
+  // Dictionary keys, not sentences: see the note in bookingInput.
+  startsAt: z.iso.datetime({ offset: true, message: "TIME_INVALID" }),
+  endsAt: z.iso.datetime({ offset: true, message: "TIME_INVALID" }),
   /** The booking being edited, which must not count as occupying its own room. */
   exclude: z.string().optional(),
 });
