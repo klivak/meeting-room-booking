@@ -7,6 +7,7 @@ import {
   SLOT_MINUTES,
   WORK_DAY_END,
   WORK_DAY_START,
+  minutesOfDay,
 } from "./constants";
 
 // Pure booking rules. No database, no framework: the API routes and the forms
@@ -36,12 +37,6 @@ export type BookingRuleError = {
 };
 
 export const MAX_TITLE_LENGTH = 100;
-
-/** Minutes since midnight for a "HH:mm" constant. */
-function minutesOfDay(time: string): number {
-  const [hours, minutes] = time.split(":").map(Number);
-  return hours * 60 + minutes;
-}
 
 /** A boundary must sit exactly on the 30-minute grid, with no stray seconds. */
 function isAligned(moment: DateTime): boolean {

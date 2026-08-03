@@ -7,6 +7,7 @@ import {
   SLOT_MINUTES,
   WORK_DAY_END,
   WORK_DAY_START,
+  minutesOfDay,
 } from "./constants";
 
 // Geometry of the weekly grid.
@@ -18,11 +19,6 @@ import {
 // Anchoring to the office instead of to the viewer's local minutes keeps the
 // grid rectangular in every timezone: for a viewer in Tokyo the office day runs
 // past local midnight, and "minutes since midnight" would break there.
-
-function minutesOfDay(time: string): number {
-  const [hours, minutes] = time.split(":").map(Number);
-  return hours * 60 + minutes;
-}
 
 const OPEN_MINUTES = minutesOfDay(WORK_DAY_START);
 const CLOSE_MINUTES = minutesOfDay(WORK_DAY_END);

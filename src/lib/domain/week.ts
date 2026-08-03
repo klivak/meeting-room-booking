@@ -1,14 +1,14 @@
 import { DateTime } from "luxon";
 
-import { SLOT_MINUTES, WORK_DAY_END, WORK_DAY_START } from "./constants";
+import {
+  SLOT_MINUTES,
+  WORK_DAY_END,
+  WORK_DAY_START,
+  minutesOfDay,
+} from "./constants";
 
 // Helpers for the weekly grid. Pure: they take a DateTime that already carries
 // its zone and never look at the current moment or the system timezone.
-
-function minutesOfDay(time: string): number {
-  const [hours, minutes] = time.split(":").map(Number);
-  return hours * 60 + minutes;
-}
 
 /**
  * Start of the week (midnight of its first day) that contains `date`, in the

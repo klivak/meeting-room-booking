@@ -16,3 +16,15 @@ export const SLOT_MINUTES = 30;
 export const MIN_DURATION_MINUTES = 30;
 
 export const MAX_DURATION_MINUTES = 240;
+
+/**
+ * Minutes since midnight for a "HH:mm" constant above.
+ *
+ * It lives here rather than beside each caller because the grid, the week
+ * helpers and the booking rules all read the same two constants, and three
+ * copies of the parsing is three places to change if the format ever does.
+ */
+export function minutesOfDay(time: string): number {
+  const [hours, minutes] = time.split(":").map(Number);
+  return hours * 60 + minutes;
+}
