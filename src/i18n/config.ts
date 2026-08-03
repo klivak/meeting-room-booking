@@ -25,3 +25,20 @@ export const LOCALE_SHORT_LABELS: Record<Locale, string> = {
 export function isLocale(value: string | undefined): value is Locale {
   return LOCALES.includes((value ?? "") as Locale);
 }
+
+/**
+ * The language an Accept-Language header asks for, or the office default.
+ *
+ * The header is split into tags and compared by the primary subtag, in the
+ * order the browser listed them. Searching the whole header for a substring
+ * would answer "uk" to "en-UK" and would let the order of LOCALES outrank the
+ * order the browser actually asked for.
+ */
+export function preferredLocale(header: string): Locale {
+  const tags = header
+    .split(",")
+    .map((part) => part.split(";")[0].trim().toLowerCase())
+    .map((tag) => tag.split("-")[0]);
+
+  return tags.find((tag): tag is Locale => isLocale(tag)) ?? DEFAULT_LOCALE;
+}

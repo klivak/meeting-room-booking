@@ -1,7 +1,7 @@
 import { getRequestConfig } from "next-intl/server";
 import { cookies, headers } from "next/headers";
 
-import { DEFAULT_LOCALE, LOCALE_COOKIE, LOCALES, isLocale } from "./config";
+import { LOCALE_COOKIE, isLocale, preferredLocale } from "./config";
 
 /**
  * Resolves the language for a request: an explicit choice wins, then what the
@@ -14,11 +14,7 @@ export default getRequestConfig(async () => {
     return { locale: chosen, messages: await load(chosen) };
   }
 
-  const accepted = (await headers()).get("accept-language") ?? "";
-  const preferred = LOCALES.find((locale) =>
-    accepted.toLowerCase().includes(locale),
-  );
-  const locale = preferred ?? DEFAULT_LOCALE;
+  const locale = preferredLocale((await headers()).get("accept-language") ?? "");
 
   return { locale, messages: await load(locale) };
 });
