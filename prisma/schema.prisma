@@ -117,4 +117,7 @@ model Booking {
   // Week view of a room and the "my bookings" list are the only read paths.
   @@index([roomId, startsAt])
   @@index([userId, startsAt])
+  // Cancelling a series updates all of its occurrences in one updateMany
+  // filtered by seriesId, which had nothing to read but the whole table.
+  @@index([seriesId])
 }
