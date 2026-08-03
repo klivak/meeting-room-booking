@@ -592,6 +592,11 @@ export function Schedule({
 
   // The release can happen anywhere, including outside the grid, so the whole
   // window is listened to rather than the cells.
+  //
+  // Keyed to the gesture rather than left without dependencies: the listener
+  // has to see the rows as they are now, but re-subscribing on every render
+  // means doing it for the minute tick and for every unrelated state change
+  // too, all the way through the drag.
   useEffect(() => {
     if (!drag) {
       return;
@@ -605,7 +610,10 @@ export function Schedule({
 
     window.addEventListener("pointerup", finish);
     return () => window.removeEventListener("pointerup", finish);
-  });
+    // openForm and days are rebuilt on every render and would defeat the point
+    // of the dependency above; both are read only when the pointer is released.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drag]);
 
   // The same arrangement for a booking being reshaped: the pointer is followed
   // on the window, because it leaves the block the moment the drag begins.
@@ -623,8 +631,7 @@ export function Schedule({
       const rows = dragToRows(bookingDrag, cell.row);
       // A move follows the pointer across the week; a resize belongs to the day
       // the booking is already on.
-      const dayIndex =
-        bookingDrag.mode === "move" ? cell.dayIndex : bookingDrag.dayIndex;
+      const dayIndex = bookingDrag.mode === "move" ? cell.dayIndex : bookingDrag.dayIndex;
 
       if (
         rows.rowStart === bookingDrag.rowStart &&
@@ -654,7 +661,9 @@ export function Schedule({
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", finish);
     };
-  });
+    // saveShape is rebuilt on every render and is read only on release.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookingDrag]);
 
   /**
    * Where a booking is being put right now, if it is being put anywhere: the
