@@ -14,7 +14,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { WEEK_START_DAY } from "@/lib/config";
 import { OFFICE_TZ } from "@/lib/domain/constants";
 import { getWeekStart } from "@/lib/domain/week";
-import { prisma } from "@/lib/server/db";
+import { getMyBookingsPage, type BookingScope } from "@/lib/server/myBookings";
 import { getCurrentUser } from "@/lib/server/session";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -23,11 +23,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t("title") };
 }
 
-const PAGE_SIZE = 20;
-
-type Tab = "upcoming" | "past";
-
-const TABS: Tab[] = ["upcoming", "past"];
+const TABS: BookingScope[] = ["upcoming", "past"];
 
 /** Office week that contains the booking, which is the week the grid opens. */
 function weekOf(startsAt: Date): string {
@@ -37,7 +33,7 @@ function weekOf(startsAt: Date): string {
   );
 }
 
-async function BookingList({ tab }: { tab: Tab }) {
+async function BookingList({ tab }: { tab: BookingScope }) {
   const t = await getTranslations("myBookings");
   const user = await getCurrentUser();
   if (!user) {
@@ -46,33 +42,9 @@ async function BookingList({ tab }: { tab: Tab }) {
 
   const now = new Date();
 
-  // A booking that has started but not ended still counts as upcoming: it is
-  // over only once it ends.
-  // One extra row is read purely to learn whether another page exists.
-  const page = await prisma.booking.findMany({
-    where: {
-      userId: user.id,
-      canceledAt: null,
-      ...(tab === "upcoming" ? { endsAt: { gt: now } } : { endsAt: { lte: now } }),
-    },
-    orderBy: [
-      { startsAt: tab === "upcoming" ? "asc" : "desc" },
-      { id: tab === "upcoming" ? "asc" : "desc" },
-    ],
-    take: PAGE_SIZE + 1,
-    select: {
-      id: true,
-      seriesId: true,
-      title: true,
-      startsAt: true,
-      endsAt: true,
-      room: { select: { id: true, name: true } },
-    },
-  });
-
-  const hasMore = page.length > PAGE_SIZE;
-  const bookings = hasMore ? page.slice(0, PAGE_SIZE) : page;
-  const nextCursor = hasMore ? bookings[bookings.length - 1].id : null;
+  // Same query and same paging rules the "show more" endpoint uses, so the
+  // first page and every next one cannot start disagreeing.
+  const { items: bookings, nextCursor } = await getMyBookingsPage(user.id, tab, now);
 
   if (bookings.length === 0) {
     return (
@@ -106,7 +78,7 @@ async function BookingList({ tab }: { tab: Tab }) {
               startsAt: booking.startsAt.toISOString(),
               endsAt: booking.endsAt.toISOString(),
               room: booking.room,
-              isRecurring: booking.seriesId !== null,
+              isRecurring: booking.isRecurring,
             }}
             // A finished booking can no longer be changed, so the past tab
             // carries no actions at all.
@@ -121,7 +93,7 @@ async function BookingList({ tab }: { tab: Tab }) {
                   <CancelBookingButton
                     bookingId={booking.id}
                     title={booking.title}
-                    isRecurring={booking.seriesId !== null}
+                    isRecurring={booking.isRecurring}
                   />
                 </>
               ) : null
@@ -198,7 +170,7 @@ export default async function MyBookingsPage({
   searchParams: Promise<{ tab?: string }>;
 }) {
   const { tab: tabParam } = await searchParams;
-  const tab: Tab = tabParam === "past" ? "past" : "upcoming";
+  const tab: BookingScope = tabParam === "past" ? "past" : "upcoming";
   const t = await getTranslations("myBookings");
 
   return (

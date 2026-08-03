@@ -2,10 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { apiError, unauthorizedError, validationError } from "@/lib/server/apiError";
-import { prisma } from "@/lib/server/db";
+import { getMyBookingsPage, ownsBooking } from "@/lib/server/myBookings";
 import { getCurrentUser } from "@/lib/server/session";
-
-const PAGE_SIZE = 20;
 
 const querySchema = z.object({
   scope: z
@@ -15,6 +13,8 @@ const querySchema = z.object({
 });
 
 // The current user's own bookings, split into the two tabs of /my-bookings.
+// The query itself lives in lib/server/myBookings, shared with the page that
+// renders the first page on the server.
 export async function GET(request: Request) {
   const user = await getCurrentUser();
   if (!user) {
@@ -33,55 +33,20 @@ export async function GET(request: Request) {
   const { scope, cursor } = parsed.data;
   const now = new Date();
 
-  // A cursor pointing at someone else's booking, or at nothing, would silently
-  // produce an empty page. Saying so is more honest than pretending the list
-  // ended.
-  if (cursor) {
-    const owned = await prisma.booking.findFirst({
-      where: { id: cursor, userId: user.id },
-      select: { id: true },
+  if (cursor && !(await ownsBooking(user.id, cursor))) {
+    return await apiError(400, "VALIDATION_ERROR", "INVALID_CURSOR", {
+      field: "cursor",
     });
-
-    if (!owned) {
-      return await apiError(400, "VALIDATION_ERROR", "INVALID_CURSOR", {
-        field: "cursor",
-      });
-    }
   }
 
-  // Upcoming counts a running booking as upcoming: it is over only once it ends.
-  const timeFilter =
-    scope === "upcoming" ? { endsAt: { gt: now } } : { endsAt: { lte: now } };
-  const direction = scope === "upcoming" ? "asc" : "desc";
-
-  const bookings = await prisma.booking.findMany({
-    where: { userId: user.id, canceledAt: null, ...timeFilter },
-    // id breaks ties so two bookings starting at the same moment keep a stable
-    // order, which is what makes the cursor reliable across pages.
-    orderBy: [{ startsAt: direction }, { id: direction }],
-    take: PAGE_SIZE + 1,
-    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-    select: {
-      id: true,
-      seriesId: true,
-      title: true,
-      startsAt: true,
-      endsAt: true,
-      room: { select: { id: true, name: true } },
-    },
-  });
-
-  // One extra row was requested purely to learn whether another page exists.
-  const hasMore = bookings.length > PAGE_SIZE;
-  const items = hasMore ? bookings.slice(0, PAGE_SIZE) : bookings;
+  const { items, nextCursor } = await getMyBookingsPage(user.id, scope, now, cursor);
 
   return NextResponse.json({
-    // The series id itself is of no use to the client; whether the booking
-    // repeats is, and it is the same shape the page renders on the server.
-    items: items.map(({ seriesId, ...booking }) => ({
+    items: items.map((booking) => ({
       ...booking,
-      isRecurring: seriesId !== null,
+      startsAt: booking.startsAt.toISOString(),
+      endsAt: booking.endsAt.toISOString(),
     })),
-    nextCursor: hasMore ? items[items.length - 1].id : null,
+    nextCursor,
   });
 }
