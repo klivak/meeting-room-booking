@@ -36,3 +36,15 @@ export const updateBookingSchema = z.object({
   startsAt: isoInstant.optional(),
   endsAt: isoInstant.optional(),
 });
+
+/**
+ * Dictionary key for a failed schema check.
+ *
+ * Keys are written in SCREAMING_SNAKE_CASE by convention; anything else is
+ * Zod's own English sentence, which a schema that forgot its key would leave
+ * behind. Both readers of these schemas — the API route and the form — ask
+ * here, so neither can hand that sentence to the user as if it were the wording.
+ */
+export function messageKeyFor(issue: { message: string }): string {
+  return /^[A-Z][A-Z0-9_]*$/.test(issue.message) ? issue.message : "VALIDATION_ERROR";
+}

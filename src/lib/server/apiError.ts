@@ -7,6 +7,7 @@ import {
   MAX_PASSWORD_LENGTH,
   MIN_PASSWORD_LENGTH,
 } from "@/lib/domain/auth";
+import { messageKeyFor } from "@/lib/domain/bookingInput";
 import type { BookingRuleErrorCode } from "@/lib/domain/bookingRules";
 import { MAX_OCCURRENCES, MIN_OCCURRENCES } from "@/lib/domain/recurrence";
 
@@ -112,16 +113,10 @@ export async function validationError(error: ZodError) {
   const issue = error.issues[0];
   const field = issue.path.length > 0 ? String(issue.path[0]) : undefined;
 
-  // Keys are written in SCREAMING_SNAKE_CASE by convention. Anything else is
-  // Zod's own English sentence, which reaches this point only when a schema
-  // forgot its key — and must not be handed to the user as if it were the
-  // wording. The generic message is worse than a precise one and better than
-  // an untranslated one.
-  const key = /^[A-Z][A-Z0-9_]*$/.test(issue.message)
-    ? issue.message
-    : "VALIDATION_ERROR";
-
-  return apiError(400, "VALIDATION_ERROR", key, {
+  // A generic message is worse than a precise one and better than an
+  // untranslated one. The same choice is made in the form, hence the shared
+  // helper rather than a copy of the rule here.
+  return apiError(400, "VALIDATION_ERROR", messageKeyFor(issue), {
     field,
     // A schema cannot carry values with its key, so every limit a schema
     // message might mention is offered here. The names differ per rule, so a

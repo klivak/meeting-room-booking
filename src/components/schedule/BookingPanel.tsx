@@ -15,7 +15,7 @@ import {
   readOfficeTimeZone,
   readViewerTimeZone,
 } from "@/components/viewerTimeZone";
-import { createBookingSchema } from "@/lib/domain/bookingInput";
+import { createBookingSchema, messageKeyFor } from "@/lib/domain/bookingInput";
 import { MAX_TITLE_LENGTH, validateTitle } from "@/lib/domain/bookingRules";
 import { MAX_DURATION_MINUTES, OFFICE_TZ, SLOT_MINUTES } from "@/lib/domain/constants";
 import { intervalsOverlap } from "@/lib/domain/overlap";
@@ -337,7 +337,9 @@ function BookingForm({
       const issue = parsed.error.issues[0];
       setError({
         code: "VALIDATION_ERROR",
-        message: tApi(issue.message),
+        // The same key the route would pick: the form and the route read one
+        // schema, so they have to treat its messages the same way.
+        message: tApi(messageKeyFor(issue)),
         field: String(issue.path[0] ?? ""),
       });
       return;
