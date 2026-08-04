@@ -13,9 +13,12 @@ import "./globals.css";
 const manrope = Manrope({
   variable: "--font-manrope",
   subsets: ["latin", "cyrillic"],
-  // Not "swap": a font that arrives after the first paint shifts every label on
-  // the grid, and the grid is the whole screen.
-  display: "block",
+  // "swap" rather than "block": blocking hid every word until the font arrived,
+  // which on a throttled phone was 2.6s of blank screen and the whole of the
+  // largest-contentful-paint. next/font builds a fallback whose metrics are
+  // adjusted to match, so the swap costs no measurable layout shift — which was
+  // the reason to block in the first place.
+  display: "swap",
   preload: true,
 });
 
@@ -23,7 +26,7 @@ const manrope = Manrope({
 const jetBrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
   subsets: ["latin", "cyrillic"],
-  display: "block",
+  display: "swap",
   preload: true,
 });
 
