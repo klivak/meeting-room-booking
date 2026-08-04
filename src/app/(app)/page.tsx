@@ -1,4 +1,4 @@
-import { DoorOpen } from "lucide-react";
+import { Users } from "lucide-react";
 import { DateTime } from "luxon";
 import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
@@ -47,18 +47,18 @@ async function RoomsSkeleton() {
       </p>
       <ul aria-hidden className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {SKELETON_CARDS.map((card, index) => (
-          // 128px is what the loaded card measures: name, floor line, and the
-          // availability line under its divider.
+          // 156px is what the loaded card measures: name, floor line, and the
+          // availability strip under its divider.
           <li
             key={index}
-            className="border-border-grid bg-surface rounded-card flex h-[128px] flex-col gap-3 border p-4"
+            className="border-border-grid bg-surface rounded-card shadow-card flex h-[156px] flex-col gap-3 border p-[22px]"
           >
             <Skeleton
-              className={`h-4 ${card.name}`}
+              className={`h-5 ${card.name}`}
               style={{ animationDelay: `${index * 110}ms` }}
             />
             <Skeleton className={`h-3 ${card.meta}`} />
-            <Skeleton className="mt-auto h-3 w-2/5" />
+            <Skeleton className="mt-auto h-9 w-full" />
           </li>
         ))}
       </ul>
@@ -117,7 +117,7 @@ async function RoomsList({ capacityMin }: { capacityMin?: number }) {
 
   return (
     <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-      {rooms.map((room) => {
+      {rooms.map((room, index) => {
         const availability = getRoomAvailability(
           todaysBookings.filter((booking) => booking.roomId === room.id),
           now,
@@ -133,32 +133,41 @@ async function RoomsList({ capacityMin }: { capacityMin?: number }) {
         return (
           <li key={room.id}>
             {/* The whole card is the link: the name alone would be a small
-                target for the most common action on this screen. */}
+                target for the most common action on this screen. The cards
+                arrive one after another rather than all at once, so the eye
+                reads the grid in the order it is laid out. */}
             <Link
               href={`/rooms/${room.id}`}
-              className="focus-ring border-border-grid bg-surface rounded-card shadow-rest hover:border-accent-own-booking hover:shadow-panel flex flex-col gap-2.5 border p-4 text-inherit no-underline transition hover:-translate-y-0.5"
+              style={{ animationDelay: `${index * 60}ms` }}
+              className="focus-ring border-border-grid bg-surface rounded-card shadow-card hover:border-accent-own-booking hover:shadow-panel animate-block relative flex flex-col overflow-hidden border p-[22px] text-inherit no-underline transition hover:-translate-y-0.5"
             >
-              <span className="flex items-baseline gap-2">
-                <DoorOpen
-                  aria-hidden="true"
-                  className="text-text-tertiary size-4 self-center"
-                />
-                <span className="text-[17px] font-semibold tracking-tight">
-                  {room.name}
+              {/* The capacity again, as a watermark: it gives the card a scale
+                  and a face without another line of text. */}
+              <span
+                aria-hidden="true"
+                className="text-accent-own-booking/[0.06] pointer-events-none absolute -top-8 -right-2.5 font-mono text-[120px] leading-none font-bold"
+              >
+                {room.capacity}
+              </span>
+
+              <span className="flex items-start justify-between gap-3">
+                <span className="flex flex-col gap-1">
+                  <span className="text-[21px] font-extrabold tracking-[-0.02em]">
+                    {room.name}
+                  </span>
+                  <span className="text-text-tertiary font-mono text-xs font-semibold">
+                    {t("floor", { floor: room.floor })}
+                  </span>
                 </span>
-                <span className="flex-1" />
-                <span className="bg-surface-muted text-text-secondary rounded-booking shrink-0 px-1.5 py-0.5 font-mono text-xs font-semibold">
+                <span className="bg-surface-muted text-text-secondary border-border-grid relative flex shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-[5px] font-mono text-xs font-bold">
+                  <Users aria-hidden="true" className="size-[13px]" />
                   {t("seats", { count: room.capacity })}
                 </span>
               </span>
 
-              <span className="text-text-tertiary text-[13px]">
-                {t("floor", { floor: room.floor })}
-              </span>
+              <span className="bg-border-grid mt-[18px] mb-3.5 h-px" />
 
-              <span className="border-border-grid-half border-t pt-2">
-                <RoomAvailability availability={view} />
-              </span>
+              <RoomAvailability availability={view} />
             </Link>
           </li>
         );
@@ -194,25 +203,28 @@ export default async function HomePage({
   const capacityMin = Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
-      <div className="flex flex-wrap items-end gap-4">
-        <h1 className="text-[22px] font-semibold tracking-tight">{t("title")}</h1>
-
-        <span className="hidden flex-1 sm:block" />
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+      <div className="flex flex-wrap items-end justify-between gap-5">
+        <div className="flex flex-col gap-1.5">
+          <h1 className="text-[28px] font-extrabold tracking-[-0.03em] sm:text-[38px]">
+            {t("title")}
+          </h1>
+          <p className="text-text-secondary text-sm">{t("subtitle")}</p>
+        </div>
 
         {/* Links rather than a select: the filter stays in the URL, is shareable
             and needs no client-side JavaScript. */}
-        <nav aria-label={t("capacity")} className="flex flex-col gap-1.5">
-          <span className="text-text-tertiary text-xs font-semibold">
+        <nav aria-label={t("capacity")} className="flex items-center gap-2">
+          <span className="text-text-tertiary mr-1 hidden text-xs font-bold sm:inline">
             {t("capacity")}
           </span>
-          <span className="flex flex-wrap gap-1">
+          <span className="-mx-4 flex gap-1.5 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0">
             {CAPACITY_OPTIONS.map((option) => (
               <LinkButton
                 key={option.label}
                 href={option.value ? `/?capacityMin=${option.value}` : "/"}
                 active={option.value === capacityMin}
-                className="min-w-0 px-3"
+                className="min-w-0 shrink-0 px-3.5 sm:min-h-9"
               >
                 {option.value ? option.label : t("any")}
               </LinkButton>
