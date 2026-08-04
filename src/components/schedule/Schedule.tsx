@@ -47,7 +47,7 @@ import { intervalsOverlap } from "@/lib/domain/overlap";
 import { getWeekStart } from "@/lib/domain/week";
 
 // Shared by every day with nothing booked, so the ribbon does not allocate
-// seven empty sets on each render.
+// fourteen empty sets on each render.
 const EMPTY_DAY: ReadonlySet<number> = new Set<number>();
 
 export type { BookingView };
@@ -490,8 +490,6 @@ export function Schedule({
     lastColumn: number;
     rowHeight: string;
   }) => {
-    const isHour = rowIndex % 2 === 0;
-
     return (
       <button
         key={`${prefix}-${rowIndex}`}
@@ -562,24 +560,20 @@ export function Schedule({
         // w-full is not decoration: a <button> sizes to its content, and every
         // child here is absolutely positioned, so without it the cell collapses
         // to zero width wherever its parent is not a flex container.
-        className={`focus-ring-inset group relative flex w-full items-center justify-center border-t transition ${
-          // A full line between hours, a lighter one inside them: that contrast
-          // is what stops twenty equal rows from reading as a spreadsheet.
-          rowIndex === 0
-            ? "border-t-transparent"
-            : isHour
-              ? "border-t-border-grid"
-              : "border-t-border-grid-half"
-        } ${canBook ? "cursor-pointer" : "cursor-default"}`}
+        // The row lines are painted by the column behind it, so the cell itself
+        // carries no border: forty of them stacked read as a spreadsheet.
+        className={`focus-ring-inset group relative flex w-full items-center justify-center transition ${
+          canBook ? "cursor-pointer" : "cursor-default"
+        }`}
         style={{ height: rowHeight }}
       >
         {/* The hovered cell names its own time and shows the shape of the
             booking it would make: the axis is far away once the pointer is deep
             inside the week, and a bare highlight does not say "click to book". */}
         <span
-          className={`rounded-booking pointer-events-none absolute inset-x-1 inset-y-[2px] flex items-center justify-center gap-1 font-mono text-xs opacity-0 transition-opacity sm:text-[11px] xl:text-xs ${
+          className={`rounded-booking pointer-events-none absolute inset-x-1 inset-y-[2px] flex items-center justify-center gap-1 font-mono text-[11px] opacity-0 transition-opacity ${
             canBook
-              ? "border-accent-own-booking bg-accent-own-surface text-accent-own-ink border-[1.5px] border-dashed font-semibold group-hover:opacity-100 group-focus-visible:opacity-100"
+              ? "border-accent-own-booking bg-accent-own-surface text-accent-own-ink border-[1.5px] border-dashed font-bold group-hover:opacity-100 group-focus-visible:opacity-100"
               : "text-text-tertiary group-focus-visible:opacity-100"
           }`}
         >
@@ -693,17 +687,19 @@ export function Schedule({
     return null;
   };
 
-  const placements = bookings
-    .map((booking) => ({
-      booking,
-      placement:
-        shapeOf(booking) ??
-        placeBooking(
-          { startsAt: new Date(booking.startsAt), endsAt: new Date(booking.endsAt) },
-          weekStartDateTime,
-        ),
-    }))
-    .filter((entry) => entry.placement !== null);
+  // flatMap rather than map + filter: filter does not narrow the type, and the
+  // four readers below would each need a non-null assertion.
+  const placements = bookings.flatMap((booking) => {
+    const placement =
+      shapeOf(booking) ??
+      placeBooking(
+        { startsAt: new Date(booking.startsAt), endsAt: new Date(booking.endsAt) },
+        weekStartDateTime,
+      );
+
+    // A booking outside the displayed week simply is not on this grid.
+    return placement ? [{ booking, placement }] : [];
+  });
 
   /** One booking, placed into whichever column is drawing it. */
   const renderBooking = (
@@ -875,39 +871,39 @@ export function Schedule({
         // Read by the booking panel, which has to place itself somewhere other
         // than on top of the range being picked.
         data-selection
-        className="pointer-events-none absolute right-[3px] left-[3px] z-8"
+        className="pointer-events-none absolute right-1 left-1 z-8"
         style={{
           top: rowSpan(rows.rowStart, rowHeight),
           height: `calc(${rowSpan(rows.rowEnd - rows.rowStart, rowHeight)} - 2px)`,
         }}
       >
         <div
-          className={`rounded-booking flex h-full items-center justify-center border-2 border-dashed ${
+          className={`rounded-booking h-full border-[1.5px] border-dashed ${
             refused
-              ? "border-danger bg-danger-surface/75"
-              : "border-accent-own-booking bg-accent-own-surface/70"
+              ? "border-danger bg-danger-surface"
+              : "border-accent-own-booking bg-accent-own-surface"
+          }`}
+        />
+        {/* The plaque hangs off the top edge rather than sitting in the middle:
+            a range one row tall has no middle, and the reading order of a
+            calendar is downwards from the start. */}
+        <span
+          className={`rounded-booking absolute -top-2.5 left-1.5 flex items-center gap-1 px-1.5 py-0.5 font-mono text-[10px] font-bold whitespace-nowrap text-white ${
+            refused ? "bg-danger-solid" : "bg-accent-own-ink"
           }`}
         >
-          <span
-            className={`rounded-booking border px-1.5 py-0.5 font-mono text-xs sm:text-[11px] xl:text-xs font-semibold ${
-              refused
-                ? "border-danger bg-surface text-danger-ink"
-                : "border-accent-own-booking bg-surface text-accent-own-ink"
-            }`}
-          >
-            {refused ? (
-              <>
-                <X aria-hidden="true" className="size-3.5" />
-                {clashes ? t("taken") : t("slotPast")}
-              </>
-            ) : (
-              <>
-                {from}–{to} ·{" "}
-                {durationLabel((rows.rowEnd - rows.rowStart) * SLOT_MINUTES, tDuration)}
-              </>
-            )}
-          </span>
-        </div>
+          {refused ? (
+            <>
+              <X aria-hidden="true" className="size-3" />
+              {clashes ? t("taken") : t("slotPast")}
+            </>
+          ) : (
+            <>
+              {from}–{to} ·{" "}
+              {durationLabel((rows.rowEnd - rows.rowStart) * SLOT_MINUTES, tDuration)}
+            </>
+          )}
+        </span>
       </div>
     );
   };
@@ -924,7 +920,7 @@ export function Schedule({
         aria-hidden
         // Enough to see at a glance where "now" starts, not enough to compete
         // with the bookings sitting on top of it.
-        className="bg-surface-raised pointer-events-none absolute inset-x-0 top-0 opacity-60"
+        className="bg-text-primary/[0.035] pointer-events-none absolute inset-x-0 top-0"
         style={{ height: rowSpan(rows, rowHeight) }}
       />
     );
@@ -936,25 +932,19 @@ export function Schedule({
     labels.map((label, rowIndex) => (
       <div
         key={`${label}-${rowIndex}`}
-        className={`flex items-start justify-end pr-2 ${
-          rowIndex === 0
-            ? "border-t-transparent"
-            : rowIndex % 2 === 0
-              ? "border-t-border-grid"
-              : "border-t-transparent"
-        } border-t`}
+        className="flex items-start justify-end pr-2.5"
         style={{ height: rowHeight }}
       >
         {/* Lifted onto the line it marks, the way a calendar axis reads —
             except the first, which has only the header above it and would be
-            clipped by the top edge of the grid. */}
+            clipped by the top edge of the grid. Whole hours carry the weight;
+            the half hours between them go unlabelled, so the axis reads as a
+            scale instead of forty equal numbers. */}
         <span
-          className={`font-mono text-xs sm:text-[11px] xl:text-xs leading-none ${
-            rowIndex === 0 ? "" : "-translate-y-[6px]"
+          className={`font-mono text-[10.5px] leading-none ${
+            rowIndex === 0 ? "" : "-translate-y-[5px]"
           } ${
-            rowIndex % 2 === 0
-              ? "text-text-secondary font-semibold"
-              : "text-transparent"
+            rowIndex % 2 === 0 ? "text-text-tertiary font-semibold" : "text-transparent"
           }`}
         >
           {label}
@@ -964,42 +954,50 @@ export function Schedule({
 
   const isWeekEmpty = placements.length === 0;
 
-  // Which half hours of each day are taken, for the strip in the week header.
-  const busyByDay = new Map<number, Set<number>>();
-  for (const { placement } of placements) {
-    const busy = busyByDay.get(placement!.dayIndex) ?? new Set<number>();
-    for (let row = placement!.rowStart; row < placement!.rowStart + placement!.rowSpan; row += 1) {
-      busy.add(row);
+  // Which half hours of each day are taken, and by whom, for the strip in the
+  // week header. Two sets rather than one: the strip repeats the ownership
+  // colours of the blocks below it, so a glance at the header already says
+  // whether the busy part of a day is yours.
+  const busyByDay = new Map<number, { mine: Set<number>; others: Set<number> }>();
+  for (const { booking, placement } of placements) {
+    const day = busyByDay.get(placement.dayIndex) ?? {
+      mine: new Set<number>(),
+      others: new Set<number>(),
+    };
+    const target = booking.isMine ? day.mine : day.others;
+    for (let row = placement.rowStart; row < placement.rowStart + placement.rowSpan; row += 1) {
+      target.add(row);
     }
-    busyByDay.set(placement!.dayIndex, busy);
+    busyByDay.set(placement.dayIndex, day);
   }
 
   return (
     <div className="flex flex-col gap-2.5">
       {/* Single day: a phone has no room for seven columns. */}
       <div className="flex flex-col gap-2 sm:hidden">
-        <div className="bg-surface border-border-grid rounded-card flex items-center gap-2 border p-2">
+        <div className="flex items-center justify-between gap-2">
           <Link
             href={dayHref(day.minus({ days: 1 }))}
             aria-label={t("previousDay")}
             title={t("previousDay")}
-            className="focus-ring border-border-grid text-text-secondary rounded-control flex h-11 w-11 shrink-0 items-center justify-center border no-underline"
+            className="focus-ring border-border-grid bg-surface-muted text-text-secondary rounded-control flex h-10 w-10 shrink-0 items-center justify-center border no-underline"
           >
             <ChevronLeft aria-hidden="true" className="size-[18px]" />
           </Link>
-          <span className="flex min-w-0 flex-1 flex-col items-center">
-            <span className="truncate text-[15px] font-semibold">
+          <span className="flex min-w-0 flex-col items-center">
+            <span className="truncate text-base font-extrabold">
               {day.setLocale(locale).toFormat("cccc")}
             </span>
             <span className="text-text-tertiary font-mono text-xs">
-              {day.toFormat("dd.MM.yyyy")}
+              {day.toFormat("dd.MM")}
+              {day.toISODate() === todayIso ? ` · ${t("today").toLowerCase()}` : ""}
             </span>
           </span>
           <Link
             href={dayHref(day.plus({ days: 1 }))}
             aria-label={t("nextDay")}
             title={t("nextDay")}
-            className="focus-ring border-border-grid text-text-secondary rounded-control flex h-11 w-11 shrink-0 items-center justify-center border no-underline"
+            className="focus-ring border-border-grid bg-surface-muted text-text-secondary rounded-control flex h-10 w-10 shrink-0 items-center justify-center border no-underline"
           >
             <ChevronRight aria-hidden="true" className="size-[18px]" />
           </Link>
@@ -1009,12 +1007,12 @@ export function Schedule({
             reading — but nothing can be booked in it, so it says so instead of
             letting the user pick a slot and be refused by the server. */}
         {isPastDay(day) ? (
-          <p className="bg-warning-surface border-warning-border text-warning-ink rounded-control border px-3 py-2 text-[13px] leading-snug">
+          <p className="bg-warning-surface text-warning-ink rounded-control px-3 py-2 text-[13px] leading-snug font-semibold">
             {t("pastDay")}
           </p>
         ) : null}
 
-        <div className="flex gap-1">
+        <div className="flex gap-1.5">
           {days.map((option) => {
             const isSelected = option.toISODate() === day.toISODate();
 
@@ -1023,14 +1021,20 @@ export function Schedule({
                 key={option.toISODate()}
                 href={dayHref(option)}
                 aria-current={isSelected ? "page" : undefined}
-                className={`focus-ring rounded-control flex min-h-11 flex-1 flex-col items-center justify-center border text-xs no-underline ${
+                className={`focus-ring rounded-control flex min-h-11 flex-1 flex-col items-center justify-center gap-0.5 no-underline ${
                   isSelected
-                    ? "border-accent-own-booking bg-accent-own-booking text-accent-own-on font-bold"
-                    : "border-border-grid bg-surface text-text-secondary"
-                } ${!isSelected && isPastDay(option) ? "opacity-55" : ""}`}
+                    ? "bg-accent-own-booking text-accent-own-on"
+                    : `bg-surface-muted text-text-secondary ${
+                        isPastDay(option) ? "opacity-70" : ""
+                      }`
+                }`}
               >
-                <span>{option.setLocale(locale).toFormat("ccc")}</span>
-                <span className="font-mono font-semibold">{option.toFormat("dd")}</span>
+                <span className="text-[10px] font-bold">
+                  {option.setLocale(locale).toFormat("ccc")}
+                </span>
+                <span className="font-mono text-[11px] font-bold">
+                  {option.toFormat("dd")}
+                </span>
               </Link>
             );
           })}
@@ -1040,12 +1044,12 @@ export function Schedule({
           prevHref={dayHref(day.minus({ days: 1 }))}
           nextHref={dayHref(day.plus({ days: 1 }))}
         >
-          <div className="bg-surface border-border-grid rounded-card overflow-hidden border">
+          <div className="bg-surface border-border-grid rounded-card shadow-rest overflow-hidden border">
             <div className="relative flex">
-              <div className="border-border-grid w-13 flex-none border-r">
+              <div className="border-border-grid grid-rows-day-touch w-14 flex-none border-r">
                 {timeAxis(DAY_ROW_H)}
               </div>
-              <div className="relative min-w-0 flex-1">
+              <div className="grid-rows-day-touch relative min-w-0 flex-1">
                 {Array.from({ length: SLOT_COUNT }, (_, rowIndex) =>
                   renderCell({
                     cellDay: day,
@@ -1059,11 +1063,11 @@ export function Schedule({
                 )}
                 {renderPast(day, DAY_ROW_H)}
                 {placements
-                  .filter((entry) => entry.placement!.dayIndex === dayIndex)
+                  .filter((entry) => entry.placement.dayIndex === dayIndex)
                   .map((entry) =>
                     renderBooking(
                       entry.booking,
-                      entry.placement!,
+                      entry.placement,
                       DAY_ROW_H,
                       "day",
                       false,
@@ -1074,12 +1078,12 @@ export function Schedule({
                 {now !== null && nowMarker?.dayIndex === dayIndex ? (
                   <div
                     aria-hidden
-                    className="border-now-line pointer-events-none absolute inset-x-0 z-9 border-t-2"
+                    className="bg-now-line animate-now pointer-events-none absolute inset-x-0 z-9 h-0.5 origin-left shadow-[0_0_8px_var(--color-now-line)]"
                     style={{
                       top: rowSpan(nowMarker.ratio * SLOT_COUNT, DAY_ROW_H),
                     }}
                   >
-                    <span className="bg-now-label rounded-booking absolute -top-2.5 left-1.5 px-1 py-px font-mono text-xs sm:text-[11px] xl:text-xs font-semibold text-white">
+                    <span className="bg-now-label rounded-booking absolute -top-2.5 left-1.5 px-1.5 py-px font-mono text-[10px] font-bold text-white">
                       {DateTime.fromMillis(now).setZone(timeZone).toFormat("HH:mm")}
                     </span>
                   </div>
@@ -1089,7 +1093,9 @@ export function Schedule({
           </div>
         </SwipeArea>
 
-        <p className="text-text-tertiary text-xs leading-relaxed">{t("hintTouch")}</p>
+        <p className="text-text-tertiary text-center text-xs leading-relaxed">
+          {t("hintTouch")}
+        </p>
       </div>
 
       {/* Whole week. Wide screens scroll it sideways; the time column stays put
@@ -1115,45 +1121,42 @@ export function Schedule({
                   // shares one baseline, and the pair as a whole sits in the
                   // middle of the row. items-baseline alone hangs both labels
                   // from the top edge.
-                  className={`border-border-grid-half relative flex min-w-[5.5rem] flex-1 items-center justify-center border-l px-2 ${
+                  className={`border-border-grid relative flex min-w-[5.5rem] flex-1 items-center justify-center border-l px-2.5 ${
                     isToday ? "bg-today-column" : ""
-                  } ${isPastDay(option) ? "opacity-55" : ""}`}
+                  } ${isPastDay(option) ? "opacity-60" : ""}`}
                   style={{ height: `${HEADER_REM}rem` }}
                 >
                   <span className="flex items-baseline gap-1.5">
                     <span
-                      className={`text-[13px] ${
-                        isToday
-                          ? "text-text-primary font-bold"
-                          : "text-text-secondary font-medium"
+                      className={`text-xs font-bold ${
+                        isToday ? "text-accent-own-ink" : "text-text-secondary"
                       }`}
                     >
                       {option.setLocale(locale).toFormat("ccc")}
                     </span>
                     <span
-                      className={`font-mono text-xs ${
-                        isToday
-                          ? "text-text-primary font-bold"
-                          : "text-text-tertiary font-medium"
+                      className={`font-mono text-xs font-bold ${
+                        isToday ? "text-accent-own-ink" : "text-text-primary"
                       }`}
                     >
                       {option.toFormat("dd.MM")}
                     </span>
+                    {/* Out of the flow would be tidier, but the dot belongs to
+                        the pair: it is the one mark that says "today" when the
+                        column tint is invisible on a printout. */}
+                    {isToday ? (
+                      <span
+                        aria-hidden="true"
+                        className="bg-now-line size-1.5 self-center rounded-full shadow-[0_0_0_3px_var(--color-warning-surface)]"
+                      />
+                    ) : null}
                   </span>
                   <DayRibbon
-                    busy={busyByDay.get(index) ?? EMPTY_DAY}
+                    mine={busyByDay.get(index)?.mine ?? EMPTY_DAY}
+                    others={busyByDay.get(index)?.others ?? EMPTY_DAY}
                     slotCount={SLOT_COUNT}
-                    className="absolute inset-x-2 bottom-1"
+                    className="absolute inset-x-2.5 bottom-1"
                   />
-                  {/* Out of the flow: in the row it widened the today column's
-                      label group and pushed its text off the centre the other
-                      six days line up on. */}
-                  {isToday ? (
-                    <span
-                      aria-hidden="true"
-                      className="bg-now-line absolute top-2 right-2 h-1.5 w-1.5 rounded-full"
-                    />
-                  ) : null}
                 </div>
               );
             })}
@@ -1171,7 +1174,7 @@ export function Schedule({
                   // Read back while a booking is dragged, to say which day and
                   // which row the pointer is over.
                   data-day-index={index}
-                  className={`border-border-grid-half relative flex min-w-[5.5rem] flex-1 flex-col border-l ${
+                  className={`border-border-grid grid-rows-day relative flex min-w-[5.5rem] flex-1 flex-col border-l ${
                     option.toISODate() === todayIso ? "bg-today-column" : ""
                   }`}
                 >
@@ -1188,11 +1191,11 @@ export function Schedule({
                   )}
                   {renderPast(option, ROW_H)}
                   {placements
-                    .filter((entry) => entry.placement!.dayIndex === index)
+                    .filter((entry) => entry.placement.dayIndex === index)
                     .map((entry) =>
                       renderBooking(
                         entry.booking,
-                        entry.placement!,
+                        entry.placement,
                         ROW_H,
                         "week",
                         true,
@@ -1216,10 +1219,11 @@ export function Schedule({
                 style={{ top: rowSpan(nowMarker.ratio * SLOT_COUNT, ROW_H) }}
               >
                 {/* Drawn from the axis outwards, the direction the day runs in;
-                    appearing all at once would read as a border. */}
-                <div className="border-now-line ml-axis animate-now origin-left border-t-2" />
-                <span className="w-axis absolute -top-2.5 left-0 pr-1 text-right">
-                  <span className="bg-now-label rounded-booking px-1 py-px font-mono text-xs sm:text-[11px] xl:text-xs font-semibold text-white">
+                    appearing all at once would read as a border. The glow is
+                    what lifts a 2px line off twenty other horizontal lines. */}
+                <div className="bg-now-line ml-axis animate-now h-0.5 origin-left shadow-[0_0_8px_var(--color-now-line)]" />
+                <span className="w-axis absolute -top-2 left-0 pr-1.5 text-right">
+                  <span className="text-now-label bg-surface rounded px-1 font-mono text-[10.5px] font-bold">
                     {DateTime.fromMillis(now).setZone(timeZone).toFormat("HH:mm")}
                   </span>
                 </span>
@@ -1232,8 +1236,8 @@ export function Schedule({
       {/* An empty week has to read as an opportunity rather than as a failure,
           so the grid stays and a plain sentence says what it means. */}
       {isWeekEmpty ? (
-        <p className="border-success bg-success-surface text-success-ink rounded-control flex flex-wrap items-center gap-2 border px-3 py-2">
-          <span className="text-sm font-semibold">{t("emptyWeekTitle")}</span>
+        <p className="bg-success-surface text-success-ink rounded-control flex flex-wrap items-center gap-2 px-3.5 py-2.5">
+          <span className="text-sm font-extrabold">{t("emptyWeekTitle")}</span>
           <span className="text-[13px] leading-snug">{t("emptyWeekText")}</span>
         </p>
       ) : null}

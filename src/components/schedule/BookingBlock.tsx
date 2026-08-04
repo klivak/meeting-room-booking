@@ -54,26 +54,36 @@ type BookingBlockProps = {
   style: React.CSSProperties;
 };
 
-// Three textures, not three shades: the fill plus a left bar for yours, diagonal
-// hatching for someone else's, a dashed outline plus a tick for one of yours
-// that is over. All three survive a grayscale screenshot and deuteranopia,
-// which colour alone would not.
+// Three textures, not three shades: a fill with a jade bar for yours, diagonal
+// hatching with a blue one for someone else's, and a dashed outline with a tick
+// for one of yours that is over. All three survive a grayscale screenshot and
+// deuteranopia, which colour alone would not.
 const STATES: Record<BookingState, string> = {
-  own: "border-accent-own-booking bg-accent-own-surface text-accent-own-ink shadow-[inset_3px_0_0_var(--color-accent-own-booking),var(--shadow-rest)]",
-  // A booking that is over gets no fill and no shadow: it is still on the grid
-  // for reference, but it must not compete with the part of the day left to book.
+  own: "bg-accent-own-fill border-accent-own-booking border-l-[3px] py-1 pr-2 pl-2.5",
+  // A booking that is over gets no fill and no bar: it is still on the grid for
+  // reference, but it must not compete with the day left to book.
   finished:
-    "border-dashed border-accent-own-past bg-surface text-accent-own-past shadow-[inset_3px_0_0_var(--color-accent-own-past)]",
-  // The left bar is a different hue from the accent, not a paler one, so that
-  // "someone else booked this" never reads as "a faded version of yours".
+    "border-accent-own-past border-[1.5px] border-dashed py-1 pr-2 pl-2",
   other:
-    "border-border-grid hatch text-text-secondary cursor-default shadow-[inset_3px_0_0_var(--color-booking-other-author),var(--shadow-rest)]",
+    "hatch border-booking-other-author border-l-[3px] cursor-default py-1 pr-2 pl-2.5",
+};
+
+const TIME_TONES: Record<BookingState, string> = {
+  own: "text-accent-own-ink",
+  finished: "text-text-tertiary",
+  other: "text-booking-other-ink",
+};
+
+const TITLE_TONES: Record<BookingState, string> = {
+  own: "text-text-primary",
+  finished: "text-text-secondary",
+  other: "text-booking-other-ink",
 };
 
 const CHIPS: Record<BookingState, string> = {
   own: "bg-accent-own-booking text-accent-own-on",
-  finished: "bg-surface-raised text-text-tertiary",
-  other: "bg-booking-other-author text-white",
+  finished: "bg-surface-muted text-text-tertiary",
+  other: "bg-booking-other-surface text-booking-other-ink",
 };
 
 /**
@@ -110,15 +120,13 @@ export function BookingBlock({
 }: BookingBlockProps) {
   const t = useTranslations("schedule");
 
-  // The block grows out of its own row rather than fading in from nowhere, so
-  // the eye keeps the slot it was already looking at.
-  const className = `focus-ring-tight rounded-booking animate-block origin-top absolute right-[4px] left-[4px] flex overflow-hidden border no-underline transition ${
-    compact ? "flex-row items-center gap-1.5 py-0 pr-1 pl-1.5" : "flex-col gap-0.5 py-1 pr-1.5 pl-2"
-  } ${STATES[state]} ${
-    isSelected ? "outline-focus-ring outline-2 outline-offset-1" : ""
-  } ${interactive ? "" : "pointer-events-none"} ${
-    onGrab ? "cursor-grab" : ""
-  } ${isDragging ? "cursor-grabbing shadow-panel z-10 select-none" : ""} ${
+  const className = `focus-ring-tight rounded-booking animate-block absolute right-1 left-1 flex flex-col gap-0.5 overflow-hidden no-underline transition ${
+    STATES[state]
+  } ${isSelected ? "outline-focus-ring outline-2 outline-offset-1" : ""} ${
+    interactive ? "" : "pointer-events-none"
+  } ${onGrab ? "cursor-grab" : ""} ${
+    isDragging ? "cursor-grabbing shadow-panel z-10 select-none" : ""
+  } ${
     // Red only while the drag is in the air: releasing here is refused, and the
     // block says so before the release rather than after it.
     invalid ? "border-danger bg-danger-surface text-danger-ink" : ""
@@ -129,49 +137,64 @@ export function BookingBlock({
     booking.isRecurring ? ` · ${t("recurring")}` : ""
   }`;
 
+  // Two letters in the corner, so authorship sits on the block itself and not
+  // only in a legend below the grid.
+  const authorChip = (
+    <span
+      aria-hidden="true"
+      className={`shrink-0 rounded-[5px] px-1.5 py-px text-[10px] leading-[1.4] font-bold ${CHIPS[state]}`}
+    >
+      {booking.isMine ? t("youShort") : initials(booking.user.name)}
+    </span>
+  );
+
   const marks = (
-    <span className="flex flex-none items-center gap-1">
+    <span className={`flex flex-none items-center gap-1 ${TIME_TONES[state]}`}>
       {booking.isRecurring ? (
-        <span title={t("recurring")} className="leading-none opacity-80">
-          <Repeat aria-hidden="true" className="size-3.5" />
+        <span title={t("recurring")} className="leading-none">
+          <Repeat aria-hidden="true" className="size-[11px]" strokeWidth={2.4} />
           <span className="sr-only">{t("recurring")}</span>
         </span>
       ) : null}
       {state === "finished" ? (
         <span title={t("finished")} className="leading-none">
-          <Check aria-hidden="true" className="size-3.5" />
+          <Check aria-hidden="true" className="size-3" strokeWidth={2.6} />
           <span className="sr-only">{t("finished")}</span>
         </span>
       ) : null}
-      <span
-        aria-hidden="true"
-        className={`flex size-4 items-center justify-center rounded-full font-mono text-[9px] leading-none font-bold ${CHIPS[state]}`}
-      >
-        {booking.isMine ? t("youShort") : initials(booking.user.name)}
-      </span>
     </span>
   );
 
   const content = compact ? (
-    <>
-      <span className="flex-none font-mono text-xs sm:text-[11px] xl:text-xs leading-tight font-semibold">
+    <span className="flex min-w-0 items-center gap-1.5">
+      <span
+        className={`flex-none font-mono text-[10.5px] leading-tight font-semibold ${TIME_TONES[state]}`}
+      >
         {start}
       </span>
-      <span className="min-w-0 flex-1 truncate text-xs leading-tight font-semibold">
+      <span
+        className={`min-w-0 flex-1 truncate text-[11.5px] leading-tight font-bold ${TITLE_TONES[state]}`}
+      >
         {booking.title}
       </span>
       {marks}
-    </>
+      {authorChip}
+    </span>
   ) : (
     <>
-      <span className="flex w-full flex-none items-center gap-1">
-        <span className="font-mono text-xs sm:text-[11px] xl:text-xs leading-tight font-semibold">
+      <span className="flex min-w-0 items-center gap-1.5">
+        <span
+          className={`font-mono text-[10.5px] leading-tight font-semibold ${TIME_TONES[state]}`}
+        >
           {range}
         </span>
-        <span className="flex-1" />
         {marks}
+        <span className="flex-1" />
+        {authorChip}
       </span>
-      <span className="w-full min-w-0 truncate text-[13px] leading-tight font-semibold">
+      <span
+        className={`w-full min-w-0 truncate text-xs leading-[1.15] font-bold ${TITLE_TONES[state]}`}
+      >
         {booking.title}
       </span>
     </>
@@ -215,7 +238,7 @@ export function BookingBlock({
       aria-label={label}
       // Only a booking you can act on lifts: the hover is the affordance, so
       // someone else's block must not have it.
-      className={`${className} hover:-translate-y-px hover:shadow-panel`}
+      className={`${className} hover:shadow-panel hover:brightness-[1.03]`}
       style={style}
       title={tooltip}
       // The browser's own link dragging would fight the grab below.
