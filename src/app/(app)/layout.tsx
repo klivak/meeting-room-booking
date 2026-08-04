@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 
@@ -5,6 +6,13 @@ import { Header } from "@/components/Header";
 import { Toaster } from "@/components/Toaster";
 import { VerificationBanner } from "@/components/VerificationBanner";
 import { getCurrentUser } from "@/lib/server/session";
+
+// Nothing in here is meant for a search engine: a crawler only ever sees the
+// redirect to /login, and a room address that leaked into an index would point
+// at a page nobody can open.
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 // Single guard for the whole application: everything inside this route group
 // requires a session. /login and /register live outside it, so they stay public.

@@ -9,7 +9,9 @@ import { getCurrentUser } from "@/lib/server/session";
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("auth");
 
-  return { title: t("loginTitle") };
+  // One of the two pages a search engine can actually reach, so it gets a
+  // description of its own rather than the application's generic one.
+  return { title: t("loginTitle"), description: t("loginDescription") };
 }
 
 export default async function LoginPage() {

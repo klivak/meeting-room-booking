@@ -9,7 +9,7 @@ import { getCurrentUser } from "@/lib/server/session";
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("auth");
 
-  return { title: t("registerTitle") };
+  return { title: t("registerTitle"), description: t("registerDescription") };
 }
 
 export default async function RegisterPage() {

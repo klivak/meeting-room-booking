@@ -21,6 +21,8 @@
     "loginSubtitle": "Your work email and password. The schedule opens right after.",
     "registerTitle": "Create an account",
     "registerSubtitle": "Colleagues see your name next to your bookings on the grid.",
+    "loginDescription": "Sign in to book a meeting room: a week of the room on one grid, half-hour slots, your own bookings yours to edit.",
+    "registerDescription": "Create an account to book meeting rooms in the office: pick a free slot on the weekly grid and edit or cancel it whenever you need to.",
     "email": "Email",
     "password": "Password",
     "name": "Name",
