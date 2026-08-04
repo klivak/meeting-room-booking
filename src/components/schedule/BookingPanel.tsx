@@ -7,9 +7,11 @@ import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { CancelBookingButton } from "@/components/CancelBookingButton";
+import { setDraftTitle } from "@/components/schedule/draftTitle";
 import { showToast } from "@/components/toast";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { CONTROL_CLASS, Select } from "@/components/ui/Select";
 import {
   noopSubscribe,
   readOfficeTimeZone,
@@ -46,12 +48,6 @@ const WIDE_SCREEN = "(min-width: 640px)";
 
 /** Element the floating panel is placed against. */
 export const SCHEDULE_ANCHOR_ID = "schedule-section";
-
-// One look for all three selects and the date field; they differ only in what
-// they hold. The focus state is a 1.5px edge plus a soft ring of the same
-// colour, so a focused field reads as lit rather than as suddenly heavier.
-const SELECT_CLASS =
-  "border-border-grid bg-surface text-text-primary rounded-control min-h-11 min-w-0 border px-2.5 text-sm font-semibold transition outline-none hover:border-border-control focus-visible:border-accent-own-booking focus-visible:border-[1.5px] focus-visible:shadow-[0_0_0_3px_var(--color-accent-own-surface)] sm:min-h-10";
 
 function subscribeToWideScreen(onChange: () => void) {
   const query = window.matchMedia(WIDE_SCREEN);
@@ -170,6 +166,9 @@ function BookingForm({
   // Repetition is offered only when creating: editing changes one occurrence.
   const [repeat, setRepeat] = useState(false);
   const [repeatWeeks, setRepeatWeeks] = useState(MIN_OCCURRENCES);
+  // The room the user asked to switch to while the form already held something
+  // worth keeping; null when nothing is being confirmed.
+  const [switchingTo, setSwitchingTo] = useState<string | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -183,6 +182,19 @@ function BookingForm({
     readWide,
     readNotWide,
   );
+
+  // The grid behind the panel draws the title on the range being picked. Only
+  // while creating: an existing booking already carries its own name there, and
+  // overwriting it as the field is edited would claim a change that is not saved.
+  useEffect(() => {
+    if (booking) {
+      return;
+    }
+
+    setDraftTitle(title.trim());
+
+    return () => setDraftTitle("");
+  }, [title, booking]);
 
   const day = DateTime.fromISO(date, { zone: OFFICE_TZ });
   // The date field can be cleared or left half typed, and the slot labels do
@@ -309,6 +321,54 @@ function BookingForm({
     // the page. It goes back to the grid the booking is on instead.
     const schedule = document.getElementById(SCHEDULE_ANCHOR_ID);
     schedule?.focus();
+  };
+
+  /**
+   * Moves the schedule behind the panel to the room now picked in it, keeping
+   * the range the form holds, so "which room" is answered by the grid and not
+   * only by the select. The address is what the grid reads, so this is a
+   * navigation — and a navigation rebuilds the panel from the address, which is
+   * why the title and the repeat settings cannot survive it.
+   */
+  const goToRoom = (targetRoomId: string) => {
+    setSelectedRoomId(targetRoomId);
+    setSwitchingTo(null);
+
+    // A half-typed date has no week and no slot to carry over; the panel simply
+    // stays where it is until the field makes sense again.
+    if (!day.isValid) {
+      return;
+    }
+
+    const start = getSlotStart(day, startIndex).toUTC().toISO() ?? "";
+    const end = getSlotStart(day, endIndex).toUTC().toISO() ?? "";
+    const week = getWeekStart(day, WEEK_START_DAY).toISODate() ?? weekParam;
+
+    router.replace(
+      `/rooms/${targetRoomId}?week=${week}&slot=${encodeURIComponent(start)}&slotEnd=${encodeURIComponent(end)}`,
+      { scroll: false },
+    );
+  };
+
+  // Editing never navigates: the booking stays in its own room until the change
+  // is actually saved. When creating, the jump costs whatever has been typed,
+  // so it is confirmed — but only when there is something to lose.
+  const pickRoom = (targetRoomId: string) => {
+    if (targetRoomId === selectedRoomId) {
+      return;
+    }
+
+    if (booking) {
+      setSelectedRoomId(targetRoomId);
+      return;
+    }
+
+    if (title.trim() || repeat) {
+      setSwitchingTo(targetRoomId);
+      return;
+    }
+
+    goToRoom(targetRoomId);
   };
 
   /** Keeps the end after the start when the start moves. */
@@ -523,6 +583,8 @@ function BookingForm({
     }
   }
 
+  const switchingRoom = rooms.find((room) => room.id === switchingTo);
+
   return (
     <div
       // No backdrop above the sm breakpoint: the point of the panel is that the
@@ -631,11 +693,10 @@ function BookingForm({
               >
                 {t("room")}
               </label>
-              <select
+              <Select
                 id="room"
                 value={selectedRoomId}
-                onChange={(event) => setSelectedRoomId(event.target.value)}
-                className={SELECT_CLASS}
+                onChange={(event) => pickRoom(event.target.value)}
               >
                 {/* Floor and capacity are how a room is actually chosen; the name
                     alone means memorising which is which. */}
@@ -648,7 +709,7 @@ function BookingForm({
                     })}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
 
             {/* The date takes its own line so the two time fields get half the
@@ -672,7 +733,7 @@ function BookingForm({
                   aria-describedby={
                     fieldError("date") ? "date-error" : undefined
                   }
-                  className={`${SELECT_CLASS} font-mono text-[13px] ${
+                  className={`${CONTROL_CLASS} font-mono text-[13px] ${
                     fieldError("date") ? "border-danger" : ""
                   }`}
                 />
@@ -694,18 +755,18 @@ function BookingForm({
                 >
                   {t("start")}
                 </label>
-                <select
+                <Select
                   id="start"
                   value={startIndex}
                   onChange={(event) => changeStart(Number(event.target.value))}
-                  className={`${SELECT_CLASS} font-mono text-[13px]`}
+                  className="font-mono text-[13px]"
                 >
                   {Array.from({ length: SLOT_COUNT }, (_, index) => (
                     <option key={index} value={index}>
                       {getSlotLabel(labelDay, index, timeZone)}
                     </option>
                   ))}
-                </select>
+                </Select>
               </div>
 
               <div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -715,11 +776,11 @@ function BookingForm({
                 >
                   {t("end")}
                 </label>
-                <select
+                <Select
                   id="end"
                   value={endIndex}
                   onChange={(event) => setEndIndex(Number(event.target.value))}
-                  className={`${SELECT_CLASS} font-mono text-[13px] ${
+                  className={`font-mono text-[13px] ${
                     generalError ? "border-danger" : ""
                   }`}
                 >
@@ -738,7 +799,7 @@ function BookingForm({
                       )}
                     </option>
                   ))}
-                </select>
+                </Select>
               </div>
             </div>
 
@@ -773,7 +834,7 @@ function BookingForm({
                     <button
                       key={room.id}
                       type="button"
-                      onClick={() => setSelectedRoomId(room.id)}
+                      onClick={() => pickRoom(room.id)}
                       title={t("roomOption", {
                         name: room.name,
                         floor: room.floor,
@@ -835,7 +896,7 @@ function BookingForm({
               <div className="border-border-grid rounded-control flex flex-col gap-2.5 border p-3 sm:flex-row sm:items-center">
                 <label
                   htmlFor="repeat"
-                  className="flex flex-1 items-center gap-2.5 text-[13px] font-semibold"
+                  className="flex flex-1 items-center gap-2.5 text-[13px] font-semibold whitespace-nowrap"
                 >
                   <input
                     id="repeat"
@@ -849,14 +910,14 @@ function BookingForm({
                 </label>
 
                 <div className="flex items-center gap-2 ps-[30px] sm:ps-0">
-                  <select
+                  <Select
                     value={repeatWeeks}
                     onChange={(event) =>
                       setRepeatWeeks(Number(event.target.value))
                     }
                     disabled={!repeat}
                     aria-label={t("repeatCount")}
-                    className={`${SELECT_CLASS} min-h-11 font-mono text-[13px] sm:min-h-8 disabled:opacity-[0.45]`}
+                    className="min-h-11 font-mono text-[13px] sm:min-h-8 disabled:opacity-[0.45]"
                   >
                     {Array.from(
                       { length: MAX_OCCURRENCES - MIN_OCCURRENCES + 1 },
@@ -866,7 +927,7 @@ function BookingForm({
                         {count}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                   <span className="text-text-tertiary text-xs">
                     {t("times")}
                   </span>
@@ -915,6 +976,58 @@ function BookingForm({
           </div>
         </form>
       </div>
+
+      {/* Asked only when the jump actually costs something, and it says what:
+          "the calendar will move" is not a warning, "what you typed goes" is.
+          A child of the panel rather than a sibling, so it needs the pointer
+          events the panel gives up on a wide screen. */}
+      {switchingRoom ? (
+        <div
+          className="pointer-events-auto fixed inset-0 z-70 flex items-center justify-center bg-[rgb(14_22_20/0.45)] p-6"
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              setSwitchingTo(null);
+            }
+          }}
+        >
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="switch-room-title"
+            className="rounded-panel bg-surface border-border-grid shadow-modal animate-pop w-full max-w-[400px] border p-6"
+          >
+            <h2
+              id="switch-room-title"
+              className="mb-1.5 text-[19px] leading-snug font-extrabold tracking-[-0.02em]"
+            >
+              {t("switchRoomTitle")}
+            </h2>
+            <p className="text-text-secondary mb-4 text-[13.5px] leading-relaxed">
+              {t("switchRoomText", { name: switchingRoom.name })}
+            </p>
+            {/* The order the cancel dialog uses, so the muscle memory of a daily
+                user stays correct: the way back is always on the left. */}
+            <div className="flex gap-2.5">
+              <Button
+                autoFocus
+                variant="secondary"
+                size="lg"
+                className="flex-1"
+                onClick={() => setSwitchingTo(null)}
+              >
+                {t("switchRoomStay")}
+              </Button>
+              <Button
+                size="lg"
+                className="flex-1"
+                onClick={() => goToRoom(switchingRoom.id)}
+              >
+                {t("switchRoomGo")}
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -14,6 +14,8 @@ import {
   DAY_ROW_H,
   HEADER_REM,
   ROW_H,
+  TOP_GUTTER,
+  TOP_GUTTER_TOUCH,
   rowSpan,
 } from "@/components/schedule/geometry";
 import { Schedule as ScheduleGrid } from "@/components/schedule/Schedule";
@@ -25,7 +27,12 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { WEEK_START_DAY } from "@/lib/config";
 import { getRoomAvailability } from "@/lib/domain/availability";
 import { OFFICE_TZ } from "@/lib/domain/constants";
-import { DAYS_IN_WEEK, SLOT_COUNT, getSlotStart, getWeekDays } from "@/lib/domain/grid";
+import {
+  DAYS_IN_WEEK,
+  SLOT_COUNT,
+  getSlotStart,
+  getWeekDays,
+} from "@/lib/domain/grid";
 import { getWeekStart } from "@/lib/domain/week";
 import { prisma } from "@/lib/server/db";
 import { getCurrentUser } from "@/lib/server/session";
@@ -54,7 +61,9 @@ const RAIL_DOTS = {
  * The room this page is about. Memoised per request: the title and the page
  * body both need it, and Next renders generateMetadata alongside the page.
  */
-const getRoom = cache((id: string) => prisma.room.findUnique({ where: { id } }));
+const getRoom = cache((id: string) =>
+  prisma.room.findUnique({ where: { id } }),
+);
 
 export async function generateMetadata({
   params,
@@ -213,7 +222,16 @@ async function ScheduleSkeleton() {
         </div>
 
         <div className="bg-surface border-border-grid rounded-card shadow-rest overflow-hidden border">
-          <div className="flex" style={{ height: rowSpan(SLOT_COUNT, DAY_ROW_H) }}>
+          {/* The same strip above the first row the real grid has, so the card
+              does not grow by 14px the moment the schedule arrives. */}
+          <div className="flex" style={{ height: TOP_GUTTER_TOUCH }}>
+            <div className="border-border-grid w-14 flex-none border-r" />
+            <div className="flex-1" />
+          </div>
+          <div
+            className="flex"
+            style={{ height: rowSpan(SLOT_COUNT, DAY_ROW_H) }}
+          >
             <div className="border-border-grid w-14 flex-none border-r" />
             <div className="relative min-w-0 flex-1">
               <Skeleton
@@ -263,6 +281,15 @@ async function ScheduleSkeleton() {
             </div>
           ))}
         </div>
+        <div className="flex" style={{ height: TOP_GUTTER }}>
+          <div className="border-border-grid w-axis flex-none border-r" />
+          {Array.from({ length: DAYS_IN_WEEK }, (_, column) => (
+            <div
+              key={column}
+              className="border-border-grid min-w-[5.5rem] flex-1 border-l"
+            />
+          ))}
+        </div>
         <div className="flex" style={{ height: rowSpan(SLOT_COUNT, ROW_H) }}>
           <div className="border-border-grid w-axis flex-none border-r" />
           {Array.from({ length: DAYS_IN_WEEK }, (_, column) => (
@@ -290,7 +317,6 @@ async function ScheduleSkeleton() {
           ))}
         </div>
       </div>
-
     </div>
   );
 }
@@ -330,7 +356,11 @@ export default async function RoomPage({
     }),
     prisma.booking.findMany({
       // Half-open window, the same comparison the overlap rule uses.
-      where: { canceledAt: null, startsAt: { lt: dayEnd }, endsAt: { gt: dayStart } },
+      where: {
+        canceledAt: null,
+        startsAt: { lt: dayEnd },
+        endsAt: { gt: dayStart },
+      },
       select: { roomId: true, startsAt: true, endsAt: true },
     }),
   ]);
@@ -461,11 +491,14 @@ export default async function RoomPage({
             <h1 className="truncate text-[22px] font-extrabold tracking-[-0.02em] sm:text-[24px]">
               {room.name}
             </h1>
-              <span className="bg-surface-muted text-text-secondary border-border-grid hidden shrink-0 items-center gap-1.5 rounded-md border px-2 py-[3px] font-mono text-[11px] font-semibold sm:flex">
-                <Users aria-hidden="true" className="size-3" />
-                {tRooms("roomMeta", { floor: room.floor, capacity: room.capacity })}
-              </span>
-              {/* Paging back a week looks the same as paging forward, so a week
+            <span className="bg-surface-muted text-text-secondary border-border-grid hidden shrink-0 items-center gap-1.5 rounded-md border px-2 py-[3px] font-mono text-[11px] font-semibold sm:flex">
+              <Users aria-hidden="true" className="size-3" />
+              {tRooms("roomMeta", {
+                floor: room.floor,
+                capacity: room.capacity,
+              })}
+            </span>
+            {/* Paging back a week looks the same as paging forward, so a week
                   that is entirely over says so next to its own name. */}
             {isPastWeek ? <Badge tone="warning">{t("pastWeek")}</Badge> : null}
           </div>
@@ -536,7 +569,10 @@ export default async function RoomPage({
           tabIndex={-1}
           className="flex flex-col gap-2 focus:outline-none"
         >
-          <Suspense key={weekStart.toISODate()} fallback={await ScheduleSkeleton()}>
+          <Suspense
+            key={weekStart.toISODate()}
+            fallback={await ScheduleSkeleton()}
+          >
             <Schedule
               roomId={room.id}
               userId={user?.id}

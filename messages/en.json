@@ -141,6 +141,10 @@
     "created": "Booking created",
     "updated": "Changes saved",
     "failed": "Could not save the booking. Please try again",
+    "switchRoomTitle": "Open the other room's calendar?",
+    "switchRoomText": "The schedule behind will switch to {name}. The title and repeat settings you have already entered will be lost.",
+    "switchRoomStay": "Stay",
+    "switchRoomGo": "Switch",
     "roomOption": "{name} · floor {floor} · {capacity} seats"
   },
   "myBookings": {

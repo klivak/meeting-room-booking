@@ -15,9 +15,16 @@ import {
 } from "@/components/schedule/BookingBlock";
 import { DayRibbon } from "@/components/schedule/DayRibbon";
 import {
+  readDraftTitle,
+  readNoDraftTitle,
+  subscribeToDraftTitle,
+} from "@/components/schedule/draftTitle";
+import {
   DAY_ROW_H,
   HEADER_REM,
   ROW_H,
+  TOP_GUTTER,
+  TOP_GUTTER_TOUCH,
   rowSpan,
 } from "@/components/schedule/geometry";
 import { SwipeArea } from "@/components/schedule/SwipeArea";
@@ -233,6 +240,14 @@ export function Schedule({
     readOfficeTimeZone,
   );
   const now = useSyncExternalStore(subscribeToMinuteTick, readNow, readNoNow);
+
+  // What the panel's title field holds right now, so the picked range can carry
+  // it before anything is saved.
+  const draftTitle = useSyncExternalStore(
+    subscribeToDraftTitle,
+    readDraftTitle,
+    readNoDraftTitle,
+  );
 
   // Rows being dragged over right now; null when nothing is being selected.
   const [drag, setDrag] = useState<{
@@ -512,6 +527,11 @@ export function Schedule({
     lastColumn: number;
     rowHeight: string;
   }) => {
+    // A slot that has already gone by still takes the click: the form is where
+    // "this time has passed" is explained, and blocking the cell outright would
+    // leave the user guessing why half the grid stopped answering.
+    const isPast = rowIndex < pastRows(cellDay, now);
+
     return (
       <button
         key={`${prefix}-${rowIndex}`}
@@ -601,16 +621,26 @@ export function Schedule({
       >
         {/* The hovered cell names its own time and shows the shape of the
             booking it would make: the axis is far away once the pointer is deep
-            inside the week, and a bare highlight does not say "click to book". */}
+            inside the week, and a bare highlight does not say "click to book".
+            Over a slot that is already gone the same plaque says so instead of
+            inviting a booking the server is going to refuse. */}
         <span
-          className={`rounded-booking pointer-events-none absolute inset-x-1 inset-y-[2px] flex items-center justify-center gap-1 font-mono text-xs opacity-0 transition-opacity sm:text-[11px] ${
+          className={`rounded-booking pointer-events-none absolute inset-x-1 inset-y-[2px] flex items-center justify-center gap-1 truncate px-1 font-mono text-xs opacity-0 transition-opacity sm:text-[11px] ${
             canBook
-              ? "border-accent-own-booking bg-accent-own-surface text-accent-own-ink border-[1.5px] border-dashed font-bold group-hover/slot:opacity-100 group-focus-visible/slot:opacity-100"
+              ? isPast
+                ? "border-border-control text-text-tertiary border-[1.5px] border-dashed font-bold group-hover/slot:opacity-100 group-focus-visible/slot:opacity-100"
+                : "border-accent-own-booking bg-accent-own-surface text-accent-own-ink border-[1.5px] border-dashed font-bold group-hover/slot:opacity-100 group-focus-visible/slot:opacity-100"
               : "text-text-tertiary group-focus-visible/slot:opacity-100"
           }`}
         >
-          {canBook ? <Plus aria-hidden="true" className="size-3" /> : null}
-          {labels[rowIndex]}
+          {canBook ? (
+            isPast ? (
+              <X aria-hidden="true" className="size-3 shrink-0" />
+            ) : (
+              <Plus aria-hidden="true" className="size-3 shrink-0" />
+            )
+          ) : null}
+          {canBook && isPast ? t("slotPast") : labels[rowIndex]}
         </span>
       </button>
     );
@@ -941,17 +971,33 @@ export function Schedule({
         }}
       >
         <div
-          className={`rounded-booking h-full border-[1.5px] border-dashed ${
+          // The jade-to-red switch is a fade rather than a jump: while a range
+          // is being dragged past four hours the colour changes on every row,
+          // and a hard swap at that rate reads as flicker.
+          className={`rounded-booking h-full overflow-hidden border-[1.5px] border-dashed transition-colors ${
             refused
               ? "border-danger bg-danger-surface"
               : "border-accent-own-booking bg-accent-own-surface"
           }`}
-        />
+        >
+          {/* The name of the meeting as it is typed, on the range it is being
+              typed for: until the booking is saved, this block is the only
+              thing on the grid that stands for it. */}
+          {draftTitle ? (
+            <span
+              className={`block truncate px-1.5 pt-1 text-[11px] leading-tight font-bold ${
+                refused ? "text-danger-ink" : "text-accent-own-ink"
+              }`}
+            >
+              {draftTitle}
+            </span>
+          ) : null}
+        </div>
         {/* The plaque hangs off the top edge rather than sitting in the middle:
             a range one row tall has no middle, and the reading order of a
             calendar is downwards from the start. */}
         <span
-          className={`rounded-booking absolute -top-2.5 left-1.5 flex items-center gap-1 px-1.5 py-0.5 font-mono text-[11px] font-bold whitespace-nowrap text-white sm:text-[10px] ${
+          className={`rounded-booking absolute -top-2.5 left-1.5 flex items-center gap-1 px-1.5 py-0.5 font-mono text-[11px] font-bold whitespace-nowrap text-white transition-colors sm:text-[10px] ${
             refused ? "bg-danger-solid" : "bg-accent-own-ink"
           }`}
         >
@@ -1005,16 +1051,12 @@ export function Schedule({
         className="relative flex items-start justify-end pr-2.5"
         style={{ height: rowHeight }}
       >
-        {/* Lifted onto the line it marks, the way a calendar axis reads —
-            except the first, which has only the header above it and would be
-            clipped by the top edge of the grid, so it drops clear of the line
-            instead. Whole hours carry the weight; the half hours between them
-            go unlabelled, so the axis reads as a scale instead of forty equal
-            numbers. */}
+        {/* Lifted onto the line it marks, the way a calendar axis reads. The
+            first one included: the strip above the grid is what it hangs into,
+            and before that strip existed it had to drop inside its own row to
+            avoid being clipped. */}
         <span
-          className={`font-mono text-xs leading-none sm:text-[10.5px] ${
-            rowIndex === 0 ? "translate-y-[3px]" : "-translate-y-[5px]"
-          } ${
+          className={`-translate-y-[5px] font-mono text-xs leading-none sm:text-[10.5px] ${
             rowIndex % 2 === 0
               ? "text-text-tertiary font-semibold"
               : "text-transparent"
@@ -1033,7 +1075,12 @@ export function Schedule({
       </div>
     ));
 
-  const isWeekEmpty = placements.length === 0;
+  // "Nothing here yet" and a range the user is in the middle of picking are two
+  // different states, and the note claimed the first one while the second was on
+  // screen: with the form open the pointer sits on the panel, not on the grid,
+  // so the hover that hides the note never happens.
+  const isWeekEmpty =
+    placements.length === 0 && !drag && !justPicked && !selectedSlot;
 
   /**
    * An empty week has to read as an opportunity rather than as a failure, so it
@@ -1163,6 +1210,15 @@ export function Schedule({
           nextHref={dayHref(day.plus({ days: 1 }))}
         >
           <div className="bg-surface border-border-grid rounded-card shadow-rest overflow-hidden border">
+            {/* The sliver of 08:30 the day starts under; see TOP_GUTTER. */}
+            <div
+              aria-hidden
+              className="flex"
+              style={{ height: TOP_GUTTER_TOUCH }}
+            >
+              <div className="border-border-grid w-14 flex-none border-r" />
+              <div className="flex-1" />
+            </div>
             <div className="group relative flex">
               <div className="border-border-grid grid-rows-day-touch w-14 flex-none border-r">
                 {timeAxis(DAY_ROW_H)}
@@ -1281,6 +1337,20 @@ export function Schedule({
                 </div>
               );
             })}
+          </div>
+
+          {/* The same sliver as the day view, carrying the column tints so it
+              reads as the top of the grid rather than as a gap above it. */}
+          <div aria-hidden className="flex" style={{ height: TOP_GUTTER }}>
+            <div className="bg-surface border-border-grid sticky left-0 z-11 w-axis flex-none border-r" />
+            {days.map((option) => (
+              <div
+                key={option.toISODate()}
+                className={`border-border-grid min-w-[5.5rem] flex-1 border-l ${
+                  option.toISODate() === todayIso ? "bg-today-column" : ""
+                }`}
+              />
+            ))}
           </div>
 
           <div className="group relative flex">
