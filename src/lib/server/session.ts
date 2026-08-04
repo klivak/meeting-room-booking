@@ -1,5 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
+import { cache } from "react";
+
 import { cookies } from "next/headers";
 
 import { prisma } from "@/lib/server/db";
@@ -58,8 +60,14 @@ export async function createSession(userId: string): Promise<void> {
   });
 }
 
-/** Current user for the incoming request, or null for a guest. */
-export async function getCurrentUser(): Promise<CurrentUser | null> {
+/**
+ * Current user for the incoming request, or null for a guest.
+ *
+ * Memoised for the length of one request: the layout guard asks, and then the
+ * page asks again, and on /my-bookings a third time. They are the same question
+ * and used to be three round trips to the database before anything rendered.
+ */
+export const getCurrentUser = cache(async function getCurrentUser(): Promise<CurrentUser | null> {
   const cookieStore = await cookies();
   const cookieValue = cookieStore.get(COOKIE_NAME)?.value;
   if (!cookieValue) {
@@ -87,7 +95,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     email: session.user.email,
     emailVerified: session.user.emailVerifiedAt !== null,
   };
-}
+});
 
 /** Logout: drops the row so the cookie cannot be replayed, then clears the cookie. */
 export async function destroySession(): Promise<void> {
