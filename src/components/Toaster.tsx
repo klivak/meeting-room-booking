@@ -25,10 +25,16 @@ export function Toaster() {
       role="status"
       // A card rather than an inverted bar: it sits over the grid, and the one
       // dark rectangle on the screen read as an error whatever it said.
-      className="bg-surface border-border-grid text-text-primary shadow-modal animate-toast rounded-card fixed right-5 bottom-5 z-80 flex max-w-[360px] items-center gap-3 border px-3.5 py-3"
+      className="bg-surface border-border-grid text-text-primary shadow-panel animate-toast rounded-card fixed right-5 bottom-5 z-80 flex max-w-[360px] items-center gap-3 border px-4 py-3.5"
     >
-      <CircleCheck aria-hidden="true" className="text-success size-[18px] shrink-0" />
-      <span className="flex-1 text-[13px] leading-snug font-medium">{toast.message}</span>
+      <span className="bg-success-surface rounded-chip flex size-[30px] shrink-0 items-center justify-center">
+        <CircleCheck
+          aria-hidden="true"
+          className="text-success size-4"
+          strokeWidth={2.4}
+        />
+      </span>
+      <span className="flex-1 text-[13.5px] leading-snug font-bold">{toast.message}</span>
       {toast.action ? (
         <button
           type="button"
@@ -36,7 +42,7 @@ export function Toaster() {
             dismissToast();
             toast.action?.run();
           }}
-          className="focus-ring rounded-control border-border-control text-text-secondary hover:bg-surface-muted hover:text-text-primary flex shrink-0 items-center gap-1.5 border px-3 py-1.5 text-xs font-semibold transition"
+          className="focus-ring rounded-chip bg-accent-own-surface text-accent-own-ink flex shrink-0 items-center gap-1.5 px-3 py-[7px] text-[12.5px] font-bold transition hover:brightness-95"
         >
           <Undo2 aria-hidden="true" className="size-3.5" />
           {toast.action.label}

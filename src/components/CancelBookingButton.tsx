@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarX } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
@@ -45,12 +45,17 @@ export function CancelBookingButton({
   const [confirming, setConfirming] = useState(false);
   const [pending, setPending] = useState(false);
   const [failed, setFailed] = useState(false);
+  // What "yes" means for a series. Asked as a choice rather than as two
+  // destructive buttons: picking is a separate act from confirming, and only
+  // one of the two should be able to destroy eight bookings.
+  const [scope, setScope] = useState<"occurrence" | "series">("occurrence");
   // The dialog takes the focus, so it has to give it back when it closes.
   const trigger = useRef<HTMLButtonElement>(null);
 
   function closeDialog() {
     setConfirming(false);
     setFailed(false);
+    setScope("occurrence");
     trigger.current?.focus();
   }
 
@@ -145,18 +150,18 @@ export function CancelBookingButton({
               return;
             }
 
-            // The dialog is modal, so Tab has to stay inside it: the three
-            // buttons are the only answers, and the page behind is not one.
-            const buttons = Array.from(
-              event.currentTarget.querySelectorAll<HTMLButtonElement>(
-                "button:not(:disabled)",
+            // The dialog is modal, so Tab has to stay inside it: its own
+            // controls are the only answers, and the page behind is not one.
+            const focusable = Array.from(
+              event.currentTarget.querySelectorAll<HTMLElement>(
+                "button:not(:disabled), input:not(:disabled)",
               ),
             );
-            const edge = event.shiftKey ? buttons[0] : buttons[buttons.length - 1];
+            const edge = event.shiftKey ? focusable[0] : focusable[focusable.length - 1];
 
             if (document.activeElement === edge) {
               event.preventDefault();
-              (event.shiftKey ? buttons[buttons.length - 1] : buttons[0])?.focus();
+              (event.shiftKey ? focusable[focusable.length - 1] : focusable[0])?.focus();
             }
           }}
         >
@@ -164,65 +169,90 @@ export function CancelBookingButton({
             role="alertdialog"
             aria-modal="true"
             aria-labelledby="cancel-booking-title"
-            className="rounded-panel bg-surface border-border-grid shadow-modal animate-pop w-full max-w-[420px] overflow-hidden border"
+            className="rounded-panel bg-surface border-border-grid shadow-modal animate-pop w-full max-w-[400px] border p-6"
           >
-            <div className="flex flex-col gap-3 px-5 pt-5 pb-3.5">
-              {/* The badge says "destructive" before the sentence is read; the
-                  wording then says exactly what is about to be destroyed. */}
-              <span className="flex items-center gap-3">
-                <span
-                  aria-hidden="true"
-                  className="bg-danger-surface text-danger flex size-10 flex-none items-center justify-center rounded-full"
-                >
-                  <CalendarX className="size-[22px]" />
-                </span>
-                <h2
-                  id="cancel-booking-title"
-                  className="text-[17px] leading-snug font-semibold tracking-tight"
-                >
-                  {t("question", { title })}
-                </h2>
-              </span>
-              <p className="text-text-secondary text-sm leading-relaxed">
-                {isRecurring ? t("seriesExplanation") : t("explanation")}
+            {/* The badge says "destructive" before the sentence is read; the
+                wording then says exactly what is about to be destroyed. */}
+            <span
+              aria-hidden="true"
+              className="bg-danger-surface text-danger rounded-panel mb-4 flex size-[46px] items-center justify-center"
+            >
+              <Trash2 className="size-[22px]" />
+            </span>
+            <h2
+              id="cancel-booking-title"
+              className="mb-1.5 text-[19px] leading-snug font-extrabold tracking-[-0.02em]"
+            >
+              {t("question", { title })}
+            </h2>
+            <p className="text-text-secondary mb-4 text-[13.5px] leading-relaxed">
+              {isRecurring ? t("seriesExplanation") : t("explanation")}
+            </p>
+
+            {isRecurring ? (
+              <div className="mb-5 flex flex-col gap-2">
+                {(["occurrence", "series"] as const).map((option) => (
+                  <label
+                    key={option}
+                    className={`rounded-control flex items-center gap-2.5 border p-3 transition ${
+                      scope === option
+                        ? "border-accent-own-booking bg-accent-own-surface border-[1.5px]"
+                        : "border-border-grid hover:border-border-control"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="cancel-scope"
+                      value={option}
+                      checked={scope === option}
+                      onChange={() => setScope(option)}
+                      disabled={pending}
+                      className="accent-accent-own-booking focus-ring size-4"
+                    />
+                    <span
+                      className={`text-[13.5px] ${
+                        scope === option
+                          ? "text-text-primary font-bold"
+                          : "text-text-secondary font-semibold"
+                      }`}
+                    >
+                      {option === "occurrence" ? t("onlyThis") : t("wholeSeries")}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            ) : null}
+
+            {failed ? (
+              <p
+                role="alert"
+                className="bg-danger-surface border-danger-border text-danger-ink rounded-control mb-4 border px-3.5 py-3 text-[13px] leading-snug font-semibold"
+              >
+                {t("failed")}
               </p>
+            ) : null}
 
-              {failed ? (
-                <p
-                  role="alert"
-                  className="bg-danger-surface border-danger text-danger-ink rounded-control mt-1 border px-3 py-2.5 text-[13px] leading-snug"
-                >
-                  {t("failed")}
-                </p>
-              ) : null}
-            </div>
-
-            {/* The order never changes and the most destructive choice is always
-                on the right, so the muscle memory of a daily user stays correct. */}
-            <div className="flex flex-wrap justify-end gap-2 px-5 pt-1 pb-4">
+            {/* The order never changes and the destructive choice is always on
+                the right, so the muscle memory of a daily user stays correct. */}
+            <div className="flex gap-2.5">
               <Button
                 autoFocus
                 variant="secondary"
+                size="lg"
+                className="flex-1"
                 onClick={closeDialog}
                 disabled={pending}
               >
                 {t("no")}
               </Button>
-              {isRecurring ? (
-                <Button
-                  variant="danger"
-                  onClick={() => cancel("occurrence")}
-                  disabled={pending}
-                >
-                  {t("onlyThis")}
-                </Button>
-              ) : null}
               <Button
                 variant="dangerSolid"
-                onClick={() => cancel(isRecurring ? "series" : "occurrence")}
+                size="lg"
+                className="flex-1"
+                onClick={() => cancel(isRecurring ? scope : "occurrence")}
                 disabled={pending}
               >
-                {pending ? t("canceling") : isRecurring ? t("wholeSeries") : t("yes")}
+                {pending ? t("canceling") : t("yes")}
               </Button>
             </div>
           </div>
