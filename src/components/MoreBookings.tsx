@@ -61,14 +61,14 @@ export function MoreBookings({ initialCursor, now, scope, loaded }: MoreBookings
   return (
     <>
       {items.length > 0 ? (
-        <ul className="flex flex-col">
+        <ul className="flex flex-col gap-3">
           {items.map((booking) => (
             <BookingRow key={booking.id} booking={booking} now={now} />
           ))}
         </ul>
       ) : null}
 
-      <div className="border-border-grid bg-surface-muted flex flex-col items-center gap-2 border-t p-4">
+      <div className="flex flex-col items-center gap-2 pt-1">
         {failed ? (
           <p role="alert" className="text-danger-ink text-[13px]">
             {t("loadFailed")}
@@ -76,7 +76,7 @@ export function MoreBookings({ initialCursor, now, scope, loaded }: MoreBookings
         ) : null}
 
         {cursor ? (
-          <Button variant="secondary" onClick={loadMore} disabled={pending}>
+          <Button variant="secondary" size="lg" onClick={loadMore} disabled={pending}>
             {pending ? t("loadingMore") : failed ? t("retry") : t("showMore")}
           </Button>
         ) : (

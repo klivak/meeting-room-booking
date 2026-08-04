@@ -14,7 +14,11 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { WEEK_START_DAY } from "@/lib/config";
 import { OFFICE_TZ } from "@/lib/domain/constants";
 import { getWeekStart } from "@/lib/domain/week";
-import { getMyBookingsPage, type BookingScope } from "@/lib/server/myBookings";
+import {
+  countMyBookings,
+  getMyBookingsPage,
+  type BookingScope,
+} from "@/lib/server/myBookings";
 import { getCurrentUser } from "@/lib/server/session";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -63,8 +67,8 @@ async function BookingList({ tab }: { tab: BookingScope }) {
   }
 
   return (
-    <div className="border-border-grid bg-surface rounded-card overflow-hidden border">
-      <ul className="flex flex-col">
+    <div className="flex flex-col gap-3">
+      <ul className="flex flex-col gap-3">
         {bookings.map((booking, index) => (
           <BookingRow
             key={booking.id}
@@ -110,7 +114,7 @@ async function BookingList({ tab }: { tab: BookingScope }) {
           loaded={bookings.length}
         />
       ) : (
-        <p className="border-border-grid bg-surface-muted text-text-tertiary border-t p-4 text-center text-[13px]">
+        <p className="text-text-tertiary py-2 text-center text-[13px]">
           {t("endOfList", { count: bookings.length })}
         </p>
       )}
@@ -128,17 +132,14 @@ async function ListSkeleton() {
       <p role="status" className="sr-only">
         {t("loading")}
       </p>
-      <ul
-        aria-hidden
-        className="border-border-grid bg-surface rounded-card flex flex-col overflow-hidden border"
-      >
+      <ul aria-hidden className="flex flex-col gap-3">
         {[0, 1, 2].map((index) => (
           // Same padding, wrapping and column widths as a loaded row, and the
           // bars stand as tall as the two lines of text they replace, so the
           // list keeps its height when the data arrives.
           <li
             key={index}
-            className="border-border-grid-half flex flex-wrap items-center gap-3 border-b px-4 py-3.5 last:border-b-0 sm:flex-nowrap sm:gap-4 sm:px-5"
+            className="border-border-grid bg-surface rounded-card shadow-rest flex flex-wrap items-center gap-3 border px-5 py-4 sm:flex-nowrap sm:gap-[18px]"
           >
             <div className="flex min-w-0 flex-1 flex-col gap-1">
               <Skeleton
@@ -147,7 +148,7 @@ async function ListSkeleton() {
               />
               <Skeleton className="h-4 w-1/3" />
             </div>
-            <span className="flex flex-none flex-col gap-1 sm:w-[170px] sm:items-end">
+            <span className="flex flex-none flex-col gap-1 sm:w-[168px] sm:items-end">
               <Skeleton className="h-6 w-[90px]" />
               <Skeleton className="h-4 w-[70px]" />
             </span>
@@ -171,37 +172,50 @@ export default async function MyBookingsPage({
 }) {
   const { tab: tabParam } = await searchParams;
   const tab: BookingScope = tabParam === "past" ? "past" : "upcoming";
-  const t = await getTranslations("myBookings");
+  const [t, user] = await Promise.all([
+    getTranslations("myBookings"),
+    getCurrentUser(),
+  ]);
+
+  // Outside the Suspense boundary on purpose: the tabs are navigation, and
+  // navigation that appears a beat after the page reads as a layout shift.
+  const counts = user
+    ? await countMyBookings(user.id, new Date())
+    : { upcoming: 0, past: 0 };
 
   return (
     // The same measure as the room list: two pages of one application should not
     // change how wide their content is when you move between them.
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
-      <div className="flex flex-wrap items-end gap-4">
-        <h1 className="text-[22px] font-semibold tracking-tight">{t("title")}</h1>
+    <div className="mx-auto flex w-full max-w-[940px] flex-col gap-5">
+      <h1 className="text-[26px] font-extrabold tracking-[-0.03em] sm:text-[34px]">
+        {t("title")}
+      </h1>
 
-        <span className="hidden flex-1 sm:block" />
-
-        {/* The active tab lives in the URL, so the page can be linked and
-            reloaded. An underline rather than two filled buttons: these are two
-            views of one list, not two actions. */}
-        <nav className="border-border-grid -mb-px flex border-b">
-          {TABS.map((option) => (
-            <Link
-              key={option}
-              href={option === "upcoming" ? "/my-bookings" : "/my-bookings?tab=past"}
-              aria-current={option === tab ? "page" : undefined}
-              className={`focus-ring -mb-px border-b-2 px-3.5 py-2.5 text-sm no-underline transition ${
-                option === tab
-                  ? "border-b-accent-own-booking text-text-primary font-semibold"
-                  : "text-text-tertiary hover:text-text-secondary border-b-transparent font-medium"
-              }`}
-            >
-              {t(option)}
-            </Link>
-          ))}
-        </nav>
-      </div>
+      {/* The active tab lives in the URL, so the page can be linked and
+          reloaded. An underline rather than two filled buttons: these are two
+          views of one list, not two actions. */}
+      <nav className="border-border-grid -mb-px flex gap-6 border-b">
+        {TABS.map((option) => (
+          <Link
+            key={option}
+            href={option === "upcoming" ? "/my-bookings" : "/my-bookings?tab=past"}
+            aria-current={option === tab ? "page" : undefined}
+            className={`focus-ring relative -mb-px px-0.5 pb-3 text-[15px] no-underline transition ${
+              option === tab
+                ? "text-text-primary font-bold"
+                : "text-text-tertiary hover:text-text-secondary font-semibold"
+            }`}
+          >
+            {t(option)}
+            <span className="text-text-tertiary ml-[7px] font-mono text-xs">
+              {counts[option]}
+            </span>
+            {option === tab ? (
+              <span className="bg-accent-own-booking absolute inset-x-0 -bottom-px h-[2.5px] rounded-sm" />
+            ) : null}
+          </Link>
+        ))}
+      </nav>
 
       <Suspense key={tab} fallback={await ListSkeleton()}>
         <BookingList tab={tab} />

@@ -81,3 +81,24 @@ export async function ownsBooking(userId: string, bookingId: string): Promise<bo
 
   return owned !== null;
 }
+
+/**
+ * How many bookings each tab holds. The tabs carry the numbers, and a count is
+ * cheaper than a page: this asks the database to count rather than reading
+ * twenty rows to measure them.
+ */
+export async function countMyBookings(
+  userId: string,
+  now: Date,
+): Promise<Record<BookingScope, number>> {
+  const [upcoming, past] = await Promise.all([
+    prisma.booking.count({
+      where: { userId, canceledAt: null, endsAt: { gt: now } },
+    }),
+    prisma.booking.count({
+      where: { userId, canceledAt: null, endsAt: { lte: now } },
+    }),
+  ]);
+
+  return { upcoming, past };
+}
