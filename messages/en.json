@@ -47,7 +47,10 @@
     "resend": "Send again",
     "resending": "Sending…",
     "resendDone": "A new link for {email} is in the server log.",
-    "resendFailed": "Sending failed — try again in a minute."
+    "resendFailed": "Sending failed — try again in a minute.",
+    "loginHeading": "Welcome back",
+    "pitchHours": "Working hours {from}–{to} · {zone}",
+    "demoBadge": "DEMO"
   },
   "rooms": {
     "title": "Meeting rooms",
@@ -66,7 +69,8 @@
     "emptyFilteredTitle": "No rooms with {capacity} seats or more",
     "emptyFilteredText": "Try a smaller filter — something more compact may do.",
     "resetFilter": "Clear the filter",
-    "loading": "Loading the schedule…"
+    "loading": "Loading the schedule…",
+    "subtitle": "A week of the room at a glance — and the free time with it."
   },
   "schedule": {
     "previousWeek": "Previous week",
@@ -94,7 +98,8 @@
     "recurring": "weekly",
     "pastWeek": "past week",
     "pastDay": "This day is already over — you can only book future time.",
-    "slotPast": "This time has passed"
+    "slotPast": "This time has passed",
+    "officeHours": "Working hours {from}–{to} in {officeZone}"
   },
   "shortcuts": {
     "title": "Keyboard shortcuts",
@@ -151,7 +156,8 @@
     "loadFailed": "Could not load the next page. The rows already shown are still there.",
     "retry": "Try again",
     "endOfList": "That is all your bookings — {count, plural, one {# entry} other {# entries}}",
-    "loading": "Loading the bookings…"
+    "loading": "Loading the bookings…",
+    "nextMeeting": "Next meeting"
   },
   "cancel": {
     "cancel": "Cancel booking",
@@ -159,9 +165,9 @@
     "explanation": "The slot frees up for everyone else. For a few seconds afterwards you can still take it back — as long as nobody has claimed the slot.",
     "seriesExplanation": "This is one occurrence of a weekly series. Choose what to cancel — the slot frees up for everyone else.",
     "no": "No",
-    "yes": "Yes, cancel it",
+    "yes": "Cancel booking",
     "onlyThis": "Only this one",
-    "wholeSeries": "Yes, whole series",
+    "wholeSeries": "The whole series",
     "canceling": "Cancelling…",
     "failed": "Could not cancel it — the booking is still there. Please try again.",
     "done": "Booking cancelled · the slot is free",
@@ -178,7 +184,8 @@
     "emptyHint": "We write to you when something affects your bookings.",
     "refreshFailed": "Could not refresh the list. The next attempt is in half a minute.",
     "endingSoon": "“{title}” is ending soon — the room is taken next",
-    "item": "“{title}” is ending — {room} is taken right after."
+    "item": "“{title}” is ending — {room} is taken right after.",
+    "readAll": "Mark all read"
   },
   "errors": {
     "notFoundTitle": "There is no such page",
