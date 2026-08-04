@@ -193,6 +193,8 @@
     "notFoundTitle": "There is no such page",
     "notFoundText": "The link may be out of date. Sign in and we will show you the schedule.",
     "notFoundAction": "Sign in",
+    "notFoundTextAuthed": "The link may be out of date. Go back to the schedule — everything is where you left it.",
+    "notFoundActionAuthed": "Go to the schedule",
     "appNotFoundTitle": "Room not found",
     "appNotFoundText": "It may have been removed from the list. Your bookings in other rooms are untouched.",
     "appNotFoundAction": "Back to the rooms",

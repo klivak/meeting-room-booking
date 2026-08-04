@@ -3,6 +3,11 @@ import type { Metadata } from "next";
 
 import { GhostGrid } from "@/components/ui/GhostGrid";
 import { LinkButton } from "@/components/ui/LinkButton";
+import { getCurrentUser } from "@/lib/server/session";
+
+// Reading the session cookie makes this page per-request, so it must not be
+// rendered at build time.
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("errors");
@@ -11,9 +16,11 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 // Shown for any address that matches no route, including for guests, so it
-// cannot rely on the application layout or on a session.
+// cannot rely on the application layout. The way out depends on who is asking:
+// sending a signed-in user to the login page would only bounce them back.
 export default async function NotFound() {
   const t = await getTranslations("errors");
+  const user = await getCurrentUser();
 
   return (
     <div className="bg-surface-sunken relative flex min-h-dvh w-full items-center justify-center overflow-hidden px-4 py-12">
@@ -32,10 +39,14 @@ export default async function NotFound() {
           {t("notFoundTitle")}
         </h1>
         <p className="text-text-secondary text-sm leading-relaxed text-balance">
-          {t("notFoundText")}
+          {user ? t("notFoundTextAuthed") : t("notFoundText")}
         </p>
-        <LinkButton href="/login" variant="primary" className="mt-1.5 min-h-12 px-6 text-sm">
-          {t("notFoundAction")}
+        <LinkButton
+          href={user ? "/" : "/login"}
+          variant="primary"
+          className="mt-1.5 min-h-12 px-6 text-sm"
+        >
+          {user ? t("notFoundActionAuthed") : t("notFoundAction")}
         </LinkButton>
       </div>
     </div>
