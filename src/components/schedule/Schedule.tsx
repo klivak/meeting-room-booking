@@ -21,6 +21,7 @@ import {
   rowSpan,
 } from "@/components/schedule/geometry";
 import { SwipeArea } from "@/components/schedule/SwipeArea";
+import { SlotMotif } from "@/components/ui/SlotMotif";
 import {
   noopSubscribe,
   readOfficeTimeZone,
@@ -972,7 +973,7 @@ export function Schedule({
   }
 
   return (
-    <div className="flex flex-col gap-2.5">
+    <div className="flex flex-col gap-2">
       {/* Single day: a phone has no room for seven columns. */}
       <div className="flex flex-col gap-2 sm:hidden">
         <div className="flex items-center justify-between gap-2">
@@ -1212,6 +1213,22 @@ export function Schedule({
                 outside them there is nothing on the grid for it to point at.
                 Drawn as a sibling of the axis rather than inside the day
                 columns, so the label is not painted over by the sticky axis. */}
+            {/* An empty week has to read as an opportunity rather than as a
+                failure, so it is said over the empty columns themselves — a
+                banner under the grid would push the legend off a 768px screen,
+                which is the one thing the layout may not do. */}
+            {isWeekEmpty ? (
+              <div className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 text-center">
+                <SlotMotif />
+                <span className="text-xl font-extrabold tracking-[-0.02em]">
+                  {t("emptyWeekTitle")}
+                </span>
+                <span className="text-text-secondary max-w-[34ch] text-sm text-balance">
+                  {t("emptyWeekText")}
+                </span>
+              </div>
+            ) : null}
+
             {nowMarker && now !== null ? (
               <div
                 aria-hidden
@@ -1232,15 +1249,6 @@ export function Schedule({
           </div>
         </div>
       </div>
-
-      {/* An empty week has to read as an opportunity rather than as a failure,
-          so the grid stays and a plain sentence says what it means. */}
-      {isWeekEmpty ? (
-        <p className="bg-success-surface text-success-ink rounded-control flex flex-wrap items-center gap-2 px-3.5 py-2.5">
-          <span className="text-sm font-extrabold">{t("emptyWeekTitle")}</span>
-          <span className="text-[13px] leading-snug">{t("emptyWeekText")}</span>
-        </p>
-      ) : null}
 
     </div>
   );

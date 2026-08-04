@@ -35,7 +35,7 @@ export default async function AppLayout({
       {/* Tighter vertically than horizontally on purpose: the twenty half-hour
           rows of a week have to fit a 1366×768 laptop without the page
           scrolling, and every 8px of padding is 8px taken from the grid. */}
-      <main id="main" className="relative mx-auto w-full max-w-[1560px] flex-1 px-4 py-5 sm:px-6">
+      <main id="main" className="relative mx-auto w-full max-w-[1560px] flex-1 px-4 py-4 sm:px-6">
         {children}
       </main>
       <Toaster />

@@ -453,26 +453,30 @@ export default async function RoomPage({
           same key, so paging through weeks stays still. */}
       <div
         key={room.id}
-        className="animate-swap flex min-w-0 flex-1 flex-col gap-3"
+        className="animate-swap flex min-w-0 flex-1 flex-col gap-2.5"
       >
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex min-w-0 flex-col gap-[3px]">
-            <div className="flex items-center gap-2.5">
-              <h1 className="truncate text-[22px] font-extrabold tracking-[-0.02em] sm:text-[26px]">
-                {room.name}
-              </h1>
+          <div className="flex min-w-0 items-center gap-2.5">
+            <h1 className="truncate text-[22px] font-extrabold tracking-[-0.02em] sm:text-[24px]">
+              {room.name}
+            </h1>
               <span className="bg-surface-muted text-text-secondary border-border-grid hidden shrink-0 items-center gap-1.5 rounded-md border px-2 py-[3px] font-mono text-[11px] font-semibold sm:flex">
                 <Users aria-hidden="true" className="size-3" />
                 {tRooms("roomMeta", { floor: room.floor, capacity: room.capacity })}
               </span>
               {/* Paging back a week looks the same as paging forward, so a week
                   that is entirely over says so next to its own name. */}
-              {isPastWeek ? <Badge tone="warning">{t("pastWeek")}</Badge> : null}
-            </div>
-            <TimeZoneNotice />
+            {isPastWeek ? <Badge tone="warning">{t("pastWeek")}</Badge> : null}
           </div>
 
           <span className="hidden flex-1 sm:block" />
+
+          {/* Both are meta about the week on screen, so they share the line the
+              name leaves free rather than each taking one of their own — at
+              1366x768 a second row here costs the grid its last half hour. */}
+          <span className="hidden lg:inline">
+            <TimeZoneNotice />
+          </span>
 
           <span className="text-text-primary hidden font-mono text-[13px] font-semibold lg:inline">
             {formatWeekRange(weekStart, locale)}
@@ -530,7 +534,7 @@ export default async function RoomPage({
         <div
           id={SCHEDULE_ANCHOR_ID}
           tabIndex={-1}
-          className="flex flex-col gap-2.5 focus:outline-none"
+          className="flex flex-col gap-2 focus:outline-none"
         >
           <Suspense key={weekStart.toISODate()} fallback={await ScheduleSkeleton()}>
             <Schedule
