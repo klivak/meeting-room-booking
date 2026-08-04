@@ -38,7 +38,10 @@ export function SwipeArea({ prevHref, nextHref, children }: SwipeAreaProps) {
         start.current = null;
 
         // A mostly vertical movement is the user scrolling the grid, not swiping.
-        if (Math.abs(deltaX) < SWIPE_THRESHOLD_PX || Math.abs(deltaY) > Math.abs(deltaX)) {
+        if (
+          Math.abs(deltaX) < SWIPE_THRESHOLD_PX ||
+          Math.abs(deltaY) > Math.abs(deltaX)
+        ) {
           return;
         }
 

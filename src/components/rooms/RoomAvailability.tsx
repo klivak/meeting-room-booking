@@ -36,7 +36,11 @@ const DOTS = {
  * removes the most common wasted step — opening a room only to find it taken.
  * The time is shown in the viewer's timezone, like every other time here.
  */
-export function RoomAvailability({ availability }: { availability: RoomAvailabilityView }) {
+export function RoomAvailability({
+  availability,
+}: {
+  availability: RoomAvailabilityView;
+}) {
   const t = useTranslations("rooms");
   const timeZone = useSyncExternalStore(
     noopSubscribe,
@@ -56,7 +60,9 @@ export function RoomAvailability({ availability }: { availability: RoomAvailabil
       ? t("freeNow")
       : availability.kind === "freeFrom"
         ? t("freeFrom", {
-            time: DateTime.fromISO(availability.at).setZone(timeZone).toFormat("HH:mm"),
+            time: DateTime.fromISO(availability.at)
+              .setZone(timeZone)
+              .toFormat("HH:mm"),
           })
         : availability.kind === "busyToday"
           ? t("busyToday")
@@ -71,7 +77,10 @@ export function RoomAvailability({ availability }: { availability: RoomAvailabil
     >
       {/* The dot is a second, redundant signal, not the only one: the sentence
           next to it already says everything. */}
-      <span aria-hidden="true" className={`size-2 shrink-0 rounded-full ${DOTS[tone]}`} />
+      <span
+        aria-hidden="true"
+        className={`size-2 shrink-0 rounded-full ${DOTS[tone]}`}
+      />
       {text}
       <ChevronRight
         aria-hidden="true"

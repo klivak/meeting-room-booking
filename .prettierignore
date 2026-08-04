@@ -1,0 +1,12 @@
+# Generated or downloaded, not written here. Mirrors the eslint ignore list.
+.next/
+.next-test/
+out/
+build/
+coverage/
+playwright-report/
+test-results/
+blob-report/
+src/generated/
+docs/design/
+package-lock.json

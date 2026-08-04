@@ -46,5 +46,7 @@ export const updateBookingSchema = z.object({
  * here, so neither can hand that sentence to the user as if it were the wording.
  */
 export function messageKeyFor(issue: { message: string }): string {
-  return /^[A-Z][A-Z0-9_]*$/.test(issue.message) ? issue.message : "VALIDATION_ERROR";
+  return /^[A-Z][A-Z0-9_]*$/.test(issue.message)
+    ? issue.message
+    : "VALIDATION_ERROR";
 }

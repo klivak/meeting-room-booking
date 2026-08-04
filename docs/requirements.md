@@ -12,25 +12,25 @@ A small web application for booking meeting rooms in an office. An employee open
 
 ## 2. Roles
 
-| Role | Description |
-|---|---|
-| Guest | Unauthenticated visitor. Only registration and login are available; the rest of the app is behind login (see DEC-1) |
-| User | Registered employee. Views the schedule of all rooms, creates bookings, edits and cancels **only their own** bookings |
-| Administrator | **Does not exist.** Rooms are created via seed; no separate admin panel is required |
+| Role          | Description                                                                                                           |
+| ------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Guest         | Unauthenticated visitor. Only registration and login are available; the rest of the app is behind login (see DEC-1)   |
+| User          | Registered employee. Views the schedule of all rooms, creates bookings, edits and cancels **only their own** bookings |
+| Administrator | **Does not exist.** Rooms are created via seed; no separate admin panel is required                                   |
 
 ## 3. Global Conventions (Domain Constants)
 
-| Parameter | Value |
-|---|---|
-| Office timezone | `Europe/Kyiv` |
-| Working hours | 09:00–19:00 **office time**, identical for all rooms |
-| Grid step / time granularity | 30 minutes |
-| Minimum booking duration | 30 minutes |
-| Maximum booking duration | 4 hours |
-| Time storage in DB | UTC |
-| Time display in UI | User's timezone (detected from the browser) |
-| Working-hours validation | Always in office time, regardless of the user's timezone |
-| First day of the week in the grid | Monday by default, configurable (see DEC-2) |
+| Parameter                         | Value                                                    |
+| --------------------------------- | -------------------------------------------------------- |
+| Office timezone                   | `Europe/Kyiv`                                            |
+| Working hours                     | 09:00–19:00 **office time**, identical for all rooms     |
+| Grid step / time granularity      | 30 minutes                                               |
+| Minimum booking duration          | 30 minutes                                               |
+| Maximum booking duration          | 4 hours                                                  |
+| Time storage in DB                | UTC                                                      |
+| Time display in UI                | User's timezone (detected from the browser)              |
+| Working-hours validation          | Always in office time, regardless of the user's timezone |
+| First day of the week in the grid | Monday by default, configurable (see DEC-2)              |
 
 ---
 
@@ -88,6 +88,7 @@ A.start < B.end && B.start < A.end
 ```
 
 Consequences:
+
 - `A.end == B.start` → no conflict (back-to-back);
 - partial overlap → conflict;
 - exact match → conflict;
@@ -156,7 +157,7 @@ A thought-through interface is expected, not "a form on top of a database."
   - partial overlap → conflict;
   - exact match → conflict;
   - adjacent days → no conflict.
-  Run with: `npm test`.
+    Run with: `npm test`.
 - **TECH-10** Secrets and settings live in env; the repository contains an **`.env.example`**.
 
 ---
@@ -193,12 +194,12 @@ A thought-through interface is expected, not "a form on top of a database."
 
 ## 9. Evaluation Criteria
 
-| Criterion | Weight |
-|---|---|
-| Works per the "What must work" list (FR-1…FR-8) | 40 |
-| Code quality: readability, structure, no junk or dead code | 25 |
-| UI/UX: expectations of the "Interface" section, grid clarity, overall polish | 20 |
-| README and commit history | 15 |
+| Criterion                                                                    | Weight |
+| ---------------------------------------------------------------------------- | ------ |
+| Works per the "What must work" list (FR-1…FR-8)                              | 40     |
+| Code quality: readability, structure, no junk or dead code                   | 25     |
+| UI/UX: expectations of the "Interface" section, grid clarity, overall polish | 20     |
+| README and commit history                                                    | 15     |
 
 - Bonus items add points **on top**.
 - The participant must be ready to explain any part of their code: a follow-up call with "why is it written this way" questions is possible after review.

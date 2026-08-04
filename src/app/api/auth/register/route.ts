@@ -20,7 +20,9 @@ export async function POST(request: Request) {
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
-    return await apiError(400, "EMAIL_TAKEN", "EMAIL_TAKEN", { field: "email" });
+    return await apiError(400, "EMAIL_TAKEN", "EMAIL_TAKEN", {
+      field: "email",
+    });
   }
 
   const passwordHash = await hashPassword(password);
@@ -32,7 +34,9 @@ export async function POST(request: Request) {
     // Two simultaneous registrations pass the check above; the unique index is
     // what actually decides, and P2002 means this request lost the race.
     if (isUniqueConstraintError(error)) {
-      return await apiError(400, "EMAIL_TAKEN", "EMAIL_TAKEN", { field: "email" });
+      return await apiError(400, "EMAIL_TAKEN", "EMAIL_TAKEN", {
+        field: "email",
+      });
     }
     throw error;
   }

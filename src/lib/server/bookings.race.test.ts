@@ -52,18 +52,28 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await prisma.booking.deleteMany({ where: { userId } });
-  await prisma.user.deleteMany({ where: { email: { startsWith: TEST_PREFIX } } });
-  await prisma.room.deleteMany({ where: { name: { startsWith: TEST_PREFIX } } });
+  await prisma.user.deleteMany({
+    where: { email: { startsWith: TEST_PREFIX } },
+  });
+  await prisma.room.deleteMany({
+    where: { name: { startsWith: TEST_PREFIX } },
+  });
   await prisma.$disconnect();
 });
 
 /** A slot far enough out that nothing else in the database occupies it. */
 const slot = (dayOffset: number) => {
-  const day = DateTime.now().setZone(OFFICE_TZ).plus({ days: 200 + dayOffset });
+  const day = DateTime.now()
+    .setZone(OFFICE_TZ)
+    .plus({ days: 200 + dayOffset });
 
   return {
-    startsAt: day.set({ hour: 10, minute: 0, second: 0, millisecond: 0 }).toJSDate(),
-    endsAt: day.set({ hour: 11, minute: 0, second: 0, millisecond: 0 }).toJSDate(),
+    startsAt: day
+      .set({ hour: 10, minute: 0, second: 0, millisecond: 0 })
+      .toJSDate(),
+    endsAt: day
+      .set({ hour: 11, minute: 0, second: 0, millisecond: 0 })
+      .toJSDate(),
   };
 };
 
@@ -107,7 +117,12 @@ it("does not make different rooms wait for each other", async () => {
 
   const results = await Promise.all([
     createBooking({ roomId, userId, title: "Кімната А", ...times }),
-    createBooking({ roomId: otherRoomId, userId, title: "Кімната Б", ...times }),
+    createBooking({
+      roomId: otherRoomId,
+      userId,
+      title: "Кімната Б",
+      ...times,
+    }),
   ]);
 
   // The lock key is derived from the room, so both succeed.

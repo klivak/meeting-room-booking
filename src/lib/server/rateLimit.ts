@@ -39,7 +39,11 @@ export function registerFailedAttempt(
 }
 
 /** Whether the key is currently blocked, without recording a new attempt. */
-export function isRateLimited(key: string, limit: number, windowMs: number): boolean {
+export function isRateLimited(
+  key: string,
+  limit: number,
+  windowMs: number,
+): boolean {
   const now = Date.now();
   const recent = (attempts.get(key) ?? []).filter(
     (moment) => moment > now - windowMs,

@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { apiError, unauthorizedError, validationError } from "@/lib/server/apiError";
+import {
+  apiError,
+  unauthorizedError,
+  validationError,
+} from "@/lib/server/apiError";
 import { getMyBookingsPage, ownsBooking } from "@/lib/server/myBookings";
 import { getCurrentUser } from "@/lib/server/session";
 
@@ -39,7 +43,12 @@ export async function GET(request: Request) {
     });
   }
 
-  const { items, nextCursor } = await getMyBookingsPage(user.id, scope, now, cursor);
+  const { items, nextCursor } = await getMyBookingsPage(
+    user.id,
+    scope,
+    now,
+    cursor,
+  );
 
   return NextResponse.json({
     items: items.map((booking) => ({

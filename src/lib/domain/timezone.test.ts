@@ -14,7 +14,9 @@ describe("showsSameClock", () => {
 
   it("accepts a different zone on the same offset", () => {
     // The labels on the grid really are office times there.
-    expect(showsSameClock("Europe/Bucharest", "Europe/Kyiv", SUMMER)).toBe(true);
+    expect(showsSameClock("Europe/Bucharest", "Europe/Kyiv", SUMMER)).toBe(
+      true,
+    );
   });
 
   it("rejects a zone an hour away", () => {
@@ -26,6 +28,8 @@ describe("showsSameClock", () => {
   });
 
   it("rejects a name it does not recognise", () => {
-    expect(showsSameClock("Nowhere/Nothing", "Europe/Kyiv", SUMMER)).toBe(false);
+    expect(showsSameClock("Nowhere/Nothing", "Europe/Kyiv", SUMMER)).toBe(
+      false,
+    );
   });
 });

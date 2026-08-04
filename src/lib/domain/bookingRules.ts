@@ -90,8 +90,10 @@ export function validateBookingTime(input: {
   }
 
   // A booking may end exactly at 19:00, and it may not span two office days.
-  const startsBeforeOpening = start.hour * 60 + start.minute < minutesOfDay(WORK_DAY_START);
-  const endsAfterClosing = end.hour * 60 + end.minute > minutesOfDay(WORK_DAY_END);
+  const startsBeforeOpening =
+    start.hour * 60 + start.minute < minutesOfDay(WORK_DAY_START);
+  const endsAfterClosing =
+    end.hour * 60 + end.minute > minutesOfDay(WORK_DAY_END);
   const spansTwoDays = start.toISODate() !== end.toISODate();
 
   if (startsBeforeOpening || endsAfterClosing || spansTwoDays) {

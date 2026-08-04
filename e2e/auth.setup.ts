@@ -19,7 +19,9 @@ setup("sign in as the seeded user", async ({ page }) => {
   await page.getByRole("button", { name: "Увійти" }).click();
 
   // The room list is the screen a successful sign-in lands on.
-  await expect(page.getByRole("heading", { name: "Переговорні" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Переговорні" }),
+  ).toBeVisible();
 
   await page.context().storageState({ path: STORAGE_STATE });
 });

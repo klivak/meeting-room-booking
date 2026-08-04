@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { apiError, unauthorizedError, validationError } from "@/lib/server/apiError";
+import {
+  apiError,
+  unauthorizedError,
+  validationError,
+} from "@/lib/server/apiError";
 import { prisma } from "@/lib/server/db";
 import { getCurrentUser } from "@/lib/server/session";
 
@@ -26,7 +30,9 @@ export async function GET(
 
   const { id } = await params;
   const url = new URL(request.url);
-  const parsed = querySchema.safeParse({ weekStart: url.searchParams.get("weekStart") });
+  const parsed = querySchema.safeParse({
+    weekStart: url.searchParams.get("weekStart"),
+  });
   if (!parsed.success) {
     return await validationError(parsed.error);
   }

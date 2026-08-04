@@ -30,7 +30,9 @@ export async function useDarkTheme(page: Page) {
  */
 export function cell(page: Page, column: number, row: number) {
   return page
-    .locator(`[data-cell="week-${column}-${row}"]:visible, [data-cell="day-0-${row}"]:visible`)
+    .locator(
+      `[data-cell="week-${column}-${row}"]:visible, [data-cell="day-0-${row}"]:visible`,
+    )
     .first();
 }
 
@@ -44,7 +46,8 @@ export function cell(page: Page, column: number, row: number) {
  */
 export async function removeTestBookings(page: Page, titles: string[]) {
   const response = await page.request.get("/api/my-bookings?scope=upcoming");
-  const { items }: { items: { id: string; title: string }[] } = await response.json();
+  const { items }: { items: { id: string; title: string }[] } =
+    await response.json();
 
   for (const booking of items) {
     if (titles.includes(booking.title)) {

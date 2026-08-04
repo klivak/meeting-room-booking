@@ -66,13 +66,19 @@ export async function PATCH(
   // validated as a whole — editing goes through the same rules as creating.
   const nextRoomId = parsed.data.roomId ?? booking.roomId;
   const nextTitle = parsed.data.title ?? booking.title;
-  const nextStart = parsed.data.startsAt ? new Date(parsed.data.startsAt) : booking.startsAt;
-  const nextEnd = parsed.data.endsAt ? new Date(parsed.data.endsAt) : booking.endsAt;
+  const nextStart = parsed.data.startsAt
+    ? new Date(parsed.data.startsAt)
+    : booking.startsAt;
+  const nextEnd = parsed.data.endsAt
+    ? new Date(parsed.data.endsAt)
+    : booking.endsAt;
 
   if (nextRoomId !== booking.roomId) {
     const room = await prisma.room.findUnique({ where: { id: nextRoomId } });
     if (!room) {
-      return await apiError(404, "NOT_FOUND", "ROOM_NOT_FOUND", { field: "roomId" });
+      return await apiError(404, "NOT_FOUND", "ROOM_NOT_FOUND", {
+        field: "roomId",
+      });
     }
   }
 
@@ -84,7 +90,11 @@ export async function PATCH(
     });
   }
 
-  const errors = validateBookingTime({ startsAt: nextStart, endsAt: nextEnd, now });
+  const errors = validateBookingTime({
+    startsAt: nextStart,
+    endsAt: nextEnd,
+    now,
+  });
 
   // Renaming a booking that is already running is allowed, so "must be in the
   // future" only applies when the start time itself moves.

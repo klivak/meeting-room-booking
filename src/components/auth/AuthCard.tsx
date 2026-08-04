@@ -32,19 +32,28 @@ export async function AuthCard({
       <BrandPanel />
 
       <div className="bg-surface-sunken relative flex flex-1 items-center justify-center px-4 py-12 lg:px-12">
-        <span aria-hidden="true" className="app-bloom pointer-events-none absolute inset-0" />
+        <span
+          aria-hidden="true"
+          className="app-bloom pointer-events-none absolute inset-0"
+        />
 
         <div className="relative flex w-full max-w-[384px] flex-col gap-[22px]">
           {/* Below lg the brand panel is hidden, so without this the form asks
               for a password without ever naming what it signs you into. */}
           <div className="flex items-center gap-3 lg:hidden">
             <LogoMark className="size-9 rounded-[10px] p-[9px]" />
-            <span className="text-[17px] font-extrabold tracking-[-0.01em]">{tApp("title")}</span>
+            <span className="text-[17px] font-extrabold tracking-[-0.01em]">
+              {tApp("title")}
+            </span>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <h1 className="text-[28px] font-extrabold tracking-[-0.02em]">{title}</h1>
-            <p className="text-text-secondary text-sm leading-relaxed">{subtitle}</p>
+            <h1 className="text-[28px] font-extrabold tracking-[-0.02em]">
+              {title}
+            </h1>
+            <p className="text-text-secondary text-sm leading-relaxed">
+              {subtitle}
+            </p>
           </div>
 
           {children}

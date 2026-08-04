@@ -7,7 +7,12 @@ import { intervalsOverlap } from "./overlap";
 const at = (iso: string) => new Date(`2026-03-10T${iso}:00.000Z`);
 
 /** Checks the pair in both directions, since the rule has to be symmetric. */
-const overlaps = (aStart: string, aEnd: string, bStart: string, bEnd: string) => {
+const overlaps = (
+  aStart: string,
+  aEnd: string,
+  bStart: string,
+  bEnd: string,
+) => {
   const forward = intervalsOverlap(at(aStart), at(aEnd), at(bStart), at(bEnd));
   const backward = intervalsOverlap(at(bStart), at(bEnd), at(aStart), at(aEnd));
 

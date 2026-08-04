@@ -24,9 +24,13 @@ export type NotificationView = {
  * booking cancelled after the row was created — either the user's own or the
  * one that needed the room next — stops being announced immediately.
  */
-export async function getDueNotifications(userId: string): Promise<NotificationView[]> {
+export async function getDueNotifications(
+  userId: string,
+): Promise<NotificationView[]> {
   const now = new Date();
-  const horizon = new Date(now.getTime() + env.NOTIFY_BEFORE_MINUTES * 60 * 1000);
+  const horizon = new Date(
+    now.getTime() + env.NOTIFY_BEFORE_MINUTES * 60 * 1000,
+  );
 
   // Only the user's own bookings that are about to end can produce a warning.
   const ending = await prisma.booking.findMany({
@@ -59,7 +63,10 @@ export async function getDueNotifications(userId: string): Promise<NotificationV
   const followUpKey = (roomId: string, startsAt: Date) =>
     `${roomId}@${startsAt.getTime()}`;
   const followUpByKey = new Map(
-    followUps.map((booking) => [followUpKey(booking.roomId, booking.startsAt), booking]),
+    followUps.map((booking) => [
+      followUpKey(booking.roomId, booking.startsAt),
+      booking,
+    ]),
   );
 
   const dueBookingIds: string[] = [];
@@ -67,7 +74,8 @@ export async function getDueNotifications(userId: string): Promise<NotificationV
   for (const booking of ending) {
     const due = isEndingNotificationDue({
       booking,
-      nextBooking: followUpByKey.get(followUpKey(booking.roomId, booking.endsAt)) ?? null,
+      nextBooking:
+        followUpByKey.get(followUpKey(booking.roomId, booking.endsAt)) ?? null,
       now,
       minutesBefore: env.NOTIFY_BEFORE_MINUTES,
     });
@@ -81,7 +89,9 @@ export async function getDueNotifications(userId: string): Promise<NotificationV
     // The unique index on (bookingId, type) is what makes this exactly once,
     // even if two polls arrive at the same moment.
     await prisma.notification.upsert({
-      where: { bookingId_type: { bookingId: booking.id, type: BOOKING_ENDING } },
+      where: {
+        bookingId_type: { bookingId: booking.id, type: BOOKING_ENDING },
+      },
       update: {},
       create: { userId, bookingId: booking.id, type: BOOKING_ENDING },
     });

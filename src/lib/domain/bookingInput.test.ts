@@ -11,7 +11,9 @@ describe("messageKeyFor", () => {
   // The whole point: a schema that forgot its key must not put Zod's English
   // into a response the user reads.
   it("replaces anything that is not a key with the generic one", () => {
-    expect(messageKeyFor({ message: "Invalid ISO datetime" })).toBe("VALIDATION_ERROR");
+    expect(messageKeyFor({ message: "Invalid ISO datetime" })).toBe(
+      "VALIDATION_ERROR",
+    );
     expect(messageKeyFor({ message: "Required" })).toBe("VALIDATION_ERROR");
     expect(messageKeyFor({ message: "" })).toBe("VALIDATION_ERROR");
   });

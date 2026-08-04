@@ -32,9 +32,9 @@ export function VerificationBanner({ email }: { email: string }) {
     setPending(true);
     setResult(null);
 
-    const response = await fetch("/api/auth/verification", { method: "POST" }).catch(
-      () => null,
-    );
+    const response = await fetch("/api/auth/verification", {
+      method: "POST",
+    }).catch(() => null);
 
     setResult(response?.ok ? "sent" : "failed");
     setPending(false);

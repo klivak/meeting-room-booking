@@ -31,8 +31,16 @@ export default function GlobalError({
         <h1 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0 }}>
           Застосунок не завантажився · The application did not start
         </h1>
-        <p style={{ fontSize: "0.9375rem", lineHeight: 1.5, margin: 0, maxWidth: "48ch" }}>
-          Перезавантажте сторінку — найчастіше цього достатньо. Ваші бронювання в безпеці.
+        <p
+          style={{
+            fontSize: "0.9375rem",
+            lineHeight: 1.5,
+            margin: 0,
+            maxWidth: "48ch",
+          }}
+        >
+          Перезавантажте сторінку — найчастіше цього достатньо. Ваші бронювання
+          в безпеці.
           <br />
           Reload the page — that is usually enough. Your bookings are safe.
         </p>

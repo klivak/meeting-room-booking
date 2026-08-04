@@ -2,7 +2,11 @@ import { Check } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import { LogoMark } from "@/components/ui/LogoMark";
-import { OFFICE_TZ, WORK_DAY_END, WORK_DAY_START } from "@/lib/domain/constants";
+import {
+  OFFICE_TZ,
+  WORK_DAY_END,
+  WORK_DAY_START,
+} from "@/lib/domain/constants";
 
 const POINTS = ["pitchGrid", "pitchOwn", "pitchZone"] as const;
 
@@ -86,7 +90,9 @@ export async function BrandPanel() {
 
       <div className="relative flex items-center gap-3">
         <LogoMark className="size-9 rounded-[10px] bg-white/16 bg-none p-[9px]" />
-        <span className="text-[17px] font-extrabold text-white">{tApp("title")}</span>
+        <span className="text-[17px] font-extrabold text-white">
+          {tApp("title")}
+        </span>
       </div>
 
       <div className="relative mt-auto flex flex-col gap-[22px]">
@@ -98,9 +104,15 @@ export async function BrandPanel() {
           {POINTS.map((key) => (
             <li key={key} className="flex items-center gap-[11px]">
               <span className="flex size-5 flex-none items-center justify-center rounded-md bg-white/16">
-                <Check aria-hidden="true" className="size-[13px] text-white" strokeWidth={3} />
+                <Check
+                  aria-hidden="true"
+                  className="size-[13px] text-white"
+                  strokeWidth={3}
+                />
               </span>
-              <span className="text-[14.5px] font-medium text-white/90">{t(key)}</span>
+              <span className="text-[14.5px] font-medium text-white/90">
+                {t(key)}
+              </span>
             </li>
           ))}
         </ul>
@@ -108,7 +120,11 @@ export async function BrandPanel() {
         {/* The office zone is a rule of the domain, not a detail of the schedule
             screen, so it is said before the first booking rather than after. */}
         <p className="mt-1.5 font-mono text-xs text-white/60">
-          {t("pitchHours", { from: WORK_DAY_START, to: WORK_DAY_END, zone: OFFICE_TZ })}
+          {t("pitchHours", {
+            from: WORK_DAY_START,
+            to: WORK_DAY_END,
+            zone: OFFICE_TZ,
+          })}
         </p>
       </div>
     </aside>

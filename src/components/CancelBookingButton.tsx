@@ -163,11 +163,16 @@ export function CancelBookingButton({
                 "button:not(:disabled), input:not(:disabled)",
               ),
             );
-            const edge = event.shiftKey ? focusable[0] : focusable[focusable.length - 1];
+            const edge = event.shiftKey
+              ? focusable[0]
+              : focusable[focusable.length - 1];
 
             if (document.activeElement === edge) {
               event.preventDefault();
-              (event.shiftKey ? focusable[focusable.length - 1] : focusable[0])?.focus();
+              (event.shiftKey
+                ? focusable[focusable.length - 1]
+                : focusable[0]
+              )?.focus();
             }
           }}
         >
@@ -222,7 +227,9 @@ export function CancelBookingButton({
                           : "text-text-secondary font-semibold"
                       }`}
                     >
-                      {option === "occurrence" ? t("onlyThis") : t("wholeSeries")}
+                      {option === "occurrence"
+                        ? t("onlyThis")
+                        : t("wholeSeries")}
                     </span>
                   </label>
                 ))}

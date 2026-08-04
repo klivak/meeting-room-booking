@@ -24,7 +24,12 @@ type MoreBookingsProps = {
  * A failed page does not disturb the rows already on screen: they are still
  * true, and re-rendering them would lose the reader's place.
  */
-export function MoreBookings({ initialCursor, now, scope, loaded }: MoreBookingsProps) {
+export function MoreBookings({
+  initialCursor,
+  now,
+  scope,
+  loaded,
+}: MoreBookingsProps) {
   const router = useRouter();
   const t = useTranslations("myBookings");
   const [items, setItems] = useState<MyBooking[]>([]);
@@ -76,7 +81,12 @@ export function MoreBookings({ initialCursor, now, scope, loaded }: MoreBookings
         ) : null}
 
         {cursor ? (
-          <Button variant="secondary" size="lg" onClick={loadMore} disabled={pending}>
+          <Button
+            variant="secondary"
+            size="lg"
+            onClick={loadMore}
+            disabled={pending}
+          >
             {pending ? t("loadingMore") : failed ? t("retry") : t("showMore")}
           </Button>
         ) : (

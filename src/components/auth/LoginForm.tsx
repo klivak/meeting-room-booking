@@ -45,9 +45,7 @@ export function LoginForm() {
     }
 
     const body = await response?.json().catch(() => null);
-    setError(
-      body?.error ?? { code: "UNKNOWN", message: t("loginFailed") },
-    );
+    setError(body?.error ?? { code: "UNKNOWN", message: t("loginFailed") });
     setPending(false);
   }
 
@@ -57,7 +55,11 @@ export function LoginForm() {
   const generalError = error && !error.field ? error.message : null;
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-[18px]" noValidate>
+    <form
+      onSubmit={handleSubmit}
+      className="flex flex-col gap-[18px]"
+      noValidate
+    >
       {/* Above the form, not beside a field: "wrong email or password" is about
           the pair, and pointing at one of them would be a guess. */}
       {generalError ? (
@@ -94,7 +96,12 @@ export function LoginForm() {
         error={fieldError("password")}
       />
 
-      <Button type="submit" size="lg" className="mt-0.5 h-12 w-full text-[15px]" disabled={pending}>
+      <Button
+        type="submit"
+        size="lg"
+        className="mt-0.5 h-12 w-full text-[15px]"
+        disabled={pending}
+      >
         {pending ? t("signingIn") : t("signIn")}
       </Button>
 
@@ -106,7 +113,9 @@ export function LoginForm() {
           <span className="text-text-tertiary font-mono text-[11px] font-bold tracking-wider">
             {t("demoBadge")}
           </span>
-          <span className="text-text-secondary text-[12.5px]">{t("demoHint")}</span>
+          <span className="text-text-secondary text-[12.5px]">
+            {t("demoHint")}
+          </span>
           <button
             type="button"
             onClick={() => {

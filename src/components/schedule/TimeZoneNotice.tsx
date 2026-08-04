@@ -9,7 +9,11 @@ import {
   readOfficeTimeZone,
   readViewerTimeZone,
 } from "@/components/viewerTimeZone";
-import { OFFICE_TZ, WORK_DAY_END, WORK_DAY_START } from "@/lib/domain/constants";
+import {
+  OFFICE_TZ,
+  WORK_DAY_END,
+  WORK_DAY_START,
+} from "@/lib/domain/constants";
 import { showsSameClock } from "@/lib/domain/timezone";
 
 /**
@@ -51,7 +55,8 @@ export function TimeZoneNotice() {
           : "text-text-tertiary hidden lg:block"
       }`}
     >
-      {offset} · {shifted ? t("timezoneNotice", values) : t("officeHours", values)}
+      {offset} ·{" "}
+      {shifted ? t("timezoneNotice", values) : t("officeHours", values)}
     </p>
   );
 }

@@ -152,7 +152,11 @@ export function BookingBlock({
     <span className={`flex flex-none items-center gap-1 ${TIME_TONES[state]}`}>
       {booking.isRecurring ? (
         <span title={t("recurring")} className="leading-none">
-          <Repeat aria-hidden="true" className="size-[11px]" strokeWidth={2.4} />
+          <Repeat
+            aria-hidden="true"
+            className="size-[11px]"
+            strokeWidth={2.4}
+          />
           <span className="sr-only">{t("recurring")}</span>
         </span>
       ) : null}
@@ -259,7 +263,13 @@ export function BookingBlock({
       {handles}
     </Link>
   ) : (
-    <div role="note" aria-label={label} className={className} style={style} title={tooltip}>
+    <div
+      role="note"
+      aria-label={label}
+      className={className}
+      style={style}
+      title={tooltip}
+    >
       {content}
     </div>
   );

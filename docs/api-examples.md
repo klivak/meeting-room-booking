@@ -47,15 +47,15 @@ curl -s -b alice.txt -X POST http://localhost:3000/api/bookings \
 
 Очікувані відмови при створенні:
 
-| Що надсилаємо | Відповідь |
-|---|---|
-| дата в минулому | `400 TIME_IN_PAST` |
-| `19:30–20:00` за Києвом | `400 OUTSIDE_WORKING_HOURS` |
-| початок о `10:15` | `400 TIME_NOT_ALIGNED` |
-| тривалість 5 годин | `400 DURATION_INVALID` |
-| порожня назва | `400 TITLE_INVALID`, `field: "title"` |
-| неіснуюча кімната | `404 NOT_FOUND`, `field: "roomId"` |
-| без cookie | `401 UNAUTHORIZED` |
+| Що надсилаємо           | Відповідь                             |
+| ----------------------- | ------------------------------------- |
+| дата в минулому         | `400 TIME_IN_PAST`                    |
+| `19:30–20:00` за Києвом | `400 OUTSIDE_WORKING_HOURS`           |
+| початок о `10:15`       | `400 TIME_NOT_ALIGNED`                |
+| тривалість 5 годин      | `400 DURATION_INVALID`                |
+| порожня назва           | `400 TITLE_INVALID`, `field: "title"` |
+| неіснуюча кімната       | `404 NOT_FOUND`, `field: "roomId"`    |
+| без cookie              | `401 UNAUTHORIZED`                    |
 
 ## Редагування і скасування
 

@@ -80,7 +80,11 @@ export function ScheduleShortcuts({
 
       // A focused booking of the viewer's own takes Alt + arrow for itself: the
       // same combination moves it a day earlier or later.
-      if (!event.altKey || event.shiftKey || target?.closest("[data-reshapable]")) {
+      if (
+        !event.altKey ||
+        event.shiftKey ||
+        target?.closest("[data-reshapable]")
+      ) {
         return;
       }
 
@@ -122,58 +126,58 @@ export function ScheduleShortcuts({
     <>
       {trigger}
       <div
-      className="fixed inset-0 z-70 flex items-center justify-center bg-[rgb(14_22_20/0.45)] p-6 backdrop-blur-[2px]"
-      onClick={(event) => {
-        if (event.currentTarget === event.target) {
-          setHelpOpen(false);
-        }
-      }}
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="shortcuts-title"
-        className="rounded-panel bg-surface border-border-grid shadow-modal animate-pop flex w-full max-w-[420px] flex-col gap-3 border p-6"
+        className="fixed inset-0 z-70 flex items-center justify-center bg-[rgb(14_22_20/0.45)] p-6 backdrop-blur-[2px]"
+        onClick={(event) => {
+          if (event.currentTarget === event.target) {
+            setHelpOpen(false);
+          }
+        }}
       >
-        <h2
-          id="shortcuts-title"
-          className="text-[19px] font-extrabold tracking-[-0.02em]"
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="shortcuts-title"
+          className="rounded-panel bg-surface border-border-grid shadow-modal animate-pop flex w-full max-w-[420px] flex-col gap-3 border p-6"
         >
-          {t("title")}
-        </h2>
+          <h2
+            id="shortcuts-title"
+            className="text-[19px] font-extrabold tracking-[-0.02em]"
+          >
+            {t("title")}
+          </h2>
 
-        <ul className="flex flex-col">
-          {SHORTCUTS.map((shortcut) => (
-            <li
-              key={shortcut.hint}
-              className="border-border-grid-half flex items-center gap-3 border-b py-2 last:border-b-0"
-            >
-              <span className="flex flex-none gap-1">
-                {shortcut.keys.map((key) => (
-                  <kbd
-                    key={key}
-                    className="border-border-grid bg-surface-muted text-text-primary flex min-w-6 items-center justify-center rounded-md border px-1.5 py-1 font-mono text-xs font-bold"
-                  >
-                    {key}
-                  </kbd>
-                ))}
-              </span>
-              <span className="text-text-secondary text-[13px] leading-snug">
-                {t(shortcut.hint)}
-              </span>
-            </li>
-          ))}
-        </ul>
+          <ul className="flex flex-col">
+            {SHORTCUTS.map((shortcut) => (
+              <li
+                key={shortcut.hint}
+                className="border-border-grid-half flex items-center gap-3 border-b py-2 last:border-b-0"
+              >
+                <span className="flex flex-none gap-1">
+                  {shortcut.keys.map((key) => (
+                    <kbd
+                      key={key}
+                      className="border-border-grid bg-surface-muted text-text-primary flex min-w-6 items-center justify-center rounded-md border px-1.5 py-1 font-mono text-xs font-bold"
+                    >
+                      {key}
+                    </kbd>
+                  ))}
+                </span>
+                <span className="text-text-secondary text-[13px] leading-snug">
+                  {t(shortcut.hint)}
+                </span>
+              </li>
+            ))}
+          </ul>
 
-        <button
-          type="button"
-          autoFocus
-          onClick={() => setHelpOpen(false)}
-          className="focus-ring border-border-grid bg-surface-muted text-text-secondary hover:text-text-primary rounded-control mt-1 min-h-11 self-end border px-4 text-sm font-bold transition"
-        >
-          {t("close")}
-        </button>
-      </div>
+          <button
+            type="button"
+            autoFocus
+            onClick={() => setHelpOpen(false)}
+            className="focus-ring border-border-grid bg-surface-muted text-text-secondary hover:text-text-primary rounded-control mt-1 min-h-11 self-end border px-4 text-sm font-bold transition"
+          >
+            {t("close")}
+          </button>
+        </div>
       </div>
     </>
   );

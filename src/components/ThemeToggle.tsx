@@ -27,12 +27,18 @@ const ICONS: Record<Theme, typeof Sun> = {
  */
 export function ThemeToggle() {
   const t = useTranslations("app");
-  const theme = useSyncExternalStore(subscribeToTheme, readTheme, readSystemTheme);
+  const theme = useSyncExternalStore(
+    subscribeToTheme,
+    readTheme,
+    readSystemTheme,
+  );
   const Icon = ICONS[theme];
 
   return (
     <IconButton
-      onClick={() => setTheme(THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length])}
+      onClick={() =>
+        setTheme(THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length])
+      }
       // The label names the current mode, not the next one: a screen reader user
       // needs to know where they are before deciding to press.
       label={t(`theme.${theme}`)}

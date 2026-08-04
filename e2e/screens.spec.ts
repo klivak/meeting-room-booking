@@ -45,9 +45,13 @@ for (const theme of ["light", "dark"] as const) {
     test("room list", async ({ page }, testInfo) => {
       await page.goto("/");
 
-      await expect(page.getByRole("heading", { name: "Переговорні" })).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: "Переговорні" }),
+      ).toBeVisible();
       // The card answers "can I go there now" without opening the room.
-      await expect(page.getByText(/Вільна|вільного часу|Робочий день/).first()).toBeVisible();
+      await expect(
+        page.getByText(/Вільна|вільного часу|Робочий день/).first(),
+      ).toBeVisible();
 
       await shot(page, testInfo, "rooms");
     });
@@ -89,7 +93,9 @@ for (const theme of ["light", "dark"] as const) {
     test("my bookings", async ({ page }, testInfo) => {
       await page.goto("/my-bookings");
 
-      await expect(page.getByRole("heading", { name: "Мої бронювання" })).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: "Мої бронювання" }),
+      ).toBeVisible();
 
       await shot(page, testInfo, "my-bookings");
     });
@@ -108,7 +114,9 @@ for (const theme of ["light", "dark"] as const) {
       await page.context().clearCookies();
       await page.goto("/login");
 
-      await expect(page.getByRole("heading", { name: "З поверненням" })).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: "З поверненням" }),
+      ).toBeVisible();
 
       await shot(page, testInfo, "login");
     });
@@ -117,7 +125,9 @@ for (const theme of ["light", "dark"] as const) {
       await page.context().clearCookies();
       await page.goto("/register");
 
-      await expect(page.getByRole("heading", { name: "Реєстрація" })).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: "Реєстрація" }),
+      ).toBeVisible();
 
       await shot(page, testInfo, "register");
     });
@@ -125,7 +135,9 @@ for (const theme of ["light", "dark"] as const) {
     test("not found", async ({ page }, testInfo) => {
       await page.goto("/no-such-page");
 
-      await expect(page.getByRole("heading", { name: "Такої сторінки немає" })).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: "Такої сторінки немає" }),
+      ).toBeVisible();
 
       await shot(page, testInfo, "not-found");
     });

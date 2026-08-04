@@ -104,10 +104,16 @@ export function getSlotStart(day: DateTime, rowIndex: number): DateTime {
  * that applies to only one of the two zones shifts the labels mid-week.
  */
 export function getSlotLabels(day: DateTime, timeZone: string): string[] {
-  const dayStart = day.setZone(OFFICE_TZ).startOf("day").plus({ minutes: OPEN_MINUTES });
+  const dayStart = day
+    .setZone(OFFICE_TZ)
+    .startOf("day")
+    .plus({ minutes: OPEN_MINUTES });
 
   return Array.from({ length: SLOT_COUNT }, (_, index) =>
-    dayStart.plus({ minutes: index * SLOT_MINUTES }).setZone(timeZone).toFormat("HH:mm"),
+    dayStart
+      .plus({ minutes: index * SLOT_MINUTES })
+      .setZone(timeZone)
+      .toFormat("HH:mm"),
   );
 }
 
@@ -118,7 +124,9 @@ export function getSlotLabels(day: DateTime, timeZone: string): string[] {
 export function getSlotIndex(instant: Date): number {
   const moment = DateTime.fromJSDate(instant).setZone(OFFICE_TZ);
 
-  return Math.round((moment.hour * 60 + moment.minute - OPEN_MINUTES) / SLOT_MINUTES);
+  return Math.round(
+    (moment.hour * 60 + moment.minute - OPEN_MINUTES) / SLOT_MINUTES,
+  );
 }
 
 /**
@@ -127,7 +135,11 @@ export function getSlotIndex(instant: Date): number {
  * Index 0 is opening time and index SLOT_COUNT is closing time, which is a
  * valid end but never a valid start.
  */
-export function getSlotLabel(day: DateTime, index: number, timeZone: string): string {
+export function getSlotLabel(
+  day: DateTime,
+  index: number,
+  timeZone: string,
+): string {
   return getSlotStart(day, index).setZone(timeZone).toFormat("HH:mm");
 }
 
@@ -136,9 +148,15 @@ export function getSlotLabel(day: DateTime, index: number, timeZone: string): st
  * at most the maximum, and never past closing time. Encoding the duration rule
  * in the options means an invalid pair cannot be built in the form at all.
  */
-export function getEndSlotBounds(startIndex: number): { min: number; max: number } {
+export function getEndSlotBounds(startIndex: number): {
+  min: number;
+  max: number;
+} {
   const min = startIndex + MIN_DURATION_MINUTES / SLOT_MINUTES;
-  const max = Math.min(startIndex + MAX_DURATION_MINUTES / SLOT_MINUTES, SLOT_COUNT);
+  const max = Math.min(
+    startIndex + MAX_DURATION_MINUTES / SLOT_MINUTES,
+    SLOT_COUNT,
+  );
 
   return { min, max };
 }
@@ -169,7 +187,10 @@ export function getSelectionRows(
  * Splits a duration into hours and minutes. Deliberately no words: how a
  * duration is said differs per language, so that belongs to the dictionary.
  */
-export function splitDuration(minutes: number): { hours: number; minutes: number } {
+export function splitDuration(minutes: number): {
+  hours: number;
+  minutes: number;
+} {
   return { hours: Math.floor(minutes / 60), minutes: minutes % 60 };
 }
 

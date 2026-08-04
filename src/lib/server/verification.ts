@@ -47,8 +47,12 @@ export async function sendVerificationLink(userId: string, origin: string) {
  * was. The token is single use: it is deleted either way, so a leaked link
  * cannot be replayed.
  */
-export async function confirmVerificationToken(token: string): Promise<boolean> {
-  const stored = await prisma.verificationToken.findUnique({ where: { token } });
+export async function confirmVerificationToken(
+  token: string,
+): Promise<boolean> {
+  const stored = await prisma.verificationToken.findUnique({
+    where: { token },
+  });
   if (!stored) {
     return false;
   }

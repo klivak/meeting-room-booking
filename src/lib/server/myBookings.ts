@@ -40,7 +40,9 @@ export async function getMyBookingsPage(
     where: {
       userId,
       canceledAt: null,
-      ...(scope === "upcoming" ? { endsAt: { gt: now } } : { endsAt: { lte: now } }),
+      ...(scope === "upcoming"
+        ? { endsAt: { gt: now } }
+        : { endsAt: { lte: now } }),
     },
     orderBy: [{ startsAt: direction }, { id: direction }],
     // One extra row is read purely to learn whether another page exists.
@@ -73,7 +75,10 @@ export async function getMyBookingsPage(
  * someone else's booking, or at nothing, would silently produce an empty page;
  * saying so is more honest than pretending the list ended.
  */
-export async function ownsBooking(userId: string, bookingId: string): Promise<boolean> {
+export async function ownsBooking(
+  userId: string,
+  bookingId: string,
+): Promise<boolean> {
   const owned = await prisma.booking.findFirst({
     where: { id: bookingId, userId },
     select: { id: true },

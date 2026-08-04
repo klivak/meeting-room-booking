@@ -16,13 +16,22 @@ const OVERLAP_TITLE = "Спроба перекрити";
 const MOVE_TITLE = "Перевірка перетягування";
 
 test.beforeEach(async ({ page }) => {
-  await removeTestBookings(page, [TITLE, KEYBOARD_TITLE, OVERLAP_TITLE, MOVE_TITLE]);
+  await removeTestBookings(page, [
+    TITLE,
+    KEYBOARD_TITLE,
+    OVERLAP_TITLE,
+    MOVE_TITLE,
+  ]);
 });
 
 type Cell = ReturnType<typeof cell>;
 
 /** Drags the pointer from one cell to another, which is how a range is picked. */
-async function dragOver(page: import("@playwright/test").Page, from: Cell, to: Cell) {
+async function dragOver(
+  page: import("@playwright/test").Page,
+  from: Cell,
+  to: Cell,
+) {
   const start = await from.boundingBox();
   const end = await to.boundingBox();
   if (!start || !end) {
@@ -33,18 +42,29 @@ async function dragOver(page: import("@playwright/test").Page, from: Cell, to: C
   await page.mouse.down();
   // Through the cells in between: the selection follows pointerenter, so a jump
   // straight to the end would skip them.
-  await page.mouse.move(end.x + end.width / 2, end.y + end.height / 2, { steps: 8 });
+  await page.mouse.move(end.x + end.width / 2, end.y + end.height / 2, {
+    steps: 8,
+  });
   await page.mouse.up();
 }
 
 /** Opens a booking of ours and cancels it, dialog and all. */
-async function cancelBooking(page: import("@playwright/test").Page, title: string) {
-  await page.getByRole("link", { name: new RegExp(title) }).first().click();
+async function cancelBooking(
+  page: import("@playwright/test").Page,
+  title: string,
+) {
+  await page
+    .getByRole("link", { name: new RegExp(title) })
+    .first()
+    .click();
   await page
     .getByRole("dialog", { name: "Редагування бронювання" })
     .getByRole("button", { name: "Скасувати бронювання" })
     .click();
-  await page.getByRole("alertdialog").getByRole("button", { name: "Так, скасувати" }).click();
+  await page
+    .getByRole("alertdialog")
+    .getByRole("button", { name: "Так, скасувати" })
+    .click();
   await expect(page.getByRole("status")).toContainText("Бронювання скасовано");
 }
 
@@ -77,12 +97,16 @@ test("books a dragged range, refuses to double-book it, then cancels it", async 
   // select — the client lets that be built, and the server is what says no.
   await cell(page, 6, 7).click();
   const second = page.getByRole("dialog", { name: "Нове бронювання" });
-  await second.getByLabel("Кінець").selectOption({ label: "14:00 · 1 год 30 хв" });
+  await second
+    .getByLabel("Кінець")
+    .selectOption({ label: "14:00 · 1 год 30 хв" });
 
   // The clash is named while the range is still being picked, and it comes with
   // the rooms that are free at exactly that time — one click away from the tour
   // of all six.
-  await expect(second.getByText("Цей час уже зайнятий іншим бронюванням")).toBeVisible();
+  await expect(
+    second.getByText("Цей час уже зайнятий іншим бронюванням"),
+  ).toBeVisible();
   await expect(second.getByRole("button", { name: /Говерла/ })).toBeVisible();
 
   await second.getByLabel("Назва").fill(OVERLAP_TITLE);
@@ -97,7 +121,9 @@ test("books a dragged range, refuses to double-book it, then cancels it", async 
   await expect(page.getByText(TITLE, { exact: true })).toHaveCount(0);
 });
 
-test("moves and resizes an own booking on the grid itself", async ({ page }) => {
+test("moves and resizes an own booking on the grid itself", async ({
+  page,
+}) => {
   await openRoom(page);
   await goToNextWeek(page);
 
@@ -108,7 +134,9 @@ test("moves and resizes an own booking on the grid itself", async ({ page }) => 
   await panel.getByRole("button", { name: "Забронювати" }).click();
   await expect(page.getByRole("status")).toContainText("Бронювання створено");
 
-  const booked = page.getByRole("link", { name: new RegExp(MOVE_TITLE) }).first();
+  const booked = page
+    .getByRole("link", { name: new RegExp(MOVE_TITLE) })
+    .first();
   await expect(booked).toBeVisible();
 
   // An hour earlier by dragging the block itself. One row is one half hour, so
@@ -117,9 +145,13 @@ test("moves and resizes an own booking on the grid itself", async ({ page }) => 
   const box = (await booked.boundingBox())!;
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down();
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 - 2 * rowHeight, {
-    steps: 6,
-  });
+  await page.mouse.move(
+    box.x + box.width / 2,
+    box.y + box.height / 2 - 2 * rowHeight,
+    {
+      steps: 6,
+    },
+  );
   await page.mouse.up();
 
   await expect(page.getByRole("status")).toContainText("Бронювання перенесено");
@@ -129,13 +161,19 @@ test("moves and resizes an own booking on the grid itself", async ({ page }) => 
 
   // The same two gestures from the keyboard: Alt moves it, Shift changes how
   // long it runs. Dragging must not be the only way to reshape a booking.
-  await page.getByRole("link", { name: new RegExp(MOVE_TITLE) }).first().focus();
+  await page
+    .getByRole("link", { name: new RegExp(MOVE_TITLE) })
+    .first()
+    .focus();
   await page.keyboard.press("Alt+ArrowDown");
   await expect(
     page.getByRole("link", { name: new RegExp(`${MOVE_TITLE}, 12:30–14:00`) }),
   ).toBeVisible();
 
-  await page.getByRole("link", { name: new RegExp(MOVE_TITLE) }).first().focus();
+  await page
+    .getByRole("link", { name: new RegExp(MOVE_TITLE) })
+    .first()
+    .focus();
   await page.keyboard.press("Shift+ArrowDown");
   await expect(
     page.getByRole("link", { name: new RegExp(`${MOVE_TITLE}, 12:30–14:30`) }),
@@ -144,7 +182,9 @@ test("moves and resizes an own booking on the grid itself", async ({ page }) => 
   await cancelBooking(page, MOVE_TITLE);
 });
 
-test("navigates the weeks and explains itself from the keyboard", async ({ page }) => {
+test("navigates the weeks and explains itself from the keyboard", async ({
+  page,
+}) => {
   await openRoom(page);
 
   // Alt + arrow walks the weeks, T comes back to this one. "Сьогодні" marks
@@ -170,7 +210,9 @@ test("navigates the weeks and explains itself from the keyboard", async ({ page 
   await expect(help).toHaveCount(0);
 });
 
-test("keeps the picked slot visible wherever in the week it is", async ({ page }) => {
+test("keeps the picked slot visible wherever in the week it is", async ({
+  page,
+}) => {
   await openRoom(page);
   await goToNextWeek(page);
 
@@ -208,14 +250,20 @@ test("leaves a colleague's booking inert", async ({ page }) => {
   await openRoom(page);
 
   // The seed puts Bohdan's "Дзвінок із клієнтом" on Monday of this week.
-  const theirs = page.getByRole("note", { name: /Дзвінок із клієнтом/ }).first();
+  const theirs = page
+    .getByRole("note", { name: /Дзвінок із клієнтом/ })
+    .first();
 
   await expect(theirs).toBeVisible();
   await expect(theirs).toContainText("БД");
   // Named for a screen reader but inert for everyone: it is neither a link nor a
   // button, and with no tabindex at all it cannot be tabbed to either.
-  await expect(page.getByRole("link", { name: /Дзвінок із клієнтом/ })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: /Дзвінок із клієнтом/ })).toHaveCount(0);
+  await expect(
+    page.getByRole("link", { name: /Дзвінок із клієнтом/ }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: /Дзвінок із клієнтом/ }),
+  ).toHaveCount(0);
   await expect(theirs).not.toHaveAttribute("tabindex", /.*/);
 });
 

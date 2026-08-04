@@ -34,7 +34,9 @@ export function Toaster() {
           strokeWidth={2.4}
         />
       </span>
-      <span className="flex-1 text-[13.5px] leading-snug font-bold">{toast.message}</span>
+      <span className="flex-1 text-[13.5px] leading-snug font-bold">
+        {toast.message}
+      </span>
       {toast.action ? (
         <button
           type="button"

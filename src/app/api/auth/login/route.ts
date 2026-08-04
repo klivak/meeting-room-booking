@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 
 import { loginSchema } from "@/lib/domain/auth";
-import { apiError, tooManyAttemptsError, validationError } from "@/lib/server/apiError";
+import {
+  apiError,
+  tooManyAttemptsError,
+  validationError,
+} from "@/lib/server/apiError";
 import {
   clientAddress,
   isRateLimited,

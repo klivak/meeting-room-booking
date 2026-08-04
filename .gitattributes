@@ -1,0 +1,2 @@
+# The pre-commit hook is run by sh; a CR at the end of each line breaks it.
+.githooks/** text eol=lf

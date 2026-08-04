@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 
 import { unauthorizedError } from "@/lib/server/apiError";
-import { getDueNotifications, markNotificationsRead } from "@/lib/server/notifications";
+import {
+  getDueNotifications,
+  markNotificationsRead,
+} from "@/lib/server/notifications";
 import { getCurrentUser } from "@/lib/server/session";
 
 /** Unread warnings for the current user; polled by the bell in the header. */

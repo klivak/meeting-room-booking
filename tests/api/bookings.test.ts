@@ -28,7 +28,10 @@ beforeEach(async () => {
  * Times are built in Kyiv and sent as UTC, exactly like the form does.
  */
 function slot(hour: number, minutes = 60, dayOffset = 30) {
-  const day = DateTime.now().setZone(OFFICE_TZ).plus({ days: dayOffset }).startOf("day");
+  const day = DateTime.now()
+    .setZone(OFFICE_TZ)
+    .plus({ days: dayOffset })
+    .startOf("day");
   const start = day.set({ hour });
 
   return {
@@ -55,7 +58,11 @@ describe("creating a booking", () => {
   it("accepts a booking that starts exactly when another ends", async () => {
     await book(alice.cookie, { roomId, title: "Перша", ...slot(10) });
 
-    const backToBack = await book(bob.cookie, { roomId, title: "Друга", ...slot(11) });
+    const backToBack = await book(bob.cookie, {
+      roomId,
+      title: "Друга",
+      ...slot(11),
+    });
 
     expect(backToBack.status).toBe(201);
     expect(await testPrisma.booking.count()).toBe(2);
@@ -94,9 +101,17 @@ describe("creating a booking", () => {
     // A booking shorter than half an hour cannot sit on the 30-minute grid at
     // all, so the alignment rule is what answers first. The duration rule on its
     // own is covered by the case above and by the domain tests.
-    ["a duration under thirty minutes", { ...slot(10, 15) }, "TIME_NOT_ALIGNED"],
+    [
+      "a duration under thirty minutes",
+      { ...slot(10, 15) },
+      "TIME_NOT_ALIGNED",
+    ],
   ])("refuses %s", async (_name, times, expectedCode) => {
-    const response = await book(alice.cookie, { roomId, title: "Тест", ...times });
+    const response = await book(alice.cookie, {
+      roomId,
+      title: "Тест",
+      ...times,
+    });
 
     expect(response.status).toBe(400);
     expect(response.body.error.code).toBe(expectedCode);
@@ -104,7 +119,10 @@ describe("creating a booking", () => {
   });
 
   it("refuses a start that is off the thirty-minute grid", async () => {
-    const day = DateTime.now().setZone(OFFICE_TZ).plus({ days: 30 }).startOf("day");
+    const day = DateTime.now()
+      .setZone(OFFICE_TZ)
+      .plus({ days: 30 })
+      .startOf("day");
     const start = day.set({ hour: 10, minute: 15 });
 
     const response = await book(alice.cookie, {
@@ -119,7 +137,11 @@ describe("creating a booking", () => {
   });
 
   it("refuses a blank title and an unknown room, naming the field", async () => {
-    const blankTitle = await book(alice.cookie, { roomId, title: "   ", ...slot(10) });
+    const blankTitle = await book(alice.cookie, {
+      roomId,
+      title: "   ",
+      ...slot(10),
+    });
     const unknownRoom = await book(alice.cookie, {
       roomId: "no-such-room",
       title: "Тест",
@@ -137,7 +159,11 @@ describe("creating a booking", () => {
 
 describe("editing a booking", () => {
   it("lets the author rename it without touching the time", async () => {
-    const created = await book(alice.cookie, { roomId, title: "Стара", ...slot(10) });
+    const created = await book(alice.cookie, {
+      roomId,
+      title: "Стара",
+      ...slot(10),
+    });
 
     const renamed = await api<Booking>(`/api/bookings/${created.body.id}`, {
       method: "PATCH",
@@ -150,7 +176,11 @@ describe("editing a booking", () => {
   });
 
   it("does not let a booking clash with itself", async () => {
-    const created = await book(alice.cookie, { roomId, title: "Своя", ...slot(10) });
+    const created = await book(alice.cookie, {
+      roomId,
+      title: "Своя",
+      ...slot(10),
+    });
 
     // Same interval again: only the excluded id keeps this from being a clash.
     const resaved = await api(`/api/bookings/${created.body.id}`, {
@@ -163,7 +193,11 @@ describe("editing a booking", () => {
   });
 
   it("refuses a move onto a taken slot", async () => {
-    const mine = await book(alice.cookie, { roomId, title: "Моя", ...slot(10) });
+    const mine = await book(alice.cookie, {
+      roomId,
+      title: "Моя",
+      ...slot(10),
+    });
     await book(bob.cookie, { roomId, title: "Чужа", ...slot(12) });
 
     const moved = await api<ErrorBody>(`/api/bookings/${mine.body.id}`, {
@@ -177,20 +211,31 @@ describe("editing a booking", () => {
   });
 
   it("applies the creation rules to the new values", async () => {
-    const created = await book(alice.cookie, { roomId, title: "Своя", ...slot(10) });
-
-    const outsideHours = await api<ErrorBody>(`/api/bookings/${created.body.id}`, {
-      method: "PATCH",
-      cookie: alice.cookie,
-      body: slot(8),
+    const created = await book(alice.cookie, {
+      roomId,
+      title: "Своя",
+      ...slot(10),
     });
+
+    const outsideHours = await api<ErrorBody>(
+      `/api/bookings/${created.body.id}`,
+      {
+        method: "PATCH",
+        cookie: alice.cookie,
+        body: slot(8),
+      },
+    );
 
     expect(outsideHours.status).toBe(400);
     expect(outsideHours.body.error.code).toBe("OUTSIDE_WORKING_HOURS");
   });
 
   it("refuses someone else's booking, and the answer does not depend on the payload", async () => {
-    const created = await book(alice.cookie, { roomId, title: "Аліси", ...slot(10) });
+    const created = await book(alice.cookie, {
+      roomId,
+      title: "Аліси",
+      ...slot(10),
+    });
 
     const hijacked = await api<ErrorBody>(`/api/bookings/${created.body.id}`, {
       method: "PATCH",
@@ -200,13 +245,23 @@ describe("editing a booking", () => {
 
     expect(hijacked.status).toBe(403);
     expect(hijacked.body.error.code).toBe("FORBIDDEN");
-    expect((await testPrisma.booking.findUniqueOrThrow({ where: { id: created.body.id } })).title).toBe("Аліси");
+    expect(
+      (
+        await testPrisma.booking.findUniqueOrThrow({
+          where: { id: created.body.id },
+        })
+      ).title,
+    ).toBe("Аліси");
   });
 });
 
 describe("cancelling a booking", () => {
   it("hides it and frees the slot", async () => {
-    const created = await book(alice.cookie, { roomId, title: "Своя", ...slot(10) });
+    const created = await book(alice.cookie, {
+      roomId,
+      title: "Своя",
+      ...slot(10),
+    });
 
     const canceled = await api(`/api/bookings/${created.body.id}`, {
       method: "DELETE",
@@ -220,12 +275,20 @@ describe("cancelling a booking", () => {
     });
     expect(stored.canceledAt).not.toBeNull();
 
-    const reused = await book(bob.cookie, { roomId, title: "Після", ...slot(10) });
+    const reused = await book(bob.cookie, {
+      roomId,
+      title: "Після",
+      ...slot(10),
+    });
     expect(reused.status).toBe(201);
   });
 
   it("refuses someone else's booking", async () => {
-    const created = await book(alice.cookie, { roomId, title: "Аліси", ...slot(10) });
+    const created = await book(alice.cookie, {
+      roomId,
+      title: "Аліси",
+      ...slot(10),
+    });
 
     const hijacked = await api<ErrorBody>(`/api/bookings/${created.body.id}`, {
       method: "DELETE",
@@ -234,14 +297,24 @@ describe("cancelling a booking", () => {
 
     expect(hijacked.status).toBe(403);
     expect(
-      (await testPrisma.booking.findUniqueOrThrow({ where: { id: created.body.id } }))
-        .canceledAt,
+      (
+        await testPrisma.booking.findUniqueOrThrow({
+          where: { id: created.body.id },
+        })
+      ).canceledAt,
     ).toBeNull();
   });
 
   it("treats an already cancelled booking as gone", async () => {
-    const created = await book(alice.cookie, { roomId, title: "Своя", ...slot(10) });
-    await api(`/api/bookings/${created.body.id}`, { method: "DELETE", cookie: alice.cookie });
+    const created = await book(alice.cookie, {
+      roomId,
+      title: "Своя",
+      ...slot(10),
+    });
+    await api(`/api/bookings/${created.body.id}`, {
+      method: "DELETE",
+      cookie: alice.cookie,
+    });
 
     const again = await api<ErrorBody>(`/api/bookings/${created.body.id}`, {
       method: "DELETE",
@@ -257,7 +330,11 @@ describe("taking a cancellation back", () => {
     api<ErrorBody>(`/api/bookings/${id}/restore`, { method: "POST", cookie });
 
   it("puts the booking back and blocks the slot again", async () => {
-    const created = await book(alice.cookie, { roomId, title: "Своя", ...slot(10) });
+    const created = await book(alice.cookie, {
+      roomId,
+      title: "Своя",
+      ...slot(10),
+    });
     await api(`/api/bookings/${created.body.id}`, {
       method: "DELETE",
       cookie: alice.cookie,
@@ -266,26 +343,33 @@ describe("taking a cancellation back", () => {
     expect((await restore(created.body.id, alice.cookie)).status).toBe(200);
 
     expect(
-      (await testPrisma.booking.findUniqueOrThrow({ where: { id: created.body.id } }))
-        .canceledAt,
+      (
+        await testPrisma.booking.findUniqueOrThrow({
+          where: { id: created.body.id },
+        })
+      ).canceledAt,
     ).toBeNull();
     // Back in the overlap check, which is the point of restoring it at all.
-    expect((await book(bob.cookie, { roomId, title: "Після", ...slot(10) })).status).toBe(
-      409,
-    );
+    expect(
+      (await book(bob.cookie, { roomId, title: "Після", ...slot(10) })).status,
+    ).toBe(409);
   });
 
   it("refuses when the slot was taken in the meantime", async () => {
-    const created = await book(alice.cookie, { roomId, title: "Своя", ...slot(10) });
+    const created = await book(alice.cookie, {
+      roomId,
+      title: "Своя",
+      ...slot(10),
+    });
     await api(`/api/bookings/${created.body.id}`, {
       method: "DELETE",
       cookie: alice.cookie,
     });
 
     // Exactly the race the undo cannot promise its way out of.
-    expect((await book(bob.cookie, { roomId, title: "Чужа", ...slot(10) })).status).toBe(
-      201,
-    );
+    expect(
+      (await book(bob.cookie, { roomId, title: "Чужа", ...slot(10) })).status,
+    ).toBe(201);
 
     const refused = await restore(created.body.id, alice.cookie);
     expect(refused.status).toBe(409);
@@ -293,7 +377,11 @@ describe("taking a cancellation back", () => {
   });
 
   it("refuses someone else's booking and one that was never cancelled", async () => {
-    const created = await book(alice.cookie, { roomId, title: "Аліси", ...slot(10) });
+    const created = await book(alice.cookie, {
+      roomId,
+      title: "Аліси",
+      ...slot(10),
+    });
 
     // Still active: there is no cancellation to take back.
     expect((await restore(created.body.id, alice.cookie)).status).toBe(404);
@@ -318,7 +406,9 @@ describe("reading bookings", () => {
       .toUTC()
       .toISO();
 
-    const week = await api<{ title: string; user: { name: string }; isMine: boolean }[]>(
+    const week = await api<
+      { title: string; user: { name: string }; isMine: boolean }[]
+    >(
       `/api/rooms/${roomId}/bookings?weekStart=${encodeURIComponent(weekStart ?? "")}`,
       { cookie: alice.cookie },
     );
@@ -346,9 +436,12 @@ describe("reading bookings", () => {
       "/api/my-bookings?scope=upcoming",
       { cookie: alice.cookie },
     );
-    const past = await api<{ items: { title: string }[] }>("/api/my-bookings?scope=past", {
-      cookie: alice.cookie,
-    });
+    const past = await api<{ items: { title: string }[] }>(
+      "/api/my-bookings?scope=past",
+      {
+        cookie: alice.cookie,
+      },
+    );
 
     expect(upcoming.body.items.map((item) => item.title)).toEqual(["Майбутня"]);
     expect(past.body.items.map((item) => item.title)).toEqual(["Минула"]);

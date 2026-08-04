@@ -201,7 +201,8 @@ export default async function HomePage({
   // An unusable value is ignored rather than refused: the list is still the
   // right thing to show.
   const parsed = Number(capacityParam);
-  const capacityMin = Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
+  const capacityMin =
+    Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">

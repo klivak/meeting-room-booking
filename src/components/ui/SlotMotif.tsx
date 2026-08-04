@@ -20,9 +20,15 @@ export function SlotMotif({
 
   return (
     <span aria-hidden="true" className={`flex gap-1.5 ${className ?? ""}`}>
-      <span className={`border-accent-own-past rounded-booking border-[1.5px] border-dashed ${slot}`} />
-      <span className={`bg-accent-own-fill rounded-booking border-accent-own-booking border-l-[3px] ${slot}`} />
-      <span className={`border-accent-own-past rounded-booking border-[1.5px] border-dashed ${slot}`} />
+      <span
+        className={`border-accent-own-past rounded-booking border-[1.5px] border-dashed ${slot}`}
+      />
+      <span
+        className={`bg-accent-own-fill rounded-booking border-accent-own-booking border-l-[3px] ${slot}`}
+      />
+      <span
+        className={`border-accent-own-past rounded-booking border-[1.5px] border-dashed ${slot}`}
+      />
     </span>
   );
 }

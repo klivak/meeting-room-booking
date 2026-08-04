@@ -9,12 +9,12 @@ const at = (iso: string) => new Date(`2026-03-10T${iso}:00.000Z`);
 const DAY_START = at("09:00");
 const DAY_END = at("19:00");
 
-const availability = (
-  bookings: [string, string][],
-  now: string,
-) =>
+const availability = (bookings: [string, string][], now: string) =>
   getRoomAvailability(
-    bookings.map(([startsAt, endsAt]) => ({ startsAt: at(startsAt), endsAt: at(endsAt) })),
+    bookings.map(([startsAt, endsAt]) => ({
+      startsAt: at(startsAt),
+      endsAt: at(endsAt),
+    })),
     at(now),
     DAY_START,
     DAY_END,
@@ -26,7 +26,9 @@ describe("getRoomAvailability", () => {
   });
 
   it("calls a room free when the next booking is still ahead", () => {
-    expect(availability([["15:00", "16:00"]], "11:00")).toEqual({ kind: "free" });
+    expect(availability([["15:00", "16:00"]], "11:00")).toEqual({
+      kind: "free",
+    });
   });
 
   it("reports when a busy room frees up", () => {
@@ -49,19 +51,28 @@ describe("getRoomAvailability", () => {
   });
 
   it("stays free when a booking ends exactly now", () => {
-    expect(availability([["10:00", "11:00"]], "11:00")).toEqual({ kind: "free" });
+    expect(availability([["10:00", "11:00"]], "11:00")).toEqual({
+      kind: "free",
+    });
   });
 
   it("waits for the office to open", () => {
-    expect(availability([], "07:00")).toEqual({ kind: "freeFrom", at: DAY_START });
+    expect(availability([], "07:00")).toEqual({
+      kind: "freeFrom",
+      at: DAY_START,
+    });
   });
 
   it("reports a day booked solid", () => {
-    expect(availability([["09:00", "19:00"]], "11:00")).toEqual({ kind: "busyToday" });
+    expect(availability([["09:00", "19:00"]], "11:00")).toEqual({
+      kind: "busyToday",
+    });
   });
 
   it("does not offer a gap shorter than one slot", () => {
-    expect(availability([["09:00", "18:45"]], "11:00")).toEqual({ kind: "busyToday" });
+    expect(availability([["09:00", "18:45"]], "11:00")).toEqual({
+      kind: "busyToday",
+    });
   });
 
   it("reports the office day as over", () => {

@@ -19,19 +19,24 @@ describe("registerSchema", () => {
   });
 
   it("trims the name and rejects a blank one", () => {
-    expect(registerSchema.parse({ ...valid, name: "  Іван  " }).name).toBe("Іван");
-    expect(registerSchema.safeParse({ ...valid, name: "   " }).success).toBe(false);
+    expect(registerSchema.parse({ ...valid, name: "  Іван  " }).name).toBe(
+      "Іван",
+    );
+    expect(registerSchema.safeParse({ ...valid, name: "   " }).success).toBe(
+      false,
+    );
     expect(
       registerSchema.safeParse({ ...valid, name: "я".repeat(101) }).success,
     ).toBe(false);
-    expect(registerSchema.safeParse({ ...valid, name: "я".repeat(100) }).success).toBe(
-      true,
-    );
+    expect(
+      registerSchema.safeParse({ ...valid, name: "я".repeat(100) }).success,
+    ).toBe(true);
   });
 
   it("accepts passwords of 8..72 characters and rejects the neighbours", () => {
     const withPassword = (length: number) =>
-      registerSchema.safeParse({ ...valid, password: "a".repeat(length) }).success;
+      registerSchema.safeParse({ ...valid, password: "a".repeat(length) })
+        .success;
 
     expect(withPassword(7)).toBe(false);
     expect(withPassword(8)).toBe(true);
@@ -40,7 +45,9 @@ describe("registerSchema", () => {
   });
 
   it("rejects a malformed email", () => {
-    expect(registerSchema.safeParse({ ...valid, email: "ivan" }).success).toBe(false);
+    expect(registerSchema.safeParse({ ...valid, email: "ivan" }).success).toBe(
+      false,
+    );
   });
 
   it("reports the offending field so the form can place the message", () => {
@@ -59,8 +66,8 @@ describe("loginSchema", () => {
   });
 
   it("rejects an empty password", () => {
-    expect(loginSchema.safeParse({ email: "ivan@x.com", password: "" }).success).toBe(
-      false,
-    );
+    expect(
+      loginSchema.safeParse({ email: "ivan@x.com", password: "" }).success,
+    ).toBe(false);
   });
 });

@@ -47,5 +47,7 @@ export function getRoomAvailability(
     return { kind: "busyToday" };
   }
 
-  return cursor <= +now ? { kind: "free" } : { kind: "freeFrom", at: new Date(cursor) };
+  return cursor <= +now
+    ? { kind: "free" }
+    : { kind: "freeFrom", at: new Date(cursor) };
 }

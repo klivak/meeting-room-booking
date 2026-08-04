@@ -74,7 +74,9 @@ async function waitForServer(server: ChildProcess, output: () => string) {
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
 
-  throw new Error(`Test server did not become ready within ${READY_TIMEOUT_MS}ms`);
+  throw new Error(
+    `Test server did not become ready within ${READY_TIMEOUT_MS}ms`,
+  );
 }
 
 export default async function setup() {

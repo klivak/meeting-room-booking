@@ -10,7 +10,9 @@ const at = (iso: string) => kyiv(iso).toJSDate();
 
 const officeTimes = (occurrences: { startsAt: Date }[]) =>
   occurrences.map((occurrence) =>
-    DateTime.fromJSDate(occurrence.startsAt).setZone(OFFICE_TZ).toFormat("yyyy-LL-dd HH:mm"),
+    DateTime.fromJSDate(occurrence.startsAt)
+      .setZone(OFFICE_TZ)
+      .toFormat("yyyy-LL-dd HH:mm"),
   );
 
 describe("getWeeklyOccurrences", () => {
@@ -50,10 +52,17 @@ describe("getWeeklyOccurrences", () => {
       2,
     );
 
-    expect(officeTimes(occurrences)).toEqual(["2026-03-25 10:00", "2026-04-01 10:00"]);
+    expect(officeTimes(occurrences)).toEqual([
+      "2026-03-25 10:00",
+      "2026-04-01 10:00",
+    ]);
     // The same wall clock is a different UTC hour, which is the whole point.
-    expect(occurrences[0].startsAt.toISOString()).toBe("2026-03-25T08:00:00.000Z");
-    expect(occurrences[1].startsAt.toISOString()).toBe("2026-04-01T07:00:00.000Z");
+    expect(occurrences[0].startsAt.toISOString()).toBe(
+      "2026-03-25T08:00:00.000Z",
+    );
+    expect(occurrences[1].startsAt.toISOString()).toBe(
+      "2026-04-01T07:00:00.000Z",
+    );
   });
 
   it("produces occurrences that all pass the booking rules", () => {
@@ -71,6 +80,8 @@ describe("getWeeklyOccurrences", () => {
   });
 
   it("returns a single booking when asked for one", () => {
-    expect(getWeeklyOccurrences(at("2026-08-24T10:00"), at("2026-08-24T11:00"), 1)).toHaveLength(1);
+    expect(
+      getWeeklyOccurrences(at("2026-08-24T10:00"), at("2026-08-24T11:00"), 1),
+    ).toHaveLength(1);
   });
 });

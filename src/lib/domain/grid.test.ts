@@ -55,28 +55,43 @@ describe("grid shape", () => {
 describe("placeBooking", () => {
   it("puts the first slot of Monday at the top left", () => {
     expect(
-      placeBooking({ startsAt: at("2026-08-24T09:00"), endsAt: at("2026-08-24T09:30") }, WEEK_START),
+      placeBooking(
+        { startsAt: at("2026-08-24T09:00"), endsAt: at("2026-08-24T09:30") },
+        WEEK_START,
+      ),
     ).toEqual({ dayIndex: 0, rowStart: 0, rowSpan: 1 });
   });
 
   it("spans several rows for a longer booking", () => {
     expect(
-      placeBooking({ startsAt: at("2026-08-26T10:00"), endsAt: at("2026-08-26T12:00") }, WEEK_START),
+      placeBooking(
+        { startsAt: at("2026-08-26T10:00"), endsAt: at("2026-08-26T12:00") },
+        WEEK_START,
+      ),
     ).toEqual({ dayIndex: 2, rowStart: 2, rowSpan: 4 });
   });
 
   it("places the last slot of the day at the bottom", () => {
     expect(
-      placeBooking({ startsAt: at("2026-08-30T18:30"), endsAt: at("2026-08-30T19:00") }, WEEK_START),
+      placeBooking(
+        { startsAt: at("2026-08-30T18:30"), endsAt: at("2026-08-30T19:00") },
+        WEEK_START,
+      ),
     ).toEqual({ dayIndex: 6, rowStart: 19, rowSpan: 1 });
   });
 
   it("ignores bookings from other weeks", () => {
     expect(
-      placeBooking({ startsAt: at("2026-08-23T10:00"), endsAt: at("2026-08-23T11:00") }, WEEK_START),
+      placeBooking(
+        { startsAt: at("2026-08-23T10:00"), endsAt: at("2026-08-23T11:00") },
+        WEEK_START,
+      ),
     ).toBeNull();
     expect(
-      placeBooking({ startsAt: at("2026-08-31T10:00"), endsAt: at("2026-08-31T11:00") }, WEEK_START),
+      placeBooking(
+        { startsAt: at("2026-08-31T10:00"), endsAt: at("2026-08-31T11:00") },
+        WEEK_START,
+      ),
     ).toBeNull();
   });
 
@@ -125,8 +140,12 @@ describe("placeBooking across the DST switch", () => {
   });
 
   it("really is a different UTC hour on those two days", () => {
-    expect(at("2026-03-27T09:00").toISOString()).toBe("2026-03-27T07:00:00.000Z");
-    expect(at("2026-03-30T09:00").toISOString()).toBe("2026-03-30T06:00:00.000Z");
+    expect(at("2026-03-27T09:00").toISOString()).toBe(
+      "2026-03-27T07:00:00.000Z",
+    );
+    expect(at("2026-03-30T09:00").toISOString()).toBe(
+      "2026-03-30T06:00:00.000Z",
+    );
   });
 });
 
@@ -146,7 +165,10 @@ describe("getSlotStart", () => {
   it("round-trips with placeBooking", () => {
     const start = getSlotStart(kyiv("2026-08-26T00:00"), 5);
     const placement = placeBooking(
-      { startsAt: start.toJSDate(), endsAt: start.plus({ minutes: 30 }).toJSDate() },
+      {
+        startsAt: start.toJSDate(),
+        endsAt: start.plus({ minutes: 30 }).toJSDate(),
+      },
       WEEK_START,
     );
 

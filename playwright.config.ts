@@ -55,12 +55,20 @@ export default defineConfig({
     { name: "setup", testMatch: /auth\.setup\.ts/ },
     {
       name: "desktop",
-      use: { ...devices["Desktop Chrome"], viewport: DESKTOP, storageState: STORAGE_STATE },
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: DESKTOP,
+        storageState: STORAGE_STATE,
+      },
       dependencies: ["setup"],
     },
     {
       name: "tablet",
-      use: { ...devices["Desktop Chrome"], viewport: TABLET, storageState: STORAGE_STATE },
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: TABLET,
+        storageState: STORAGE_STATE,
+      },
       dependencies: ["setup"],
       // Dragging a range is a mouse gesture, so the scenario runs once, on the
       // layout that has one.

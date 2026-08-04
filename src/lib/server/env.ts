@@ -46,7 +46,10 @@ function loadEnv() {
 const PLACEHOLDER_SESSION_SECRET = "dev-secret-change-me-in-production";
 
 function warnAboutPlaceholderSecret(secret: string) {
-  if (secret !== PLACEHOLDER_SESSION_SECRET || process.env.NODE_ENV !== "production") {
+  if (
+    secret !== PLACEHOLDER_SESSION_SECRET ||
+    process.env.NODE_ENV !== "production"
+  ) {
     return;
   }
 

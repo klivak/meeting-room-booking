@@ -43,9 +43,13 @@ describe("email verification", () => {
   it("registers an unconfirmed user and issues one token", async () => {
     const user = await registerUnverifiedUser("fresh@example.com");
 
-    const stored = await testPrisma.user.findUniqueOrThrow({ where: { id: user.id } });
+    const stored = await testPrisma.user.findUniqueOrThrow({
+      where: { id: user.id },
+    });
     expect(stored.emailVerifiedAt).toBeNull();
-    expect(await testPrisma.verificationToken.count({ where: { userId: user.id } })).toBe(1);
+    expect(
+      await testPrisma.verificationToken.count({ where: { userId: user.id } }),
+    ).toBe(1);
   });
 
   it("refuses booking until the address is confirmed, then allows it", async () => {
@@ -81,7 +85,9 @@ describe("email verification", () => {
     const replay = await openVerificationLink(token);
     expect(replay.headers.get("location")).toContain("verified=0");
 
-    const stored = await testPrisma.user.findUniqueOrThrow({ where: { id: user.id } });
+    const stored = await testPrisma.user.findUniqueOrThrow({
+      where: { id: user.id },
+    });
     expect(stored.emailVerifiedAt).toBeNull();
   });
 

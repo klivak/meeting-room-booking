@@ -29,23 +29,107 @@ const USERS = DEMO_ACCOUNTS;
 // current week, 7-11 on the next one. Fixed ids make the upsert idempotent,
 // since a booking has no natural unique key.
 const DEMO_BOOKINGS = [
-  { id: "seed-booking-01", room: "Хортиця", email: "alice@example.com", dayOffset: 0, start: "10:00", minutes: 60, title: "Синхронізація команди" },
+  {
+    id: "seed-booking-01",
+    room: "Хортиця",
+    email: "alice@example.com",
+    dayOffset: 0,
+    start: "10:00",
+    minutes: 60,
+    title: "Синхронізація команди",
+  },
   // Starts exactly when the previous one ends: back-to-back is legal.
-  { id: "seed-booking-02", room: "Хортиця", email: "bob@example.com", dayOffset: 0, start: "11:00", minutes: 30, title: "Дзвінок із клієнтом" },
-  { id: "seed-booking-03", room: "Говерла", email: "bob@example.com", dayOffset: 1, start: "14:00", minutes: 120, title: "Планування спринту" },
-  { id: "seed-booking-04", room: "Світязь", email: "alice@example.com", dayOffset: 2, start: "09:00", minutes: 90, title: "Ретроспектива" },
-  { id: "seed-booking-05", room: "Синевир", email: "bob@example.com", dayOffset: 3, start: "16:00", minutes: 60, title: "Співбесіда" },
-  { id: "seed-booking-06", room: "Асканія-Нова", email: "alice@example.com", dayOffset: 4, start: "12:00", minutes: 30, title: "Зустріч з партнерами" },
-  { id: "seed-booking-07", room: "Хортиця", email: "alice@example.com", dayOffset: 7, start: "09:30", minutes: 60, title: "Демо для замовника" },
-  { id: "seed-booking-08", room: "Світязь", email: "bob@example.com", dayOffset: 8, start: "13:00", minutes: 120, title: "Воркшоп із дизайну" },
-  { id: "seed-booking-09", room: "Дністер", email: "alice@example.com", dayOffset: 9, start: "15:00", minutes: 60, title: "Один на один" },
+  {
+    id: "seed-booking-02",
+    room: "Хортиця",
+    email: "bob@example.com",
+    dayOffset: 0,
+    start: "11:00",
+    minutes: 30,
+    title: "Дзвінок із клієнтом",
+  },
+  {
+    id: "seed-booking-03",
+    room: "Говерла",
+    email: "bob@example.com",
+    dayOffset: 1,
+    start: "14:00",
+    minutes: 120,
+    title: "Планування спринту",
+  },
+  {
+    id: "seed-booking-04",
+    room: "Світязь",
+    email: "alice@example.com",
+    dayOffset: 2,
+    start: "09:00",
+    minutes: 90,
+    title: "Ретроспектива",
+  },
+  {
+    id: "seed-booking-05",
+    room: "Синевир",
+    email: "bob@example.com",
+    dayOffset: 3,
+    start: "16:00",
+    minutes: 60,
+    title: "Співбесіда",
+  },
+  {
+    id: "seed-booking-06",
+    room: "Асканія-Нова",
+    email: "alice@example.com",
+    dayOffset: 4,
+    start: "12:00",
+    minutes: 30,
+    title: "Зустріч з партнерами",
+  },
+  {
+    id: "seed-booking-07",
+    room: "Хортиця",
+    email: "alice@example.com",
+    dayOffset: 7,
+    start: "09:30",
+    minutes: 60,
+    title: "Демо для замовника",
+  },
+  {
+    id: "seed-booking-08",
+    room: "Світязь",
+    email: "bob@example.com",
+    dayOffset: 8,
+    start: "13:00",
+    minutes: 120,
+    title: "Воркшоп із дизайну",
+  },
+  {
+    id: "seed-booking-09",
+    room: "Дністер",
+    email: "alice@example.com",
+    dayOffset: 9,
+    start: "15:00",
+    minutes: 60,
+    title: "Один на один",
+  },
   // The longest booking the rules allow.
-  { id: "seed-booking-10", room: "Говерла", email: "bob@example.com", dayOffset: 10, start: "10:00", minutes: 240, title: "Технічна сесія" },
+  {
+    id: "seed-booking-10",
+    room: "Говерла",
+    email: "bob@example.com",
+    dayOffset: 10,
+    start: "10:00",
+    minutes: 240,
+    title: "Технічна сесія",
+  },
 ];
 
 async function seedBookings() {
-  const rooms = await prisma.room.findMany({ select: { id: true, name: true } });
-  const users = await prisma.user.findMany({ select: { id: true, email: true } });
+  const rooms = await prisma.room.findMany({
+    select: { id: true, name: true },
+  });
+  const users = await prisma.user.findMany({
+    select: { id: true, email: true },
+  });
   const roomIdByName = new Map(rooms.map((room) => [room.name, room.id]));
   const userIdByEmail = new Map(users.map((user) => [user.email, user.id]));
 
@@ -65,7 +149,9 @@ async function seedBookings() {
     const [hour, minute] = demo.start.split(":").map(Number);
     // Built in office time, stored in UTC: 10:00 stays 10:00 in Kyiv on both
     // sides of a DST switch.
-    const startsAt = weekStart.plus({ days: demo.dayOffset }).set({ hour, minute });
+    const startsAt = weekStart
+      .plus({ days: demo.dayOffset })
+      .set({ hour, minute });
     const endsAt = startsAt.plus({ minutes: demo.minutes });
 
     const data = {

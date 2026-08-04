@@ -8,7 +8,10 @@ export async function GET(request: Request) {
   const token = new URL(request.url).searchParams.get("token");
   const confirmed = token ? await confirmVerificationToken(token) : false;
 
-  const target = new URL(confirmed ? "/?verified=1" : "/?verified=0", request.url);
+  const target = new URL(
+    confirmed ? "/?verified=1" : "/?verified=0",
+    request.url,
+  );
 
   return NextResponse.redirect(target);
 }

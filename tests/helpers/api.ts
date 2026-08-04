@@ -60,7 +60,10 @@ export async function registerUser(email: string, name = "Тест Тестов�
 }
 
 /** Registers a user and leaves the address unconfirmed. */
-export async function registerUnverifiedUser(email: string, name = "Тест Тестовий") {
+export async function registerUnverifiedUser(
+  email: string,
+  name = "Тест Тестовий",
+) {
   const response = await api<{ id: string }>("/api/auth/register", {
     method: "POST",
     body: { name, email, password: "password123" },

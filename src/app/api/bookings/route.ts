@@ -36,7 +36,9 @@ export async function POST(request: Request) {
 
   const room = await prisma.room.findUnique({ where: { id: roomId } });
   if (!room) {
-    return await apiError(404, "NOT_FOUND", "ROOM_NOT_FOUND", { field: "roomId" });
+    return await apiError(404, "NOT_FOUND", "ROOM_NOT_FOUND", {
+      field: "roomId",
+    });
   }
 
   const titleError = validateTitle(title);
@@ -60,8 +62,8 @@ export async function POST(request: Request) {
     const [timeError] = validateBookingTime({ ...occurrence, now });
     if (timeError) {
       return await apiError(400, apiCodeFor(timeError.code), timeError.code, {
-      values: timeError.values,
-    });
+        values: timeError.values,
+      });
     }
   }
 
@@ -81,7 +83,9 @@ export async function POST(request: Request) {
     // The error format has no room for a list, so the dates go into the message
     // the user reads: knowing which weeks clash is the point of the refusal.
     const dates = series.conflicts
-      .map((date) => DateTime.fromJSDate(date).setZone(OFFICE_TZ).toFormat("dd.MM"))
+      .map((date) =>
+        DateTime.fromJSDate(date).setZone(OFFICE_TZ).toFormat("dd.MM"),
+      )
       .join(", ");
 
     return await apiError(409, "SLOT_TAKEN", "SLOT_TAKEN_DATES", {

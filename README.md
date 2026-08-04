@@ -34,10 +34,10 @@ npm run dev                 # http://localhost:3000
 
 ## Тестові користувачі
 
-| Пошта | Пароль | Ім'я |
-|---|---|---|
-| `alice@example.com` | `password123` | Аліса Тест |
-| `bob@example.com` | `password123` | Богдан Демо |
+| Пошта               | Пароль        | Ім'я        |
+| ------------------- | ------------- | ----------- |
+| `alice@example.com` | `password123` | Аліса Тест  |
+| `bob@example.com`   | `password123` | Богдан Демо |
 
 Обидва мають бронювання в сіді, тож видно і свої, і чужі: увійдіть під одним, і бронювання іншого в сітці будуть без кнопок дій.
 
@@ -47,18 +47,20 @@ npm run dev                 # http://localhost:3000
 
 ## Команди
 
-| Команда | Що робить |
-|---|---|
-| `npm run dev` | dev-сервер |
-| `npm run build` | продакшн-збірка |
-| `npm run verify` | усе перед здачею: типи, ESLint, юніт- та інтеграційні тести |
-| `npm test` | юніт-тести, далі інтеграційні |
-| `npm run test:unit` | лише юніт-тести, без бази |
-| `npm run test:integration` | лише інтеграційні тести API |
-| `npm run typecheck` | перевірка типів |
-| `npm run lint` | ESLint |
-| `npm run e2e` | Playwright: проходить живими екранами і знімає скріншоти в `e2e/screenshots/` |
-| `npm run db:up` / `npm run db:down` | підняти / зупинити Postgres |
+| Команда                             | Що робить                                                                     |
+| ----------------------------------- | ----------------------------------------------------------------------------- |
+| `npm run dev`                       | dev-сервер                                                                    |
+| `npm run build`                     | продакшн-збірка                                                               |
+| `npm run verify`                    | усе перед здачею: типи, ESLint, формат, юніт- та інтеграційні тести           |
+| `npm test`                          | юніт-тести, далі інтеграційні                                                 |
+| `npm run test:unit`                 | лише юніт-тести, без бази                                                     |
+| `npm run test:integration`          | лише інтеграційні тести API                                                   |
+| `npm run typecheck`                 | перевірка типів                                                               |
+| `npm run lint`                      | ESLint                                                                        |
+| `npm run format`                    | Prettier: відформатувати                                                      |
+| `npm run format:check`              | Prettier: лише перевірити                                                     |
+| `npm run e2e`                       | Playwright: проходить живими екранами і знімає скріншоти в `e2e/screenshots/` |
+| `npm run db:up` / `npm run db:down` | підняти / зупинити Postgres                                                   |
 
 ## Тести
 
@@ -70,7 +72,11 @@ npm run dev                 # http://localhost:3000
 
 Інтеграційний набір потребує піднятої бази; якщо її немає, він падає з підказкою `docker compose up -d`. Юніт-набір працює без неї.
 
-`npm run verify` проганяє типи, ESLint і обидва набори тестів однією командою — це те, що має бути зеленим перед здачею.
+`npm run verify` проганяє типи, ESLint, перевірку формату і обидва набори тестів однією командою — це те, що має бути зеленим перед здачею.
+
+Перед кожним комітом спрацьовує хук `.githooks/pre-commit`: він проганяє Prettier і ESLint **лише по файлах цього коміту**, тому займає секунди, а не хвилину. Шлях до хуків прописує `npm install` (скрипт `prepare`, `git config core.hooksPath .githooks`) — окремо налаштовувати нічого не треба. Типи й тести хук не запускає: це робота `npm run verify` наприкінці етапу, а не кожного коміту.
+
+Єдиний виняток серед e2e — `e2e/overflow.spec.ts`: він міряє, чи не ширша сторінка за екран, на якому стоїть. Горизонтальний скрол на телефоні ніхто ніколи не робить свідомо, і побачити його можна лише в справжньому браузері.
 
 Playwright (`npm run e2e`) — не про коректність, а про «подивитися застосунок»: він проходить живими екранами в браузері і знімає скріншоти в `e2e/screenshots/` на 1366×768, 768 і 360, у світлій і темній темах. Працює проти dev-сервера і сідованої бази, тож перед ним потрібні `docker compose up -d` і `npx tsx prisma/seed.ts`.
 
@@ -92,16 +98,16 @@ Playwright (`npm run e2e`) — не про коректність, а про «�
 
 ## Реалізовані бонуси
 
-| Бонус | Стан | Де дивитися |
-|---|---|---|
-| BONUS-1 Docker compose всього застосунку | ✅ | `Dockerfile`, `docker/entrypoint.sh`, `docker-compose.yml` |
-| BONUS-4 захист від гонки | ✅ | `src/lib/server/bookings.ts`, тест `bookings.race.test.ts` |
-| BONUS-6 інтеграційні тести API | ✅ | `tests/api/` |
-| BONUS-7 фільтр кімнат за місткістю | ✅ | головна сторінка, `GET /api/rooms?capacityMin=` |
-| BONUS-2 підтвердження email у dev | ✅ | `src/lib/server/verification.ts`, `VerificationBanner.tsx` |
-| BONUS-3 щотижневі повтори | ✅ | `src/lib/domain/recurrence.ts`, `src/lib/server/bookings.ts` |
-| BONUS-5 сповіщення про кінець бронювання | ✅ | `src/lib/domain/notifications.ts`, `src/lib/server/notifications.ts`, `NotificationBell.tsx` |
-| BONUS-8 повноцінний мобільний сценарій | ✅ | `src/components/schedule/Schedule.tsx`, `SwipeArea.tsx` |
+| Бонус                                    | Стан | Де дивитися                                                                                  |
+| ---------------------------------------- | ---- | -------------------------------------------------------------------------------------------- |
+| BONUS-1 Docker compose всього застосунку | ✅   | `Dockerfile`, `docker/entrypoint.sh`, `docker-compose.yml`                                   |
+| BONUS-4 захист від гонки                 | ✅   | `src/lib/server/bookings.ts`, тест `bookings.race.test.ts`                                   |
+| BONUS-6 інтеграційні тести API           | ✅   | `tests/api/`                                                                                 |
+| BONUS-7 фільтр кімнат за місткістю       | ✅   | головна сторінка, `GET /api/rooms?capacityMin=`                                              |
+| BONUS-2 підтвердження email у dev        | ✅   | `src/lib/server/verification.ts`, `VerificationBanner.tsx`                                   |
+| BONUS-3 щотижневі повтори                | ✅   | `src/lib/domain/recurrence.ts`, `src/lib/server/bookings.ts`                                 |
+| BONUS-5 сповіщення про кінець бронювання | ✅   | `src/lib/domain/notifications.ts`, `src/lib/server/notifications.ts`, `NotificationBell.tsx` |
+| BONUS-8 повноцінний мобільний сценарій   | ✅   | `src/components/schedule/Schedule.tsx`, `SwipeArea.tsx`                                      |
 
 ### Як влаштовані щотижневі повтори
 
@@ -161,18 +167,18 @@ Playwright (`npm run e2e`) — не про коректність, а про «�
 
 ## Структура
 
-| Тека | Що всередині |
-|---|---|
-| `src/app` | сторінки і API-роути |
-| `src/lib/domain` | чиста логіка: перетини, правила часу, геометрія сітки. Без залежностей від бази і фреймворка |
-| `src/lib/server` | база, сесії, паролі, сервіс бронювань |
-| `src/components` | UI |
-| `messages` | рядки інтерфейсу і повідомлень API: `uk.json`, `en.json` |
-| `prisma` | схема, міграції, сід |
-| `tests/api` | інтеграційні тести API |
-| `e2e` | Playwright: сценарії і скріншоти екранів |
-| `docs/demo.md` | маршрут огляду проєкту |
-| `docs/api-examples.md` | curl-приклади для ручної перевірки API |
+| Тека                   | Що всередині                                                                                 |
+| ---------------------- | -------------------------------------------------------------------------------------------- |
+| `src/app`              | сторінки і API-роути                                                                         |
+| `src/lib/domain`       | чиста логіка: перетини, правила часу, геометрія сітки. Без залежностей від бази і фреймворка |
+| `src/lib/server`       | база, сесії, паролі, сервіс бронювань                                                        |
+| `src/components`       | UI                                                                                           |
+| `messages`             | рядки інтерфейсу і повідомлень API: `uk.json`, `en.json`                                     |
+| `prisma`               | схема, міграції, сід                                                                         |
+| `tests/api`            | інтеграційні тести API                                                                       |
+| `e2e`                  | Playwright: сценарії і скріншоти екранів                                                     |
+| `docs/demo.md`         | маршрут огляду проєкту                                                                       |
+| `docs/api-examples.md` | curl-приклади для ручної перевірки API                                                       |
 
 ## Змінні оточення
 

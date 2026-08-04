@@ -52,9 +52,7 @@ export function RegisterForm() {
     }
 
     const body = await response?.json().catch(() => null);
-    setError(
-      body?.error ?? { code: "UNKNOWN", message: t("registerFailed") },
-    );
+    setError(body?.error ?? { code: "UNKNOWN", message: t("registerFailed") });
     setPending(false);
   }
 
@@ -63,7 +61,11 @@ export function RegisterForm() {
   const generalError = error && !error.field ? error.message : null;
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-[18px]" noValidate>
+    <form
+      onSubmit={handleSubmit}
+      className="flex flex-col gap-[18px]"
+      noValidate
+    >
       {/* Above the form: "this address is already registered" is not a fault of
           any single field the user is looking at. */}
       {generalError ? (
@@ -125,7 +127,12 @@ export function RegisterForm() {
         }
       />
 
-      <Button type="submit" size="lg" className="mt-0.5 h-12 w-full text-[15px]" disabled={pending}>
+      <Button
+        type="submit"
+        size="lg"
+        className="mt-0.5 h-12 w-full text-[15px]"
+        disabled={pending}
+      >
         {pending ? t("signingUp") : t("signUp")}
       </Button>
     </form>

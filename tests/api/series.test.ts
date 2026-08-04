@@ -58,10 +58,12 @@ describe("creating a series", () => {
     // switch to winter time keeps its wall-clock 10:00, and the interval in UTC
     // is an hour longer that week. Comparing in UTC would call that a bug.
     for (let index = 1; index < bookings.length; index++) {
-      const previous = DateTime.fromJSDate(bookings[index - 1].startsAt).setZone(
+      const previous = DateTime.fromJSDate(
+        bookings[index - 1].startsAt,
+      ).setZone(OFFICE_TZ);
+      const current = DateTime.fromJSDate(bookings[index].startsAt).setZone(
         OFFICE_TZ,
       );
-      const current = DateTime.fromJSDate(bookings[index].startsAt).setZone(OFFICE_TZ);
 
       expect(current.diff(previous, "days").days).toBe(7);
       expect(current.toFormat("HH:mm")).toBe(previous.toFormat("HH:mm"));
@@ -82,7 +84,9 @@ describe("creating a series", () => {
     expect(refused.body.error.code).toBe("SLOT_TAKEN");
     // The clashing week is named, otherwise the refusal is unactionable.
     expect(refused.body.error.message).toMatch(/\d{2}\.\d{2}/);
-    expect(await testPrisma.booking.count({ where: { userId: alice.id } })).toBe(0);
+    expect(
+      await testPrisma.booking.count({ where: { userId: alice.id } }),
+    ).toBe(0);
     expect(await testPrisma.bookingSeries.count()).toBe(0);
   });
 
@@ -105,7 +109,11 @@ describe("creating a series", () => {
   });
 
   it("leaves a single booking without a series", async () => {
-    const response = await book(alice.cookie, { roomId, title: "Одинична", ...slot() });
+    const response = await book(alice.cookie, {
+      roomId,
+      title: "Одинична",
+      ...slot(),
+    });
 
     expect(response.body.seriesId).toBeNull();
     expect(await testPrisma.bookingSeries.count()).toBe(0);
@@ -114,7 +122,12 @@ describe("creating a series", () => {
 
 describe("cancelling a series", () => {
   const createSeries = () =>
-    book(alice.cookie, { roomId, title: "Щотижнева", ...slot(), repeatWeeks: 4 });
+    book(alice.cookie, {
+      roomId,
+      title: "Щотижнева",
+      ...slot(),
+      repeatWeeks: 4,
+    });
 
   it("cancels only the chosen occurrence by default", async () => {
     const created = await createSeries();
@@ -126,21 +139,28 @@ describe("cancelling a series", () => {
 
     expect(canceled.status).toBe(204);
     expect(
-      await testPrisma.booking.count({ where: { userId: alice.id, canceledAt: null } }),
+      await testPrisma.booking.count({
+        where: { userId: alice.id, canceledAt: null },
+      }),
     ).toBe(3);
   });
 
   it("cancels the whole series when asked", async () => {
     const created = await createSeries();
 
-    const canceled = await api(`/api/bookings/${created.body.id}?scope=series`, {
-      method: "DELETE",
-      cookie: alice.cookie,
-    });
+    const canceled = await api(
+      `/api/bookings/${created.body.id}?scope=series`,
+      {
+        method: "DELETE",
+        cookie: alice.cookie,
+      },
+    );
 
     expect(canceled.status).toBe(204);
     expect(
-      await testPrisma.booking.count({ where: { userId: alice.id, canceledAt: null } }),
+      await testPrisma.booking.count({
+        where: { userId: alice.id, canceledAt: null },
+      }),
     ).toBe(0);
   });
 
@@ -151,7 +171,11 @@ describe("cancelling a series", () => {
       cookie: alice.cookie,
     });
 
-    const reused = await book(bob.cookie, { roomId, title: "Богдан", ...slot(2) });
+    const reused = await book(bob.cookie, {
+      roomId,
+      title: "Богдан",
+      ...slot(2),
+    });
 
     expect(reused.status).toBe(201);
   });
@@ -182,21 +206,27 @@ describe("cancelling a series", () => {
 
     // Cancelling a series must not rewrite what already took place.
     expect(
-      (await testPrisma.booking.findUniqueOrThrow({ where: { id: past.id } })).canceledAt,
+      (await testPrisma.booking.findUniqueOrThrow({ where: { id: past.id } }))
+        .canceledAt,
     ).toBeNull();
   });
 
   it("refuses to cancel someone else's series", async () => {
     const created = await createSeries();
 
-    const hijacked = await api<ErrorBody>(`/api/bookings/${created.body.id}?scope=series`, {
-      method: "DELETE",
-      cookie: bob.cookie,
-    });
+    const hijacked = await api<ErrorBody>(
+      `/api/bookings/${created.body.id}?scope=series`,
+      {
+        method: "DELETE",
+        cookie: bob.cookie,
+      },
+    );
 
     expect(hijacked.status).toBe(403);
     expect(
-      await testPrisma.booking.count({ where: { userId: alice.id, canceledAt: null } }),
+      await testPrisma.booking.count({
+        where: { userId: alice.id, canceledAt: null },
+      }),
     ).toBe(4);
   });
 });

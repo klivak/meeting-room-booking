@@ -14,7 +14,9 @@ export default getRequestConfig(async () => {
     return { locale: chosen, messages: await load(chosen) };
   }
 
-  const locale = preferredLocale((await headers()).get("accept-language") ?? "");
+  const locale = preferredLocale(
+    (await headers()).get("accept-language") ?? "",
+  );
 
   return { locale, messages: await load(locale) };
 });

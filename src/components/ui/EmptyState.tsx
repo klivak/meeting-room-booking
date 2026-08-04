@@ -22,7 +22,9 @@ export function EmptyState({
         className="grid-rows-day pointer-events-none absolute inset-0 opacity-70"
       />
       <SlotMotif className="relative mb-1" />
-      <p className="relative text-xl font-extrabold tracking-[-0.02em]">{title}</p>
+      <p className="relative text-xl font-extrabold tracking-[-0.02em]">
+        {title}
+      </p>
       {description ? (
         <p className="text-text-secondary relative max-w-[38ch] text-sm leading-relaxed">
           {description}

@@ -17,7 +17,8 @@ const listeners = new Set<() => void>();
 /** Puts a choice on the document, resolving "system" against the OS setting. */
 function apply(theme: Theme) {
   const dark =
-    theme === "dark" || (theme === "system" && window.matchMedia(DARK_QUERY).matches);
+    theme === "dark" ||
+    (theme === "system" && window.matchMedia(DARK_QUERY).matches);
 
   document.documentElement.dataset.theme = dark ? "dark" : "light";
 }

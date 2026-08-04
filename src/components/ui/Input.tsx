@@ -23,7 +23,10 @@ export function Input({
   return (
     <div className="flex flex-col gap-1">
       <span className="flex items-baseline gap-2">
-        <label htmlFor={id} className="text-text-secondary text-[12.5px] font-bold">
+        <label
+          htmlFor={id}
+          className="text-text-secondary text-[12.5px] font-bold"
+        >
           {label}
         </label>
         {labelSuffix ? <span className="ml-auto">{labelSuffix}</span> : null}
@@ -54,7 +57,10 @@ export function Input({
         ) : null}
       </span>
       {error ? (
-        <p id={errorId} className="text-danger-ink text-xs leading-snug font-semibold">
+        <p
+          id={errorId}
+          className="text-danger-ink text-xs leading-snug font-semibold"
+        >
           {error}
         </p>
       ) : null}

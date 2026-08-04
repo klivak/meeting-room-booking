@@ -13,7 +13,11 @@ describe("register", () => {
       "/api/auth/register",
       {
         method: "POST",
-        body: { name: "Аліса", email: "alice@example.com", password: "password123" },
+        body: {
+          name: "Аліса",
+          email: "alice@example.com",
+          password: "password123",
+        },
       },
     );
 
@@ -31,7 +35,11 @@ describe("register", () => {
   it("stores the email normalized and refuses a second account for it", async () => {
     await api("/api/auth/register", {
       method: "POST",
-      body: { name: "Аліса", email: "  Alice@Example.COM  ", password: "password123" },
+      body: {
+        name: "Аліса",
+        email: "  Alice@Example.COM  ",
+        password: "password123",
+      },
     });
 
     const stored = await testPrisma.user.findMany({ select: { email: true } });
@@ -41,7 +49,11 @@ describe("register", () => {
       "/api/auth/register",
       {
         method: "POST",
-        body: { name: "Інша", email: "ALICE@example.com", password: "password123" },
+        body: {
+          name: "Інша",
+          email: "ALICE@example.com",
+          password: "password123",
+        },
       },
     );
 
@@ -67,7 +79,11 @@ describe("register", () => {
   it("refuses a blank name and a malformed email", async () => {
     const blankName = await api("/api/auth/register", {
       method: "POST",
-      body: { name: "   ", email: "alice@example.com", password: "password123" },
+      body: {
+        name: "   ",
+        email: "alice@example.com",
+        password: "password123",
+      },
     });
     const badEmail = await api("/api/auth/register", {
       method: "POST",
@@ -84,7 +100,11 @@ describe("login", () => {
   beforeEach(async () => {
     await api("/api/auth/register", {
       method: "POST",
-      body: { name: "Аліса", email: "alice@example.com", password: "password123" },
+      body: {
+        name: "Аліса",
+        email: "alice@example.com",
+        password: "password123",
+      },
     });
   });
 
@@ -99,14 +119,18 @@ describe("login", () => {
   });
 
   it("answers the same way for a wrong password and an unknown email", async () => {
-    const wrongPassword = await api<{ error: { code: string; message: string } }>(
-      "/api/auth/login",
-      { method: "POST", body: { email: "alice@example.com", password: "wrong-one" } },
-    );
-    const unknownEmail = await api<{ error: { code: string; message: string } }>(
-      "/api/auth/login",
-      { method: "POST", body: { email: "nobody@example.com", password: "password123" } },
-    );
+    const wrongPassword = await api<{
+      error: { code: string; message: string };
+    }>("/api/auth/login", {
+      method: "POST",
+      body: { email: "alice@example.com", password: "wrong-one" },
+    });
+    const unknownEmail = await api<{
+      error: { code: string; message: string };
+    }>("/api/auth/login", {
+      method: "POST",
+      body: { email: "nobody@example.com", password: "password123" },
+    });
 
     expect(wrongPassword.status).toBe(401);
     expect(unknownEmail.status).toBe(401);
@@ -119,7 +143,11 @@ describe("session", () => {
   it("survives as long as the row exists and dies with logout", async () => {
     const registered = await api("/api/auth/register", {
       method: "POST",
-      body: { name: "Аліса", email: "alice@example.com", password: "password123" },
+      body: {
+        name: "Аліса",
+        email: "alice@example.com",
+        password: "password123",
+      },
     });
     const cookie = registered.cookie;
 
@@ -137,7 +165,11 @@ describe("session", () => {
   it("rejects a tampered cookie", async () => {
     const registered = await api("/api/auth/register", {
       method: "POST",
-      body: { name: "Аліса", email: "alice@example.com", password: "password123" },
+      body: {
+        name: "Аліса",
+        email: "alice@example.com",
+        password: "password123",
+      },
     });
 
     const tampered = `${registered.cookie}x`;
@@ -147,12 +179,20 @@ describe("session", () => {
   it("refuses an expired session", async () => {
     const registered = await api("/api/auth/register", {
       method: "POST",
-      body: { name: "Аліса", email: "alice@example.com", password: "password123" },
+      body: {
+        name: "Аліса",
+        email: "alice@example.com",
+        password: "password123",
+      },
     });
 
-    await testPrisma.session.updateMany({ data: { expiresAt: new Date(Date.now() - 1000) } });
+    await testPrisma.session.updateMany({
+      data: { expiresAt: new Date(Date.now() - 1000) },
+    });
 
-    expect((await api("/api/auth/me", { cookie: registered.cookie })).status).toBe(401);
+    expect(
+      (await api("/api/auth/me", { cookie: registered.cookie })).status,
+    ).toBe(401);
   });
 });
 
