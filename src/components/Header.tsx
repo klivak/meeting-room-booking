@@ -44,9 +44,13 @@ export async function Header({ user }: { user: CurrentUser }) {
           <ThemeToggle />
         </div>
 
-        <div className="hidden items-center gap-[9px] pl-1 sm:flex">
+        {/* The avatar arrives with the name it belongs to, not before it, and
+            only once the row can pay for both: at 768 they were 15px more than
+            it had, and a bare initial beside no name says nothing the menu does
+            not already say. */}
+        <div className="hidden items-center gap-[9px] pl-1 lg:flex">
           <Avatar name={user.name} />
-          <span className="text-text-primary hidden text-[13px] font-semibold md:inline">
+          <span className="text-text-primary text-[13px] font-semibold">
             {user.name}
           </span>
         </div>

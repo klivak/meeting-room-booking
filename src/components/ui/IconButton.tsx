@@ -23,7 +23,7 @@ export function IconButton({
       type={type}
       aria-label={label}
       title={label}
-      className={`focus-ring border-border-grid text-text-secondary hover:text-text-primary hover:border-border-control rounded-chip relative flex h-11 w-11 shrink-0 items-center justify-center border transition sm:h-9 sm:w-9 ${
+      className={`focus-ring border-border-grid text-text-secondary hover:text-text-primary hover:border-border-control rounded-chip relative flex h-11 w-11 shrink-0 items-center justify-center border transition active:scale-[0.94] sm:h-9 sm:w-9 ${
         active ? "bg-surface-raised text-text-primary" : "bg-surface-muted"
       } ${className ?? ""}`}
       {...props}

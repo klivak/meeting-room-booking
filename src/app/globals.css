@@ -107,9 +107,12 @@
 
   /* Four levels above zero: at rest → card → floating panel → modal. */
   --shadow-rest: 0 1px 2px rgb(16 40 34 / 0.04);
-  --shadow-card: 0 1px 2px rgb(16 40 34 / 0.05), 0 8px 24px -18px rgb(16 40 34 / 0.3);
-  --shadow-panel: 0 30px 70px -24px rgb(16 40 34 / 0.4), 0 2px 8px rgb(16 40 34 / 0.06);
-  --shadow-modal: 0 40px 90px -30px rgb(16 40 34 / 0.45), 0 4px 12px rgb(16 40 34 / 0.1);
+  --shadow-card:
+    0 1px 2px rgb(16 40 34 / 0.05), 0 8px 24px -18px rgb(16 40 34 / 0.3);
+  --shadow-panel:
+    0 30px 70px -24px rgb(16 40 34 / 0.4), 0 2px 8px rgb(16 40 34 / 0.06);
+  --shadow-modal:
+    0 40px 90px -30px rgb(16 40 34 / 0.45), 0 4px 12px rgb(16 40 34 / 0.1);
   --shadow-accent: 0 8px 20px -8px var(--color-accent-glow);
 
   /* Three curves and the durations the handoff specifies. */
@@ -203,8 +206,10 @@
      the hue and buys separation with opacity instead. */
   --shadow-rest: 0 1px 3px rgb(0 0 0 / 0.5);
   --shadow-card: 0 20px 50px -30px rgb(0 0 0 / 0.7), 0 1px 3px rgb(0 0 0 / 0.5);
-  --shadow-panel: 0 30px 70px -24px rgb(0 0 0 / 0.75), 0 2px 8px rgb(0 0 0 / 0.5);
-  --shadow-modal: 0 40px 90px -30px rgb(0 0 0 / 0.85), 0 6px 16px rgb(0 0 0 / 0.6);
+  --shadow-panel:
+    0 30px 70px -24px rgb(0 0 0 / 0.75), 0 2px 8px rgb(0 0 0 / 0.5);
+  --shadow-modal:
+    0 40px 90px -30px rgb(0 0 0 / 0.85), 0 6px 16px rgb(0 0 0 / 0.6);
 }
 
 /* A taller half hour once there is room for one. A 185px wide column at a 28px
@@ -338,7 +343,8 @@
     repeating-linear-gradient(
       to bottom,
       transparent 0 calc(var(--spacing-slot) - 1px),
-      var(--color-border-grid-half) calc(var(--spacing-slot) - 1px) var(--spacing-slot)
+      var(--color-border-grid-half) calc(var(--spacing-slot) - 1px)
+        var(--spacing-slot)
     ),
     repeating-linear-gradient(
       to bottom,
@@ -517,4 +523,46 @@ body {
 /* Times, dates and counters line up in columns only with tabular figures. */
 .font-mono {
   font-variant-numeric: tabular-nums;
+}
+
+/* Scrollbars are furniture, not content. The system default is a wide opaque
+   bar that reads as another column of the schedule; this is a thin rounded
+   thumb on no track at all, dimmed until the pointer is on it. The border plus
+   background-clip is what makes the thumb narrower than the gutter it needs —
+   a 4px scrollbar is a 4px hit area, and this keeps the full width clickable.
+   Left alone on coarse pointers: a phone draws its own overlay bar, and it
+   fades on its own. */
+@media (pointer: fine) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border-grid) transparent;
+  }
+
+  *:hover {
+    scrollbar-color: var(--color-border-control) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 11px;
+    height: 11px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--color-border-grid);
+    background-clip: content-box;
+    border: 3px solid transparent;
+    border-radius: 999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-border-control);
+  }
+
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
 }

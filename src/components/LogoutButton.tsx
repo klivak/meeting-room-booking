@@ -25,7 +25,11 @@ export function LogoutButton() {
     <Button
       variant="secondary"
       size="sm"
-      className="min-w-0 px-3"
+      // Important, because two competing min-widths in one class list are
+      // settled by the stylesheet and not by the order they are written in: the
+      // 96px floor every button carries is what pushed this one off the right
+      // edge of a 768px header.
+      className="min-w-0! px-3"
       onClick={handleLogout}
       disabled={pending}
     >

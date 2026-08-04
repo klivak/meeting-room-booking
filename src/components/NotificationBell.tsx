@@ -33,7 +33,9 @@ export function NotificationBell() {
   );
 
   const [items, setItems] = useState<Notification[]>([]);
-  const [status, setStatus] = useState<"loading" | "ready" | "failed">("loading");
+  const [status, setStatus] = useState<"loading" | "ready" | "failed">(
+    "loading",
+  );
   const [open, setOpen] = useState(false);
   // Ids already announced, so reopening the app does not toast the same warning twice.
   const announced = useRef(new Set<string>());
@@ -131,7 +133,7 @@ export function NotificationBell() {
         onClick={() => setOpen((current) => !current)}
         aria-label={count > 0 ? t("bellCount", { count }) : t("bellEmpty")}
         aria-expanded={open}
-        className={`focus-ring border-border-grid text-text-secondary hover:text-text-primary hover:border-border-control rounded-chip relative flex h-11 w-11 shrink-0 items-center justify-center border transition sm:h-9 sm:w-9 ${
+        className={`focus-ring border-border-grid text-text-secondary hover:text-text-primary hover:border-border-control rounded-chip relative flex h-11 w-11 shrink-0 items-center justify-center border transition active:scale-[0.94] sm:h-9 sm:w-9 ${
           open ? "bg-surface-raised text-text-primary" : "bg-surface-muted"
         }`}
       >
@@ -152,8 +154,11 @@ export function NotificationBell() {
         ) : null}
       </button>
 
+      {/* 320px wherever there is room for it, and never wider than the screen it
+          hangs off: anchored to the right of a bell that sits near the right
+          edge, a fixed 320px panel ran off the left of a 360px phone. */}
       {open ? (
-        <div className="border-glass-edge bg-glass rounded-card shadow-panel animate-panel absolute right-0 z-40 mt-1.5 w-80 overflow-hidden border backdrop-blur-xl">
+        <div className="border-glass-edge bg-glass rounded-card shadow-panel animate-panel absolute right-0 z-40 mt-1.5 w-[min(20rem,calc(100vw-1.5rem))] overflow-hidden border backdrop-blur-xl">
           <div className="border-border-grid flex items-center justify-between border-b px-4 py-3.5">
             <span className="text-sm font-extrabold">{t("title")}</span>
             {count > 0 ? (
@@ -170,7 +175,10 @@ export function NotificationBell() {
           {status === "loading" ? (
             <div aria-hidden className="flex flex-col gap-3 px-4 py-4">
               <Skeleton className="h-3 w-full" />
-              <Skeleton className="h-3 w-4/5" style={{ animationDelay: "120ms" }} />
+              <Skeleton
+                className="h-3 w-4/5"
+                style={{ animationDelay: "120ms" }}
+              />
             </div>
           ) : status === "failed" ? (
             <p className="text-text-secondary px-4 py-4 text-[13px] leading-relaxed">
@@ -197,7 +205,9 @@ export function NotificationBell() {
                       {t("item", { title: item.title, room: item.roomName })}
                     </span>
                     <span className="text-text-tertiary font-mono text-xs">
-                      {DateTime.fromISO(item.endsAt).setZone(timeZone).toFormat("HH:mm")}
+                      {DateTime.fromISO(item.endsAt)
+                        .setZone(timeZone)
+                        .toFormat("HH:mm")}
                     </span>
                   </span>
                 </li>
