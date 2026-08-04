@@ -17,7 +17,11 @@ import {
 } from "@/components/viewerTimeZone";
 import { createBookingSchema, messageKeyFor } from "@/lib/domain/bookingInput";
 import { MAX_TITLE_LENGTH, validateTitle } from "@/lib/domain/bookingRules";
-import { MAX_DURATION_MINUTES, OFFICE_TZ, SLOT_MINUTES } from "@/lib/domain/constants";
+import {
+  MAX_DURATION_MINUTES,
+  OFFICE_TZ,
+  SLOT_MINUTES,
+} from "@/lib/domain/constants";
 import { intervalsOverlap } from "@/lib/domain/overlap";
 import { MAX_OCCURRENCES, MIN_OCCURRENCES } from "@/lib/domain/recurrence";
 import { getWeekStart } from "@/lib/domain/week";
@@ -146,7 +150,9 @@ function BookingForm({
 
   // Editing prefills from the booking; creating starts at the picked cell. A
   // dragged range brings its own end, a plain click means "this half hour".
-  const start = DateTime.fromISO(booking?.startsAt ?? slot ?? "", { zone: OFFICE_TZ });
+  const start = DateTime.fromISO(booking?.startsAt ?? slot ?? "", {
+    zone: OFFICE_TZ,
+  });
   const initialStart = Math.min(getSlotIndex(start.toJSDate()), SLOT_COUNT - 1);
   const initialEnd = booking
     ? getSlotIndex(new Date(booking.endsAt))
@@ -154,7 +160,9 @@ function BookingForm({
       ? getSlotIndex(new Date(slotEnd))
       : initialStart + 1;
 
-  const [selectedRoomId, setSelectedRoomId] = useState(booking?.roomId ?? roomId);
+  const [selectedRoomId, setSelectedRoomId] = useState(
+    booking?.roomId ?? roomId,
+  );
   const [date, setDate] = useState(start.toISODate() ?? "");
   const [startIndex, setStartIndex] = useState(initialStart);
   const [endIndex, setEndIndex] = useState(initialEnd);
@@ -166,9 +174,15 @@ function BookingForm({
   const [pending, setPending] = useState(false);
 
   // Where the panel was dragged to; null means it sits where CSS put it.
-  const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
+  const [position, setPosition] = useState<{ x: number; y: number } | null>(
+    null,
+  );
   const dragOffset = useRef<{ x: number; y: number } | null>(null);
-  const isWide = useSyncExternalStore(subscribeToWideScreen, readWide, readNotWide);
+  const isWide = useSyncExternalStore(
+    subscribeToWideScreen,
+    readWide,
+    readNotWide,
+  );
 
   const day = DateTime.fromISO(date, { zone: OFFICE_TZ });
   // The date field can be cleared or left half typed, and the slot labels do
@@ -184,9 +198,9 @@ function BookingForm({
   // necessarily the room and week the grid behind the panel is showing. They are
   // read only to warn before saving: the server checks the overlap again and has
   // the final word.
-  const [taken, setTaken] = useState<{ id: string; startsAt: string; endsAt: string }[]>(
-    [],
-  );
+  const [taken, setTaken] = useState<
+    { id: string; startsAt: string; endsAt: string }[]
+  >([]);
   const weekStartIso = day.isValid
     ? (getWeekStart(day, WEEK_START_DAY).toUTC().toISO() ?? "")
     : "";
@@ -280,9 +294,15 @@ function BookingForm({
         ),
     );
 
-  const close = (targetRoomId: string) => {
+  // `saved` is what decides whether the page is refetched. Dismissing the panel
+  // changed nothing on the server, and refreshing anyway made the close wait on
+  // a full re-render of the room page before the panel went away.
+  const close = (targetRoomId: string, saved = false) => {
     router.replace(`/rooms/${targetRoomId}?week=${weekParam}`);
-    router.refresh();
+
+    if (saved) {
+      router.refresh();
+    }
 
     // The panel took the focus when it opened, and closing it would drop the
     // focus on the body — the next Tab would then start again from the top of
@@ -295,7 +315,9 @@ function BookingForm({
   const changeStart = (nextStart: number) => {
     setStartIndex(nextStart);
     const bounds = getEndSlotBounds(nextStart);
-    setEndIndex((current) => Math.min(Math.max(current, bounds.min), bounds.max));
+    setEndIndex((current) =>
+      Math.min(Math.max(current, bounds.min), bounds.max),
+    );
   };
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -363,7 +385,7 @@ function BookingForm({
 
     if (response?.ok) {
       showToast(booking ? t("updated") : t("created"));
-      close(selectedRoomId);
+      close(selectedRoomId, true);
       return;
     }
 
@@ -450,7 +472,10 @@ function BookingForm({
 
     setPosition({
       x,
-      y: Math.max(margin, Math.min(schedule.top, window.innerHeight - panel.height - margin)),
+      y: Math.max(
+        margin,
+        Math.min(schedule.top, window.innerHeight - panel.height - margin),
+      ),
     });
   }
 
@@ -581,20 +606,29 @@ function BookingForm({
                 role="alert"
                 className="bg-danger-surface border-danger-border text-danger-ink rounded-control flex gap-2.5 border px-3.5 py-3 text-[13px] leading-snug font-semibold"
               >
-                <CircleAlert aria-hidden="true" className="mt-px size-4 flex-none" />
+                <CircleAlert
+                  aria-hidden="true"
+                  className="mt-px size-4 flex-none"
+                />
                 {generalError}
               </p>
             ) : null}
 
             {booking?.seriesId ? (
               <p className="bg-warning-surface text-warning-ink rounded-control px-3.5 py-3 text-[13px] leading-snug font-semibold">
-                <Repeat aria-hidden="true" className="mr-1.5 inline size-3.5 align-[-2px]" />
+                <Repeat
+                  aria-hidden="true"
+                  className="mr-1.5 inline size-3.5 align-[-2px]"
+                />
                 {t("seriesNote")}
               </p>
             ) : null}
 
             <div className="flex flex-col gap-1">
-              <label htmlFor="room" className="text-text-secondary text-[11.5px] font-bold">
+              <label
+                htmlFor="room"
+                className="text-text-secondary text-[11.5px] font-bold"
+              >
                 {t("room")}
               </label>
               <select
@@ -623,7 +657,10 @@ function BookingForm({
                 picked without dragging. */}
             <div className="flex flex-wrap gap-2">
               <div className="flex w-full min-w-0 flex-col gap-1">
-                <label htmlFor="date" className="text-text-secondary text-[11.5px] font-bold">
+                <label
+                  htmlFor="date"
+                  className="text-text-secondary text-[11.5px] font-bold"
+                >
                   {t("date")}
                 </label>
                 <input
@@ -632,13 +669,19 @@ function BookingForm({
                   value={date}
                   onChange={(event) => setDate(event.target.value)}
                   aria-invalid={fieldError("date") ? true : undefined}
-                  aria-describedby={fieldError("date") ? "date-error" : undefined}
+                  aria-describedby={
+                    fieldError("date") ? "date-error" : undefined
+                  }
                   className={`${SELECT_CLASS} font-mono text-[13px] ${
                     fieldError("date") ? "border-danger" : ""
                   }`}
                 />
                 {fieldError("date") ? (
-                  <p id="date-error" role="alert" className="text-danger-ink text-xs">
+                  <p
+                    id="date-error"
+                    role="alert"
+                    className="text-danger-ink text-xs"
+                  >
                     {fieldError("date")}
                   </p>
                 ) : null}
@@ -666,7 +709,10 @@ function BookingForm({
               </div>
 
               <div className="flex min-w-0 flex-1 flex-col gap-1">
-                <label htmlFor="end" className="text-text-secondary text-[11.5px] font-bold">
+                <label
+                  htmlFor="end"
+                  className="text-text-secondary text-[11.5px] font-bold"
+                >
                   {t("end")}
                 </label>
                 <select
@@ -686,7 +732,10 @@ function BookingForm({
                   ).map((index) => (
                     <option key={index} value={index}>
                       {getSlotLabel(labelDay, index, timeZone)} ·{" "}
-                      {durationLabel((index - startIndex) * SLOT_MINUTES, tDuration)}
+                      {durationLabel(
+                        (index - startIndex) * SLOT_MINUTES,
+                        tDuration,
+                      )}
                     </option>
                   ))}
                 </select>
@@ -701,7 +750,10 @@ function BookingForm({
                 aria-live="polite"
                 className="border-danger-border bg-danger-surface text-danger-ink rounded-control flex items-start gap-2.5 border px-3.5 py-3 text-[13px] leading-snug font-semibold"
               >
-                <CircleAlert aria-hidden="true" className="mt-px size-4 flex-none" />
+                <CircleAlert
+                  aria-hidden="true"
+                  className="mt-px size-4 flex-none"
+                />
                 {t("clash")}
               </p>
             ) : null}
@@ -777,36 +829,48 @@ function BookingForm({
             />
 
             {booking ? null : (
-              <div className="border-border-grid rounded-control flex flex-wrap items-center gap-2.5 border p-3">
-                <input
-                  id="repeat"
-                  type="checkbox"
-                  checked={repeat}
-                  onChange={(event) => setRepeat(event.target.checked)}
-                  className="accent-accent-own-booking focus-ring size-[18px] rounded-[5px]"
-                />
-                <label htmlFor="repeat" className="flex-1 text-[13px] font-semibold">
-                  <Repeat aria-hidden="true" className="mr-1.5 inline size-3.5 align-[-2px]" />
+              // Two lines on a phone rather than one squeezed one: side by side,
+              // the label wrapped under its own checkbox and left the count
+              // crushed against the edge.
+              <div className="border-border-grid rounded-control flex flex-col gap-2.5 border p-3 sm:flex-row sm:items-center">
+                <label
+                  htmlFor="repeat"
+                  className="flex flex-1 items-center gap-2.5 text-[13px] font-semibold"
+                >
+                  <input
+                    id="repeat"
+                    type="checkbox"
+                    checked={repeat}
+                    onChange={(event) => setRepeat(event.target.checked)}
+                    className="accent-accent-own-booking focus-ring size-[18px] shrink-0 rounded-[5px]"
+                  />
+                  <Repeat aria-hidden="true" className="size-3.5 shrink-0" />
                   {t("repeat")}
                 </label>
 
-                <select
-                  value={repeatWeeks}
-                  onChange={(event) => setRepeatWeeks(Number(event.target.value))}
-                  disabled={!repeat}
-                  aria-label={t("repeatCount")}
-                  className={`${SELECT_CLASS} min-h-11 font-mono text-[13px] sm:min-h-8 disabled:opacity-[0.45]`}
-                >
-                  {Array.from(
-                    { length: MAX_OCCURRENCES - MIN_OCCURRENCES + 1 },
-                    (_, offset) => MIN_OCCURRENCES + offset,
-                  ).map((count) => (
-                    <option key={count} value={count}>
-                      {count}
-                    </option>
-                  ))}
-                </select>
-                <span className="text-text-tertiary text-xs">{t("times")}</span>
+                <div className="flex items-center gap-2 ps-[30px] sm:ps-0">
+                  <select
+                    value={repeatWeeks}
+                    onChange={(event) =>
+                      setRepeatWeeks(Number(event.target.value))
+                    }
+                    disabled={!repeat}
+                    aria-label={t("repeatCount")}
+                    className={`${SELECT_CLASS} min-h-11 font-mono text-[13px] sm:min-h-8 disabled:opacity-[0.45]`}
+                  >
+                    {Array.from(
+                      { length: MAX_OCCURRENCES - MIN_OCCURRENCES + 1 },
+                      (_, offset) => MIN_OCCURRENCES + offset,
+                    ).map((count) => (
+                      <option key={count} value={count}>
+                        {count}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="text-text-tertiary text-xs">
+                    {t("times")}
+                  </span>
+                </div>
               </div>
             )}
           </div>
@@ -828,7 +892,12 @@ function BookingForm({
               </Button>
               {/* Wider than "Close": of the two ways out of the form, this is
                   the one the panel was opened for. */}
-              <Button type="submit" size="lg" disabled={pending} className="flex-1">
+              <Button
+                type="submit"
+                size="lg"
+                disabled={pending}
+                className="flex-1"
+              >
                 {pending ? t("saving") : booking ? t("save") : t("book")}
               </Button>
             </div>
