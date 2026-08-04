@@ -61,6 +61,11 @@ npm run dev                 # http://localhost:3000
 | `npm run format:check`              | Prettier: лише перевірити                                                     |
 | `npm run e2e`                       | Playwright: проходить живими екранами і знімає скріншоти в `e2e/screenshots/` |
 | `npm run db:up` / `npm run db:down` | підняти / зупинити Postgres                                                   |
+| `npm run db:migrate`                | створити й застосувати міграцію (dev)                                         |
+| `npm run db:deploy`                 | застосувати наявні міграції (prod)                                            |
+| `npm run db:seed`                   | сід: кімнати, користувачі, демо-бронювання                                    |
+| `npm run db:reset`                  | скинути базу, накатити міграції заново і сідувати                             |
+| `npm run db:studio`                 | Prisma Studio                                                                 |
 
 ## Тести
 
