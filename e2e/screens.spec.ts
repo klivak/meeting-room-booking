@@ -136,7 +136,11 @@ for (const theme of ["light", "dark"] as const) {
       await page.goto(`/rooms/${room.id}?week=2027-03-01`);
 
       // An empty week has to read as an opportunity, not as a failure.
-      await expect(page.getByText("Весь тиждень вільний")).toBeVisible();
+      // Both layouts render the note and CSS picks one, the same way the cells
+      // do, so the assertion has to name the visible one.
+      await expect(
+        page.getByText("Весь тиждень вільний").filter({ visible: true }),
+      ).toBeVisible();
 
       await shot(page, testInfo, "free-week");
     });

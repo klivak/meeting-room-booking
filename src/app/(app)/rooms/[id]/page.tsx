@@ -473,10 +473,9 @@ export default async function RoomPage({
 
           {/* Both are meta about the week on screen, so they share the line the
               name leaves free rather than each taking one of their own — at
-              1366x768 a second row here costs the grid its last half hour. */}
-          <span className="hidden lg:inline">
-            <TimeZoneNotice />
-          </span>
+              1366x768 a second row here costs the grid its last half hour.
+              The notice decides for itself when it is worth a line. */}
+          <TimeZoneNotice />
 
           <span className="text-text-primary hidden font-mono text-[13px] font-semibold lg:inline">
             {formatWeekRange(weekStart, locale)}

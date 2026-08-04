@@ -41,8 +41,14 @@ export function TimeZoneNotice() {
 
   return (
     <p
+      // A viewer sitting in another zone has to be told on every screen size:
+      // the grid really is shifted under them. The matching case says nothing
+      // they do not already know, so it waits for a screen wide enough to
+      // spend a line on it.
       className={`font-mono text-xs ${
-        shifted ? "text-warning-ink font-semibold" : "text-text-tertiary"
+        shifted
+          ? "text-warning-ink font-semibold"
+          : "text-text-tertiary hidden lg:block"
       }`}
     >
       {offset} · {shifted ? t("timezoneNotice", values) : t("officeHours", values)}

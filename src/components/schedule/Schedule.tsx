@@ -955,6 +955,26 @@ export function Schedule({
 
   const isWeekEmpty = placements.length === 0;
 
+  /**
+   * An empty week has to read as an opportunity rather than as a failure, so it
+   * is said over the empty columns themselves. A strip under the grid would
+   * push the legend off a 768px screen, which is the one thing this layout may
+   * not do — and it is built once because only one of the two views is ever on
+   * screen, and both of them need it.
+   */
+  const emptyWeekNote = isWeekEmpty ? (
+    <div className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 px-4 text-center">
+      <SlotMotif className="hidden sm:flex" />
+      <SlotMotif small className="sm:hidden" />
+      <span className="text-lg font-extrabold tracking-[-0.02em] sm:text-xl">
+        {t("emptyWeekTitle")}
+      </span>
+      <span className="text-text-secondary max-w-[34ch] text-[13px] text-balance sm:text-sm">
+        {t("emptyWeekText")}
+      </span>
+    </div>
+  ) : null;
+
   // Which half hours of each day are taken, and by whom, for the strip in the
   // week header. Two sets rather than one: the strip repeats the ownership
   // colours of the blocks below it, so a glance at the header already says
@@ -1076,6 +1096,7 @@ export function Schedule({
                     ),
                   )}
                 {renderSelection(dayIndex, day, DAY_ROW_H)}
+                {emptyWeekNote}
                 {now !== null && nowMarker?.dayIndex === dayIndex ? (
                   <div
                     aria-hidden
@@ -1213,21 +1234,7 @@ export function Schedule({
                 outside them there is nothing on the grid for it to point at.
                 Drawn as a sibling of the axis rather than inside the day
                 columns, so the label is not painted over by the sticky axis. */}
-            {/* An empty week has to read as an opportunity rather than as a
-                failure, so it is said over the empty columns themselves — a
-                banner under the grid would push the legend off a 768px screen,
-                which is the one thing the layout may not do. */}
-            {isWeekEmpty ? (
-              <div className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 text-center">
-                <SlotMotif />
-                <span className="text-xl font-extrabold tracking-[-0.02em]">
-                  {t("emptyWeekTitle")}
-                </span>
-                <span className="text-text-secondary max-w-[34ch] text-sm text-balance">
-                  {t("emptyWeekText")}
-                </span>
-              </div>
-            ) : null}
+            {emptyWeekNote}
 
             {nowMarker && now !== null ? (
               <div
