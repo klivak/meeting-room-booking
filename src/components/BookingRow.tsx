@@ -39,7 +39,12 @@ type BookingRowProps = {
  * while the link points at the office week that contains the booking — the same
  * week the grid would open.
  */
-export function BookingRow({ booking, now, highlight = false, actions }: BookingRowProps) {
+export function BookingRow({
+  booking,
+  now,
+  highlight = false,
+  actions,
+}: BookingRowProps) {
   const t = useTranslations("myBookings");
   const tSchedule = useTranslations("schedule");
   // Month names and weekday names follow the chosen language, not the office.
@@ -50,7 +55,9 @@ export function BookingRow({ booking, now, highlight = false, actions }: Booking
     readOfficeTimeZone,
   );
 
-  const start = DateTime.fromISO(booking.startsAt).setZone(timeZone).setLocale(locale);
+  const start = DateTime.fromISO(booking.startsAt)
+    .setZone(timeZone)
+    .setLocale(locale);
   const end = DateTime.fromISO(booking.endsAt).setZone(timeZone);
   const isRunning = booking.startsAt <= now && booking.endsAt > now;
 
@@ -92,7 +99,10 @@ export function BookingRow({ booking, now, highlight = false, actions }: Booking
             </Badge>
           ) : null}
         </span>
-        <span className="text-text-tertiary mt-1 block text-[13px]">
+        {/* The line heights of both columns are pinned rather than left to the
+            font: the skeleton has to stand exactly as tall as the row it stands
+            in for, or the list shifts when the data arrives. */}
+        <span className="text-text-tertiary mt-1 block text-[13px] leading-5">
           {booking.room.name}
         </span>
       </Link>
@@ -100,10 +110,10 @@ export function BookingRow({ booking, now, highlight = false, actions }: Booking
       {/* Time and date in their own column: what this page is really scanned for
           is the clock, so it lines up rather than sitting inside a sentence. */}
       <span className="flex flex-none flex-col items-start sm:w-[168px] sm:items-end">
-        <span className="font-mono text-[15px] font-semibold">
+        <span className="font-mono text-[15px] leading-6 font-semibold">
           {start.toFormat("HH:mm")} – {end.toFormat("HH:mm")}
         </span>
-        <span className="text-text-secondary font-mono text-[13px]">
+        <span className="text-text-secondary font-mono text-[13px] leading-5">
           {start.toFormat("ccc, dd.MM")}
         </span>
       </span>

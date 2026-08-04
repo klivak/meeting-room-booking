@@ -32,8 +32,10 @@ const TABS: BookingScope[] = ["upcoming", "past"];
 /** Office week that contains the booking, which is the week the grid opens. */
 function weekOf(startsAt: Date): string {
   return (
-    getWeekStart(DateTime.fromJSDate(startsAt).setZone(OFFICE_TZ), WEEK_START_DAY)
-      .toISODate() ?? ""
+    getWeekStart(
+      DateTime.fromJSDate(startsAt).setZone(OFFICE_TZ),
+      WEEK_START_DAY,
+    ).toISODate() ?? ""
   );
 }
 
@@ -48,13 +50,19 @@ async function BookingList({ tab }: { tab: BookingScope }) {
 
   // Same query and same paging rules the "show more" endpoint uses, so the
   // first page and every next one cannot start disagreeing.
-  const { items: bookings, nextCursor } = await getMyBookingsPage(user.id, tab, now);
+  const { items: bookings, nextCursor } = await getMyBookingsPage(
+    user.id,
+    tab,
+    now,
+  );
 
   if (bookings.length === 0) {
     return (
       <EmptyState
         title={tab === "upcoming" ? t("emptyUpcoming") : t("emptyPast")}
-        description={tab === "upcoming" ? t("emptyUpcomingText") : t("emptyPastText")}
+        description={
+          tab === "upcoming" ? t("emptyUpcomingText") : t("emptyPastText")
+        }
         action={
           tab === "upcoming" ? (
             <LinkButton href="/" variant="primary">
@@ -147,7 +155,10 @@ async function ListSkeleton() {
                 className="h-6 w-1/2"
                 style={{ animationDelay: `${index * 140}ms` }}
               />
-              <Skeleton className="h-4 w-1/3" />
+              {/* 24 + 4 + 20 = the 48px a row's two lines of text occupy; the
+                  row is as tall as this column, so a shorter bar here made the
+                  list jump the moment the data arrived. */}
+              <Skeleton className="h-5 w-1/3" />
             </div>
             <span className="flex flex-none flex-col gap-1 sm:w-[168px] sm:items-end">
               <Skeleton className="h-6 w-[90px]" />
@@ -199,7 +210,9 @@ export default async function MyBookingsPage({
         {TABS.map((option) => (
           <Link
             key={option}
-            href={option === "upcoming" ? "/my-bookings" : "/my-bookings?tab=past"}
+            href={
+              option === "upcoming" ? "/my-bookings" : "/my-bookings?tab=past"
+            }
             aria-current={option === tab ? "page" : undefined}
             className={`focus-ring relative -mb-px px-0.5 pb-3 text-[15px] no-underline transition ${
               option === tab
