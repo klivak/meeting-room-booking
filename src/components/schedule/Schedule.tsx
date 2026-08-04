@@ -572,7 +572,7 @@ export function Schedule({
             booking it would make: the axis is far away once the pointer is deep
             inside the week, and a bare highlight does not say "click to book". */}
         <span
-          className={`rounded-booking pointer-events-none absolute inset-x-1 inset-y-[2px] flex items-center justify-center gap-1 font-mono text-[11px] opacity-0 transition-opacity ${
+          className={`rounded-booking pointer-events-none absolute inset-x-1 inset-y-[2px] flex items-center justify-center gap-1 font-mono text-xs opacity-0 transition-opacity sm:text-[11px] ${
             canBook
               ? "border-accent-own-booking bg-accent-own-surface text-accent-own-ink border-[1.5px] border-dashed font-bold group-hover:opacity-100 group-focus-visible:opacity-100"
               : "text-text-tertiary group-focus-visible:opacity-100"
@@ -889,7 +889,7 @@ export function Schedule({
             a range one row tall has no middle, and the reading order of a
             calendar is downwards from the start. */}
         <span
-          className={`rounded-booking absolute -top-2.5 left-1.5 flex items-center gap-1 px-1.5 py-0.5 font-mono text-[10px] font-bold whitespace-nowrap text-white ${
+          className={`rounded-booking absolute -top-2.5 left-1.5 flex items-center gap-1 px-1.5 py-0.5 font-mono text-[11px] font-bold whitespace-nowrap text-white sm:text-[10px] ${
             refused ? "bg-danger-solid" : "bg-accent-own-ink"
           }`}
         >
@@ -942,7 +942,7 @@ export function Schedule({
             the half hours between them go unlabelled, so the axis reads as a
             scale instead of forty equal numbers. */}
         <span
-          className={`font-mono text-[10.5px] leading-none ${
+          className={`font-mono text-xs leading-none sm:text-[10.5px] ${
             rowIndex === 0 ? "" : "-translate-y-[5px]"
           } ${
             rowIndex % 2 === 0 ? "text-text-tertiary font-semibold" : "text-transparent"
@@ -1044,16 +1044,18 @@ export function Schedule({
                 aria-current={isSelected ? "page" : undefined}
                 className={`focus-ring rounded-control flex min-h-11 flex-1 flex-col items-center justify-center gap-0.5 no-underline ${
                   isSelected
-                    ? "bg-accent-own-booking text-accent-own-on"
-                    : `bg-surface-muted text-text-secondary ${
-                        isPastDay(option) ? "opacity-70" : ""
+                    ? "bg-accent-own-ink text-accent-own-on"
+                    : `bg-surface-muted ${
+                        // A dimmer word, not a dimmer layer: opacity on the pill
+                        // took its label under the contrast floor.
+                        isPastDay(option) ? "text-text-tertiary" : "text-text-secondary"
                       }`
                 }`}
               >
-                <span className="text-[10px] font-bold">
+                <span className="text-xs font-bold">
                   {option.setLocale(locale).toFormat("ccc")}
                 </span>
-                <span className="font-mono text-[11px] font-bold">
+                <span className="font-mono text-xs font-bold">
                   {option.toFormat("dd")}
                 </span>
               </Link>
@@ -1105,7 +1107,7 @@ export function Schedule({
                       top: rowSpan(nowMarker.ratio * SLOT_COUNT, DAY_ROW_H),
                     }}
                   >
-                    <span className="bg-now-label rounded-booking absolute -top-2.5 left-1.5 px-1.5 py-px font-mono text-[10px] font-bold text-white">
+                    <span className="bg-now-label rounded-booking absolute -top-2.5 left-1.5 px-1.5 py-px font-mono text-[11px] font-bold text-white">
                       {DateTime.fromMillis(now).setZone(timeZone).toFormat("HH:mm")}
                     </span>
                   </div>
@@ -1145,7 +1147,7 @@ export function Schedule({
                   // from the top edge.
                   className={`border-border-grid relative flex min-w-[5.5rem] flex-1 items-center justify-center border-l px-2.5 ${
                     isToday ? "bg-today-column" : ""
-                  } ${isPastDay(option) ? "opacity-60" : ""}`}
+                  } ${isPastDay(option) ? "[&_span]:text-text-tertiary" : ""}`}
                   style={{ height: `${HEADER_REM}rem` }}
                 >
                   <span className="flex items-baseline gap-1.5">

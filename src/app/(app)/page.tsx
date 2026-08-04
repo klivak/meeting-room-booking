@@ -142,13 +142,14 @@ async function RoomsList({ capacityMin }: { capacityMin?: number }) {
               className="focus-ring border-border-grid bg-surface rounded-card shadow-card hover:border-accent-own-booking hover:shadow-panel animate-block relative flex flex-col overflow-hidden border p-[22px] text-inherit no-underline transition hover:-translate-y-0.5"
             >
               {/* The capacity again, as a watermark: it gives the card a scale
-                  and a face without another line of text. */}
+                  and a face without another line of text. Drawn by a pseudo
+                  element rather than as a text node — at 6% it is a texture, and
+                  a contrast checker is right to call that unreadable prose. */}
               <span
                 aria-hidden="true"
-                className="text-accent-own-booking/[0.06] pointer-events-none absolute -top-8 -right-2.5 font-mono text-[120px] leading-none font-bold"
-              >
-                {room.capacity}
-              </span>
+                data-capacity={room.capacity}
+                className="text-accent-own-booking/[0.06] pointer-events-none absolute -top-8 -right-2.5 font-mono text-[120px] leading-none font-bold after:content-[attr(data-capacity)]"
+              />
 
               <span className="flex items-start justify-between gap-3">
                 <span className="flex flex-col gap-1">

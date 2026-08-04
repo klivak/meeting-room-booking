@@ -26,7 +26,7 @@ export default async function AppLayout({
       {/* First stop for a keyboard, so the grid full of cells can be jumped over. */}
       <a
         href="#main"
-        className="focus:bg-accent-own-booking focus:text-accent-own-on focus:shadow-panel sr-only focus:not-sr-only focus:absolute focus:top-2.5 focus:left-3 focus:z-90 focus:rounded-control focus:px-3 focus:py-2 focus:text-xs focus:font-semibold"
+        className="focus:bg-accent-own-ink focus:text-accent-own-on focus:shadow-panel sr-only focus:not-sr-only focus:absolute focus:top-2.5 focus:left-3 focus:z-90 focus:rounded-control focus:px-3 focus:py-2 focus:text-xs focus:font-semibold"
       >
         {t("skipToContent")}
       </a>

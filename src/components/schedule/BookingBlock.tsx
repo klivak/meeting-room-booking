@@ -81,7 +81,7 @@ const TITLE_TONES: Record<BookingState, string> = {
 };
 
 const CHIPS: Record<BookingState, string> = {
-  own: "bg-accent-own-booking text-accent-own-on",
+  own: "bg-accent-own-ink text-accent-own-on",
   finished: "bg-surface-muted text-text-tertiary",
   other: "bg-booking-other-surface text-booking-other-ink",
 };
@@ -142,7 +142,7 @@ export function BookingBlock({
   const authorChip = (
     <span
       aria-hidden="true"
-      className={`shrink-0 rounded-[5px] px-1.5 py-px text-[10px] leading-[1.4] font-bold ${CHIPS[state]}`}
+      className={`shrink-0 rounded-[5px] px-1.5 py-px text-[11px] leading-[1.4] font-bold sm:text-[10px] ${CHIPS[state]}`}
     >
       {booking.isMine ? t("youShort") : initials(booking.user.name)}
     </span>
@@ -168,12 +168,12 @@ export function BookingBlock({
   const content = compact ? (
     <span className="flex min-w-0 items-center gap-1.5">
       <span
-        className={`flex-none font-mono text-[10.5px] leading-tight font-semibold ${TIME_TONES[state]}`}
+        className={`flex-none font-mono text-xs leading-tight font-semibold sm:text-[10.5px] ${TIME_TONES[state]}`}
       >
         {start}
       </span>
       <span
-        className={`min-w-0 flex-1 truncate text-[11.5px] leading-tight font-bold ${TITLE_TONES[state]}`}
+        className={`min-w-0 flex-1 truncate text-xs leading-tight font-bold sm:text-[11.5px] ${TITLE_TONES[state]}`}
       >
         {booking.title}
       </span>
@@ -186,7 +186,7 @@ export function BookingBlock({
         {/* Never wrapped: "10:00-11:00" broken over two lines eats the row the
             title needs and reads as two different times. */}
         <span
-          className={`flex-none font-mono text-[10.5px] leading-tight font-semibold whitespace-nowrap ${TIME_TONES[state]}`}
+          className={`flex-none font-mono text-xs leading-tight font-semibold whitespace-nowrap sm:text-[10.5px] ${TIME_TONES[state]}`}
         >
           {range}
         </span>

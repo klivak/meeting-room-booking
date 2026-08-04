@@ -36,7 +36,7 @@ export async function LocaleSwitcher() {
             title={LOCALE_LABELS[locale]}
             className={`focus-ring-tight flex h-full items-center rounded-[6px] px-2.5 font-mono text-xs transition ${
               locale === current
-                ? "bg-accent-own-booking text-accent-own-on font-bold"
+                ? "bg-accent-own-ink text-accent-own-on font-bold"
                 : "text-text-secondary hover:text-text-primary font-semibold"
             }`}
           >

@@ -4,7 +4,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, cache } from "react";
 
 import {
   BookingPanel,
@@ -50,18 +50,19 @@ const RAIL_DOTS = {
   quiet: "bg-text-tertiary",
 };
 
+/**
+ * The room this page is about. Memoised per request: the title and the page
+ * body both need it, and Next renders generateMetadata alongside the page.
+ */
+const getRoom = cache((id: string) => prisma.room.findUnique({ where: { id } }));
+
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const room = await prisma.room.findUnique({
-    where: { id },
-    select: { name: true },
-  });
-
-  const t = await getTranslations("errors");
+  const [room, t] = await Promise.all([getRoom(id), getTranslations("errors")]);
 
   return { title: room ? room.name : t("appNotFoundTitle") };
 }
@@ -321,7 +322,7 @@ export default async function RoomPage({
   // Today's bookings come along for the rail: it carries a free/busy dot per
   // room, and a query per room would be six round trips for six dots.
   const [room, user, rooms, todaysBookings] = await Promise.all([
-    prisma.room.findUnique({ where: { id } }),
+    getRoom(id),
     getCurrentUser(),
     prisma.room.findMany({
       select: { id: true, name: true, floor: true, capacity: true },
@@ -427,7 +428,7 @@ export default async function RoomPage({
                     >
                       {option.name}
                     </span>
-                    <span className="text-text-tertiary font-mono text-[11px] whitespace-nowrap">
+                    <span className="text-text-tertiary font-mono text-xs whitespace-nowrap sm:text-[11px]">
                       {tRooms("roomMeta", {
                         floor: option.floor,
                         capacity: option.capacity,

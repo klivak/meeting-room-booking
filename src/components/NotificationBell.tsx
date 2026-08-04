@@ -196,7 +196,7 @@ export function NotificationBell() {
                     <span className="text-[13px] leading-snug font-semibold">
                       {t("item", { title: item.title, room: item.roomName })}
                     </span>
-                    <span className="text-text-tertiary font-mono text-[11px]">
+                    <span className="text-text-tertiary font-mono text-xs">
                       {DateTime.fromISO(item.endsAt).setZone(timeZone).toFormat("HH:mm")}
                     </span>
                   </span>

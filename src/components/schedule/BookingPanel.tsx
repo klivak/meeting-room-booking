@@ -730,7 +730,7 @@ function BookingForm({
                       className="focus-ring bg-accent-own-surface text-accent-own-ink rounded-chip flex items-center gap-1.5 px-3 py-2 text-[12.5px] font-bold transition hover:brightness-95"
                     >
                       {room.name}
-                      <span className="font-mono text-[11px] opacity-70">
+                      <span className="font-mono text-[11px]">
                         {room.capacity}
                       </span>
                     </button>

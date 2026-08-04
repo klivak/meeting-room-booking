@@ -31,16 +31,18 @@
 
   /* Text: three levels, all at or above 4.5:1 on both the surface and the page.
      The handoff put the muted level at #93A29C, which is 2.66:1 and unreadable
-     as body text; this is the same hue carried down to 5.1:1. */
+     as body text; this is the same hue carried down until it clears 4.5:1 on
+     the jade-tinted rows of the room rail too, which are the darkest ground any
+     of these sit on. */
   --color-text-primary: #12211c;
   --color-text-secondary: #5b6b65;
-  --color-text-tertiary: #63716b;
+  --color-text-tertiary: #5a6862;
 
   /* Jade. The vivid tone is for fills, bars and dots — graphics, where 3:1 is
-     the bar. Text on a light background uses the ink, which is 5.3:1; the
-     handoff's #0E8A66 sits at 4.33 and misses. */
+     the bar. Text uses the ink: 5.8:1 on the surface and 4.7:1 on the tinted
+     row it marks as active, which is where the handoff's #0E8A66 fell to 3.8. */
   --color-accent-own-booking: #17a67c;
-  --color-accent-own-ink: #0b7a5a;
+  --color-accent-own-ink: #0a7355;
   --color-accent-own-surface: rgb(23 166 124 / 0.12);
   --color-accent-own-fill: rgb(23 166 124 / 0.15);
   --color-accent-own-past: rgb(23 166 124 / 0.6);
@@ -153,8 +155,9 @@
 
   --color-text-primary: #eaf2ee;
   --color-text-secondary: #9db0a8;
-  /* The handoff's #6B7C75 is 3.7:1 on this surface; this is 5.2:1. */
-  --color-text-tertiary: #849590;
+  /* The handoff's #6B7C75 is 3.7:1 on this surface. This clears 4.5:1
+     everywhere it lands, the tinted active row of the room rail included. */
+  --color-text-tertiary: #8a9a93;
 
   --color-accent-own-booking: #2fcf9e;
   --color-accent-own-ink: #4fd1a5;
