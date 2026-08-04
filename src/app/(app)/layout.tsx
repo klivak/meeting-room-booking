@@ -19,7 +19,10 @@ export default async function AppLayout({
   }
 
   return (
-    <div className="bg-surface-sunken flex min-h-full flex-col">
+    <div className="bg-surface-sunken relative flex min-h-full flex-col">
+      {/* One jade bloom off the top right corner. It is what stops a page of
+          white cards from reading as a spreadsheet, and it costs one element. */}
+      <span aria-hidden="true" className="app-bloom pointer-events-none fixed inset-0" />
       {/* First stop for a keyboard, so the grid full of cells can be jumped over. */}
       <a
         href="#main"
@@ -32,7 +35,7 @@ export default async function AppLayout({
       {/* Tighter vertically than horizontally on purpose: the twenty half-hour
           rows of a week have to fit a 1366×768 laptop without the page
           scrolling, and every 8px of padding is 8px taken from the grid. */}
-      <main id="main" className="mx-auto w-full max-w-[1560px] flex-1 px-4 py-4">
+      <main id="main" className="relative mx-auto w-full max-w-[1560px] flex-1 px-4 py-5 sm:px-6">
         {children}
       </main>
       <Toaster />

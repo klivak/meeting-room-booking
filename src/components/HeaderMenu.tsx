@@ -58,8 +58,8 @@ export function HeaderMenu({
         aria-label={label}
         aria-expanded={open}
         aria-haspopup="menu"
-        className={`focus-ring border-border-grid text-text-secondary hover:text-text-primary rounded-control flex h-11 w-11 items-center justify-center border transition ${
-          open ? "bg-surface-muted" : "bg-surface"
+        className={`focus-ring border-border-grid text-text-secondary hover:text-text-primary rounded-chip flex h-11 w-11 items-center justify-center border transition ${
+          open ? "bg-surface-raised" : "bg-surface-muted"
         }`}
       >
         <Menu aria-hidden="true" className="size-5" />
@@ -75,7 +75,7 @@ export function HeaderMenu({
               setOpen(false);
             }
           }}
-          className="border-border-grid bg-surface rounded-card shadow-panel absolute top-full right-0 z-40 mt-1.5 flex w-[min(16rem,calc(100vw-2rem))] flex-col gap-2 border p-2.5"
+          className="border-glass-edge bg-glass rounded-card shadow-panel animate-panel absolute top-full right-0 z-40 mt-1.5 flex w-[min(16rem,calc(100vw-2rem))] flex-col gap-2 border p-2.5 backdrop-blur-xl"
         >
           {children}
         </div>

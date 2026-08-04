@@ -25,7 +25,7 @@ export function LogoutButton() {
     <Button
       variant="secondary"
       size="sm"
-      className="min-w-0"
+      className="min-w-0 px-3"
       onClick={handleLogout}
       disabled={pending}
     >

@@ -1,10 +1,8 @@
 "use client";
 
-import { CircleCheck, TriangleAlert } from "lucide-react";
+import { CircleCheck, Mail } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
-
-import { Button } from "@/components/ui/Button";
 
 // How long the "sent" confirmation stays before the banner goes back to asking:
 // long enough to read, short enough that it does not look like the address is
@@ -44,8 +42,8 @@ export function VerificationBanner({ email }: { email: string }) {
 
   if (result === "sent") {
     return (
-      <div className="border-success bg-success-surface text-success-ink border-b">
-        <p className="mx-auto flex max-w-[1560px] items-center gap-2.5 px-4 py-3 text-[13px] leading-relaxed">
+      <div className="border-border-grid bg-success-surface text-success-ink border-b">
+        <p className="mx-auto flex max-w-[1560px] items-center gap-3 px-4 py-2.5 text-[12.5px] font-semibold sm:px-6">
           <CircleCheck aria-hidden="true" className="size-4 flex-none" />
           {t("resendDone", { email })}
         </p>
@@ -54,16 +52,23 @@ export function VerificationBanner({ email }: { email: string }) {
   }
 
   return (
-    <div className="border-warning-border bg-warning-surface text-warning-ink border-b">
-      <div className="mx-auto flex max-w-[1560px] flex-wrap items-center gap-3 px-4 py-3">
-        <TriangleAlert aria-hidden="true" className="size-4 flex-none" />
-        <p className="flex-1 text-[13px] leading-relaxed">
+    // Warm rather than red: an unconfirmed address is a step left to take, not
+    // a failure. It sits directly under the header, above everything it blocks.
+    <div className="border-border-grid bg-warning-surface text-warning-ink border-b">
+      <div className="mx-auto flex max-w-[1560px] flex-wrap items-center gap-3 px-4 py-2.5 sm:px-6">
+        <Mail aria-hidden="true" className="size-4 flex-none" />
+        <p className="flex-1 text-[12.5px] leading-relaxed font-semibold">
           {t("verifyBanner", { email })}
           {result === "failed" ? ` ${t("resendFailed")}` : ""}
         </p>
-        <Button variant="secondary" size="sm" onClick={resend} disabled={pending}>
+        <button
+          type="button"
+          onClick={resend}
+          disabled={pending}
+          className="focus-ring rounded-chip bg-warning-border/60 text-warning-ink min-h-11 px-3 text-xs font-bold transition hover:brightness-95 disabled:opacity-50 sm:min-h-8"
+        >
           {pending ? t("resending") : t("resend")}
-        </Button>
+        </button>
       </div>
     </div>
   );

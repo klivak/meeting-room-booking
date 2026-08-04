@@ -1,6 +1,5 @@
 "use client";
 
-import { CalendarCheck, CalendarDays } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -22,13 +21,11 @@ export function HeaderNav({
   const onMyBookings = pathname.startsWith("/my-bookings");
 
   return (
-    <nav className="ml-3 hidden items-center gap-0.5 sm:flex">
+    <nav className="ml-2 hidden items-center gap-1 sm:flex">
       <NavLink href="/" active={!onMyBookings}>
-        <CalendarDays aria-hidden="true" className="size-4" />
         {roomsLabel}
       </NavLink>
       <NavLink href="/my-bookings" active={onMyBookings}>
-        <CalendarCheck aria-hidden="true" className="size-4" />
         {myBookingsLabel}
       </NavLink>
     </nav>
@@ -48,10 +45,10 @@ function NavLink({
     <Link
       href={href}
       aria-current={active ? "page" : undefined}
-      className={`focus-ring rounded-control flex items-center gap-2 px-2.5 py-1.5 text-[13px] no-underline transition ${
+      className={`focus-ring flex items-center rounded-[8px] px-3 py-[7px] text-[13.5px] no-underline transition ${
         active
-          ? "bg-surface-muted text-text-primary font-semibold"
-          : "text-text-tertiary hover:text-text-primary hover:bg-surface-muted font-medium"
+          ? "bg-accent-own-surface text-text-primary font-bold"
+          : "text-text-secondary hover:text-text-primary hover:bg-surface-muted font-semibold"
       }`}
     >
       {children}

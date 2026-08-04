@@ -17,7 +17,7 @@ export async function LocaleSwitcher() {
   return (
     <div
       aria-label={t("language")}
-      className="border-border-grid rounded-control flex overflow-hidden border"
+      className="border-border-grid bg-surface-muted rounded-chip flex h-11 items-center gap-0.5 border p-[3px] sm:h-9"
     >
       {LOCALES.map((locale) => (
         <form
@@ -28,16 +28,16 @@ export async function LocaleSwitcher() {
             // Everything is rendered per language, so the whole tree is stale.
             revalidatePath("/", "layout");
           }}
-          className="border-border-grid flex [&:not(:first-child)]:border-l"
+          className="flex h-full"
         >
           <button
             type="submit"
             aria-current={locale === current ? "true" : undefined}
             title={LOCALE_LABELS[locale]}
-            className={`focus-ring-inset flex min-h-11 items-center px-2.5 font-mono text-xs font-semibold transition sm:min-h-9 ${
+            className={`focus-ring-tight flex h-full items-center rounded-[6px] px-2.5 font-mono text-xs transition ${
               locale === current
-                ? "bg-accent-own-booking text-accent-own-on"
-                : "text-text-secondary hover:bg-surface-muted"
+                ? "bg-accent-own-booking text-accent-own-on font-bold"
+                : "text-text-secondary hover:text-text-primary font-semibold"
             }`}
           >
             {LOCALE_SHORT_LABELS[locale]}
