@@ -183,8 +183,10 @@ export function BookingBlock({
   ) : (
     <>
       <span className="flex min-w-0 items-center gap-1.5">
+        {/* Never wrapped: "10:00-11:00" broken over two lines eats the row the
+            title needs and reads as two different times. */}
         <span
-          className={`font-mono text-[10.5px] leading-tight font-semibold ${TIME_TONES[state]}`}
+          className={`flex-none font-mono text-[10.5px] leading-tight font-semibold whitespace-nowrap ${TIME_TONES[state]}`}
         >
           {range}
         </span>

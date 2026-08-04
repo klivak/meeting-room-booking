@@ -178,7 +178,7 @@ export function NotificationBell() {
             </p>
           ) : count === 0 ? (
             <div className="flex flex-col items-center gap-2 px-4 py-7 text-center">
-              <SlotMotif className="mb-1 scale-[0.55]" />
+              <SlotMotif small className="mb-1" />
               <p className="text-sm font-bold">{t("empty")}</p>
               <p className="text-text-tertiary text-[13px] leading-relaxed">
                 {t("emptyHint")}

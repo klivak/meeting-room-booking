@@ -18,6 +18,11 @@ type CancelBookingButtonProps = {
   disabled?: boolean;
   /** Extra classes for the trigger, so a caller can size it to its own row. */
   className?: string;
+  /**
+   * Short trigger label. The panel has room for "Скасувати бронювання"; a row
+   * in a list does not, and the booking it belongs to is named beside it.
+   */
+  short?: boolean;
 };
 
 /**
@@ -39,6 +44,7 @@ export function CancelBookingButton({
   redirectTo,
   disabled = false,
   className,
+  short = false,
 }: CancelBookingButtonProps) {
   const router = useRouter();
   const t = useTranslations("cancel");
@@ -128,7 +134,7 @@ export function CancelBookingButton({
         disabled={disabled}
         className={className}
       >
-        {t("cancel")}
+        {short ? t("cancelShort") : t("cancel")}
       </Button>
 
       {confirming ? (

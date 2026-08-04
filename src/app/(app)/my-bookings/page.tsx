@@ -98,6 +98,7 @@ async function BookingList({ tab }: { tab: BookingScope }) {
                     bookingId={booking.id}
                     title={booking.title}
                     isRecurring={booking.isRecurring}
+                    short
                   />
                 </>
               ) : null

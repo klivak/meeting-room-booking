@@ -91,7 +91,7 @@
     "now": "Now",
     "youShort": "YOU",
     "finished": "finished",
-    "emptyWeekTitle": "The week is free.",
+    "emptyWeekTitle": "The whole week is free",
     "emptyWeekText": "Any slot between 09:00 and 19:00 is yours — click one.",
     "verifyFirst": "Confirm your email first — the link is in the banner above the grid.",
     "timezoneNotice": "Your timezone. Room hours are {from}–{to} ({officeZone}).",
@@ -174,7 +174,8 @@
     "seriesDone": "Series cancelled · the slots are free",
     "undo": "Undo",
     "undone": "Booking restored",
-    "undoFailed": "Could not restore the booking"
+    "undoFailed": "Could not restore the booking",
+    "cancelShort": "Cancel"
   },
   "notifications": {
     "title": "Notifications",

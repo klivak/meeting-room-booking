@@ -19,12 +19,19 @@ export default async function NotFound() {
     <div className="bg-surface-sunken relative flex min-h-dvh w-full items-center justify-center overflow-hidden px-4 py-12">
       <GhostGrid />
       <div className="relative flex max-w-[38ch] flex-col items-center gap-3.5 text-center">
-        {/* The number is the illustration: at 84px in the mono face it reads as
-            a missing slot on the grid behind it rather than as an error code. */}
-        <span className="font-mono text-[84px] leading-none font-bold tracking-[-0.04em]">
+        {/* The number is the illustration, not the message: at 84px in the mono
+            face it reads as a missing slot on the grid behind it. The sentence
+            under it is the heading, so the page still announces itself. */}
+        <span
+          aria-hidden="true"
+          className="font-mono text-[84px] leading-none font-bold tracking-[-0.04em]"
+        >
           404
         </span>
-        <p className="text-text-secondary text-base font-semibold text-balance">
+        <h1 className="text-xl font-extrabold tracking-[-0.02em]">
+          {t("notFoundTitle")}
+        </h1>
+        <p className="text-text-secondary text-sm leading-relaxed text-balance">
           {t("notFoundText")}
         </p>
         <LinkButton href="/login" variant="primary" className="mt-1.5 min-h-12 px-6 text-sm">

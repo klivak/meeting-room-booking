@@ -14,7 +14,10 @@ export default async function AppNotFound() {
     <div className="border-border-grid bg-surface rounded-card shadow-card relative mx-auto flex min-h-[380px] w-full max-w-[560px] items-center justify-center overflow-hidden border px-7 py-12">
       <GhostGrid />
       <div className="relative flex flex-col items-center gap-3 text-center">
-        <span className="font-mono text-[64px] leading-none font-bold tracking-[-0.04em]">
+        <span
+          aria-hidden="true"
+          className="font-mono text-[64px] leading-none font-bold tracking-[-0.04em]"
+        >
           404
         </span>
         <h1 className="text-xl font-extrabold tracking-[-0.02em]">
