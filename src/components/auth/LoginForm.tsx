@@ -1,5 +1,6 @@
 "use client";
 
+import { CircleAlert } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -56,17 +57,15 @@ export function LoginForm() {
   const generalError = error && !error.field ? error.message : null;
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-[18px]" noValidate>
       {/* Above the form, not beside a field: "wrong email or password" is about
           the pair, and pointing at one of them would be a guess. */}
       {generalError ? (
         <p
           role="alert"
-          className="bg-danger-surface border-danger text-danger-ink rounded-control flex gap-2 border px-3 py-2.5 text-[13px] leading-snug"
+          className="border-danger-border bg-danger-surface text-danger-ink rounded-control flex items-start gap-2.5 border px-3.5 py-3 text-[13px] leading-snug font-semibold"
         >
-          <span aria-hidden="true" className="font-bold">
-            !
-          </span>
+          <CircleAlert aria-hidden="true" className="mt-px size-4 flex-none" />
           {generalError}
         </p>
       ) : null}
@@ -95,7 +94,7 @@ export function LoginForm() {
         error={fieldError("password")}
       />
 
-      <Button type="submit" size="lg" className="mt-1 w-full" disabled={pending}>
+      <Button type="submit" size="lg" className="mt-0.5 h-12 w-full text-[15px]" disabled={pending}>
         {pending ? t("signingIn") : t("signIn")}
       </Button>
 
@@ -103,8 +102,11 @@ export function LoginForm() {
           with the credentials the seed creates, which is a convenience for
           whoever is reviewing the project rather than a feature of it. */}
       {DEMO_LOGIN ? (
-        <p className="border-border-grid text-text-tertiary flex flex-wrap items-center gap-2 border-t pt-3 text-[13px]">
-          {t("demoHint")}
+        <p className="border-border-grid bg-surface-muted rounded-control flex flex-wrap items-center gap-2.5 border border-dashed px-3.5 py-3">
+          <span className="text-text-tertiary font-mono text-[11px] font-bold tracking-wider">
+            {t("demoBadge")}
+          </span>
+          <span className="text-text-secondary text-[12.5px]">{t("demoHint")}</span>
           <button
             type="button"
             onClick={() => {
@@ -112,9 +114,9 @@ export function LoginForm() {
               setPassword(DEMO_ACCOUNTS[0].password);
               setError(null);
             }}
-            className="focus-ring text-link rounded bg-transparent"
+            className="focus-ring text-accent-own-ink ml-auto rounded text-xs font-bold"
           >
-            {t("demoFill")}
+            {t("demoFill")} →
           </button>
         </p>
       ) : null}

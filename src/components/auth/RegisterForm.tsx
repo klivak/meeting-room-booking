@@ -1,5 +1,6 @@
 "use client";
 
+import { CircleAlert } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -62,17 +63,15 @@ export function RegisterForm() {
   const generalError = error && !error.field ? error.message : null;
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-[18px]" noValidate>
       {/* Above the form: "this address is already registered" is not a fault of
           any single field the user is looking at. */}
       {generalError ? (
         <p
           role="alert"
-          className="bg-danger-surface border-danger text-danger-ink rounded-control flex gap-2 border px-3 py-2.5 text-[13px] leading-snug"
+          className="border-danger-border bg-danger-surface text-danger-ink rounded-control flex items-start gap-2.5 border px-3.5 py-3 text-[13px] leading-snug font-semibold"
         >
-          <span aria-hidden="true" className="font-bold">
-            !
-          </span>
+          <CircleAlert aria-hidden="true" className="mt-px size-4 flex-none" />
           {generalError}
         </p>
       ) : null}
@@ -126,7 +125,7 @@ export function RegisterForm() {
         }
       />
 
-      <Button type="submit" size="lg" className="mt-1 w-full" disabled={pending}>
+      <Button type="submit" size="lg" className="mt-0.5 h-12 w-full text-[15px]" disabled={pending}>
         {pending ? t("signingUp") : t("signUp")}
       </Button>
     </form>

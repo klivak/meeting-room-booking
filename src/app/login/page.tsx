@@ -22,7 +22,7 @@ export default async function LoginPage() {
 
   return (
     <AuthCard
-      title={t("loginTitle")}
+      title={t("loginHeading")}
       subtitle={t("loginSubtitle")}
       footerText={t("noAccount")}
       footerLinkHref="/register"
