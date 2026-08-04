@@ -108,7 +108,7 @@ for (const theme of ["light", "dark"] as const) {
       await page.context().clearCookies();
       await page.goto("/login");
 
-      await expect(page.getByRole("heading", { name: "Вхід" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "З поверненням" })).toBeVisible();
 
       await shot(page, testInfo, "login");
     });
@@ -136,7 +136,7 @@ for (const theme of ["light", "dark"] as const) {
       await page.goto(`/rooms/${room.id}?week=2027-03-01`);
 
       // An empty week has to read as an opportunity, not as a failure.
-      await expect(page.getByText("Тиждень вільний.")).toBeVisible();
+      await expect(page.getByText("Весь тиждень вільний")).toBeVisible();
 
       await shot(page, testInfo, "free-week");
     });
