@@ -1,9 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="7" fill="#0f172a" />
-  <rect x="6" y="8" width="20" height="18" rx="3" fill="#ffffff" />
-  <rect x="6" y="8" width="20" height="5" rx="3" fill="#4f46e5" />
-  <rect x="10" y="5" width="3" height="6" rx="1.5" fill="#0f172a" />
-  <rect x="19" y="5" width="3" height="6" rx="1.5" fill="#0f172a" />
-  <rect x="9" y="16" width="8" height="3" rx="1.5" fill="#4f46e5" />
-  <rect x="9" y="21" width="14" height="3" rx="1.5" fill="#cbd5e1" />
+  <!-- The same mark the header draws in CSS (see LogoMark): four slots on a jade
+       tile, two of them taken. Kept in step with it by hand — a 32px favicon is
+       not worth rendering a component into an image for. -->
+  <defs>
+    <linearGradient id="jade" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#17a67c" />
+      <stop offset="1" stop-color="#0e8a66" />
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="9" fill="url(#jade)" />
+  <rect x="8" y="8" width="7" height="7" rx="1.5" fill="#ffffff" fill-opacity="0.95" />
+  <rect x="17" y="8" width="7" height="7" rx="1.5" fill="#ffffff" fill-opacity="0.55" />
+  <rect x="8" y="17" width="7" height="7" rx="1.5" fill="#ffffff" fill-opacity="0.55" />
+  <rect x="17" y="17" width="7" height="7" rx="1.5" fill="#ffffff" fill-opacity="0.95" />
 </svg>
