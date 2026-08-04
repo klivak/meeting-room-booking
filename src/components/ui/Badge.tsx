@@ -1,6 +1,6 @@
 const TONES = {
-  neutral: "bg-surface-muted border-border-control text-text-secondary",
-  success: "bg-success-surface border-success text-success-ink",
+  neutral: "bg-surface-muted border-border-grid text-text-secondary",
+  success: "bg-success-surface border-transparent text-success-ink",
   warning: "bg-warning-surface border-warning-border text-warning-ink",
 };
 
@@ -15,7 +15,7 @@ export function Badge({
 }) {
   return (
     <span
-      className={`rounded-booking inline-flex h-5 shrink-0 items-center border px-1.5 text-[11px] font-bold tracking-[0.02em] ${TONES[tone]}`}
+      className={`rounded-chip inline-flex shrink-0 items-center gap-1.5 border px-2.5 py-[3px] text-[11px] font-bold tracking-[0.01em] ${TONES[tone]}`}
     >
       {children}
     </span>

@@ -17,7 +17,7 @@ export function Avatar({ name }: { name: string }) {
       // The name is already in the DOM next to it on wide screens and inside
       // the menu on narrow ones, so the circle itself is decoration.
       aria-hidden="true"
-      className="bg-accent-own-booking text-accent-own-on flex size-9 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+      className="brand-gradient flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
     >
       {initials(name)}
     </span>

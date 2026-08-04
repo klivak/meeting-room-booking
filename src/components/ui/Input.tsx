@@ -23,7 +23,7 @@ export function Input({
   return (
     <div className="flex flex-col gap-1">
       <span className="flex items-baseline gap-2">
-        <label htmlFor={id} className="text-text-secondary text-xs font-semibold">
+        <label htmlFor={id} className="text-text-secondary text-[12.5px] font-bold">
           {label}
         </label>
         {labelSuffix ? <span className="ml-auto">{labelSuffix}</span> : null}
@@ -35,12 +35,15 @@ export function Input({
           id={id}
           aria-invalid={error ? true : undefined}
           aria-describedby={errorId}
-          className={`focus-ring-tight bg-surface text-text-primary rounded-control min-h-11 w-full border px-3 text-sm transition sm:min-h-[38px] ${
+          // The focus and error states are a 1.5px edge plus a soft ring of the
+          // same colour: at an 11px radius a plain 2px border reads as a jump in
+          // weight, the ring reads as the field lighting up.
+          className={`bg-surface text-text-primary rounded-control min-h-11 w-full border px-3.5 text-sm transition outline-none sm:min-h-11 ${
             trailing ? "pr-12" : ""
           } ${
             error
-              ? "border-danger focus-visible:border-danger"
-              : "border-border-control hover:border-text-tertiary focus-visible:border-accent-own-booking"
+              ? "border-danger border-[1.5px] shadow-[0_0_0_3px_var(--color-danger-surface)]"
+              : "border-border-grid hover:border-border-control focus-visible:border-accent-own-booking focus-visible:border-[1.5px] focus-visible:shadow-[0_0_0_3px_var(--color-accent-own-surface)]"
           } ${className ?? ""}`}
           {...props}
         />
@@ -51,7 +54,7 @@ export function Input({
         ) : null}
       </span>
       {error ? (
-        <p id={errorId} className="text-danger-ink text-xs leading-snug">
+        <p id={errorId} className="text-danger-ink text-xs leading-snug font-semibold">
           {error}
         </p>
       ) : null}

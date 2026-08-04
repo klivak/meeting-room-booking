@@ -7,5 +7,5 @@ export function Skeleton({
   className?: string;
   style?: React.CSSProperties;
 }) {
-  return <div className={`skeleton rounded-control ${className ?? ""}`} style={style} />;
+  return <div className={`skeleton rounded-booking ${className ?? ""}`} style={style} />;
 }
