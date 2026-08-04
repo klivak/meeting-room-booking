@@ -108,7 +108,7 @@ export function ScheduleShortcuts({
       onClick={() => setHelpOpen(true)}
       aria-label={t("title")}
       title={t("title")}
-      className="focus-ring border-border-grid bg-surface text-text-secondary hover:bg-surface-muted hover:text-text-primary rounded-control hidden h-8 w-8 items-center justify-center border font-mono text-sm font-semibold transition sm:flex"
+      className="focus-ring border-border-grid bg-surface-muted text-text-secondary hover:border-border-control hover:text-text-primary rounded-chip hidden size-9 items-center justify-center border font-mono text-sm font-bold transition sm:flex"
     >
       <span aria-hidden="true">?</span>
     </button>
@@ -122,7 +122,7 @@ export function ScheduleShortcuts({
     <>
       {trigger}
       <div
-      className="fixed inset-0 z-70 flex items-center justify-center bg-[oklch(0.24_0.02_264/0.45)] p-6"
+      className="fixed inset-0 z-70 flex items-center justify-center bg-[rgb(14_22_20/0.45)] p-6 backdrop-blur-[2px]"
       onClick={(event) => {
         if (event.currentTarget === event.target) {
           setHelpOpen(false);
@@ -133,11 +133,11 @@ export function ScheduleShortcuts({
         role="dialog"
         aria-modal="true"
         aria-labelledby="shortcuts-title"
-        className="rounded-panel bg-surface border-border-control shadow-modal animate-rise flex w-full max-w-[420px] flex-col gap-3 border px-5 py-4.5"
+        className="rounded-panel bg-surface border-border-grid shadow-modal animate-pop flex w-full max-w-[420px] flex-col gap-3 border p-6"
       >
         <h2
           id="shortcuts-title"
-          className="text-[17px] font-semibold tracking-tight"
+          className="text-[19px] font-extrabold tracking-[-0.02em]"
         >
           {t("title")}
         </h2>
@@ -152,7 +152,7 @@ export function ScheduleShortcuts({
                 {shortcut.keys.map((key) => (
                   <kbd
                     key={key}
-                    className="border-border-control bg-surface-muted text-text-primary rounded flex min-w-6 items-center justify-center border px-1.5 py-0.5 font-mono text-xs font-semibold"
+                    className="border-border-grid bg-surface-muted text-text-primary flex min-w-6 items-center justify-center rounded-md border px-1.5 py-1 font-mono text-xs font-bold"
                   >
                     {key}
                   </kbd>
@@ -169,7 +169,7 @@ export function ScheduleShortcuts({
           type="button"
           autoFocus
           onClick={() => setHelpOpen(false)}
-          className="focus-ring border-border-control text-text-primary hover:bg-surface-muted rounded-control mt-1 min-h-11 self-end border px-3.5 text-sm font-medium transition sm:min-h-[38px]"
+          className="focus-ring border-border-grid bg-surface-muted text-text-secondary hover:text-text-primary rounded-control mt-1 min-h-11 self-end border px-4 text-sm font-bold transition"
         >
           {t("close")}
         </button>
