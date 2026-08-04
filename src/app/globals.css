@@ -5,89 +5,126 @@
    root layout resolves "system" to light or dark before the first paint. */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
-/* "Ательє часу": one neutral scale tinted green, one jade accent and one warm
-   "now" signal. Depth comes from hairlines and soft shadows rather than boxes.
-   The values are the handoff palette verbatim, in hex, so a swatch picked off a
-   mockup and a swatch picked off the running app are the same number. */
+/* Jade on a green-tinted neutral: one accent, one blue for someone else's
+   booking, one warm signal for "now". Depth comes from layered surfaces, soft
+   shadows and glass rather than from boxes and rules.
+
+   The values follow the design handoff. Four of them are deliberately darker
+   than the mockup, because the mockup's shade fails WCAG 1.4.3 as text — each
+   one is marked below with the ratio it would have had. */
 @theme {
   --font-sans: var(--font-manrope), "Segoe UI", system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
 
-  /* Surfaces and lines. The grid lines are deliberately light: they are
-     decoration, and 160 of them at control contrast would read as a table. */
+  /* Surfaces. Three levels: the page, the card, the chip. */
   --color-surface: #ffffff;
-  --color-surface-muted: #f0f3f2;
-  --color-surface-sunken: #f6f8f7;
-  --color-surface-raised: #e7ecea;
-  --color-border-grid: #d0d7d4; /* the hour line */
-  --color-border-grid-half: #e3e8e6; /* the half-hour hairline */
+  --color-surface-sunken: #f1f4f3;
+  --color-surface-muted: #f5f7f6;
+  --color-surface-raised: #e9edeb;
+
+  /* One hairline for structure and a lighter one for the half hours. They are
+     alpha rather than solid so they read the same over a card and over a
+     tinted column. */
+  --color-border-grid: rgb(16 40 34 / 0.09);
+  --color-border-grid-half: rgb(16 40 34 / 0.05);
   --color-border-control: #8b9793; /* 3.0:1 — WCAG 1.4.11 */
 
-  /* Text: three levels, all at or above 4.5:1 on --color-surface. The tertiary
-     level is darker than the usual slate-500, which sits at 3:1 and fails. */
-  --color-text-primary: #0e1614;
-  --color-text-secondary: #41504c;
-  --color-text-tertiary: #68766f;
+  /* Text: three levels, all at or above 4.5:1 on both the surface and the page.
+     The handoff put the muted level at #93A29C, which is 2.66:1 and unreadable
+     as body text; this is the same hue carried down to 5.1:1. */
+  --color-text-primary: #12211c;
+  --color-text-secondary: #5b6b65;
+  --color-text-tertiary: #63716b;
 
-  /* Bookings. The author colour is a different hue from the accent on purpose:
-     someone else's booking must not read as a paler version of your own. */
-  --color-accent-own-booking: #0b7a66;
-  --color-accent-own-ink: #075c4c;
-  --color-accent-own-surface: #e2f4f0;
-  --color-accent-own-past: #93b4ac;
+  /* Jade. The vivid tone is for fills, bars and dots — graphics, where 3:1 is
+     the bar. Text on a light background uses the ink, which is 5.3:1; the
+     handoff's #0E8A66 sits at 4.33 and misses. */
+  --color-accent-own-booking: #17a67c;
+  --color-accent-own-ink: #0b7a5a;
+  --color-accent-own-surface: rgb(23 166 124 / 0.12);
+  --color-accent-own-fill: rgb(23 166 124 / 0.15);
+  --color-accent-own-past: rgb(23 166 124 / 0.6);
   --color-accent-own-on: #ffffff;
-  --color-booking-other-author: #2f6db0;
-  --color-booking-other-hatch: #c9d2ce;
 
-  /* States. */
-  --color-danger: #c0342b;
-  --color-danger-ink: #98261f;
-  --color-danger-surface: #fcedea;
-  --color-success: #0b7a66;
-  --color-success-ink: #075c4c;
-  --color-success-surface: #e2f4f0;
-  --color-warning-ink: #8a5a0b;
-  --color-warning-surface: #fdf3e0;
-  --color-warning-border: #ead5a4;
-  --color-now-line: #de5137;
-  --color-now-label: #b23d26;
-  --color-today-column: #edf6f4;
-  --color-focus-ring: #0b7a66;
-  --color-skeleton: #e6ebe9;
-  --color-skeleton-highlight: #f2f5f4;
+  /* The primary button carries white text, so its gradient is a step deeper
+     than the decorative one on the logo and the avatar: white on #17A67C is
+     3.1:1, white on these two stops is 4.7 and 5.3. */
+  --color-accent-grad-from: #0d8460;
+  --color-accent-grad-to: #0b7a5a;
+  --color-accent-glow: rgb(14 138 102 / 0.45);
+
+  /* Someone else's booking is a different hue, never a paler jade. */
+  --color-booking-other-author: #3e63dd;
+  --color-booking-other-ink: #2e4bb8;
+  --color-booking-other-surface: rgb(62 99 221 / 0.14);
+
+  /* "Now" and "free later" share the warm signal. The vivid tone draws the
+     line and the dots; the solid one carries white text, where the vivid one
+     would sit at 3.07:1. */
+  --color-now-line: #e8720c;
+  --color-now-label: #b45309;
+  --color-today-column: rgb(23 166 124 / 0.06);
+
+  --color-warning-ink: #92500a;
+  --color-warning-surface: rgb(232 114 12 / 0.1);
+  --color-warning-border: rgb(232 114 12 / 0.28);
+
+  /* Danger: the outline tone for borders and icons, the solid one for a fill
+     under white text, the ink for a sentence. */
+  --color-danger: #e5484d;
+  --color-danger-solid: #ce3439;
+  --color-danger-ink: #c93a3f;
+  --color-danger-surface: rgb(229 72 77 / 0.1);
+  --color-danger-border: rgb(229 72 77 / 0.3);
+
+  --color-success: #17a67c;
+  --color-success-ink: #0b7a5a;
+  --color-success-surface: rgb(23 166 124 / 0.12);
+
+  --color-focus-ring: #0b7a5a;
+  --color-skeleton: #e9edeb;
+  --color-skeleton-highlight: #f4f7f6;
+
+  /* Glass: the floating panel and the dropdowns sit over the grid, and the
+     point of them is that the grid stays readable underneath. */
+  --color-glass: rgb(255 255 255 / 0.78);
+  --color-glass-edge: rgb(255 255 255 / 0.9);
 
   /* Grid geometry — fixed by the domain, not by taste. */
   --spacing-slot: 1.75rem; /* 28px — one half hour on a desktop */
   --spacing-slot-touch: 3rem; /* 48px — one half hour on a phone */
   --spacing-axis: 4rem; /* the time column */
+  --spacing-rail: 14.5rem; /* the room rail beside the grid */
 
-  --radius-booking: 6px;
-  --radius-control: 10px;
+  --radius-booking: 8px;
+  --radius-control: 11px;
+  --radius-chip: 9px;
   --radius-card: 16px;
-  --radius-panel: 22px;
+  --radius-panel: 18px;
+  --radius-sheet: 22px;
 
-  /* Three levels above zero: at rest → floating panel → modal and toast. */
-  --shadow-rest:
-    0 1px 2px rgb(14 22 20 / 0.08), 0 1px 1px rgb(14 22 20 / 0.05);
-  --shadow-panel:
-    0 8px 24px -8px rgb(14 22 20 / 0.18), 0 2px 6px rgb(14 22 20 / 0.06);
-  --shadow-modal:
-    0 32px 64px -20px rgb(14 22 20 / 0.32), 0 4px 12px rgb(14 22 20 / 0.1);
+  /* Four levels above zero: at rest → card → floating panel → modal. */
+  --shadow-rest: 0 1px 2px rgb(16 40 34 / 0.04);
+  --shadow-card: 0 1px 2px rgb(16 40 34 / 0.05), 0 8px 24px -18px rgb(16 40 34 / 0.3);
+  --shadow-panel: 0 30px 70px -24px rgb(16 40 34 / 0.4), 0 2px 8px rgb(16 40 34 / 0.06);
+  --shadow-modal: 0 40px 90px -30px rgb(16 40 34 / 0.45), 0 4px 12px rgb(16 40 34 / 0.1);
+  --shadow-accent: 0 8px 20px -8px var(--color-accent-glow);
 
-  /* Four durations and three curves, so nothing invents its own timing. */
-  --ease-out-soft: cubic-bezier(0.2, 0.8, 0.3, 1);
+  /* Three curves and the durations the handoff specifies. */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
   --animate-wave: wave 1400ms linear infinite;
   --animate-rise: rise 240ms var(--ease-out-soft) both;
-  --animate-block: block-in 240ms var(--ease-out-soft) both;
-  --animate-panel: panel-in 240ms var(--ease-out-soft) both;
+  --animate-block: block-in 300ms var(--ease-out-soft) both;
+  --animate-panel: panel-in 280ms var(--ease-out-soft) both;
   --animate-toast: toast-in 240ms var(--ease-spring) both;
-  --animate-now: now-draw 380ms var(--ease-out-soft) both;
+  --animate-now: now-draw 600ms var(--ease-out-soft) both;
   --animate-pop: pop 240ms var(--ease-spring) both;
   --animate-swap: swap-in 220ms var(--ease-out-soft) both;
   --animate-sheet: sheet-up 300ms var(--ease-out-soft) both;
+  --animate-badge: badge-pop 220ms var(--ease-spring) both;
 }
 
 /* Stated rather than left to the system: the switch in the header can put a
@@ -101,50 +138,70 @@
    prefixes through the components is what keeps a component from having to know
    the theme exists at all. */
 [data-theme="dark"] {
-  /* The browser paints its own widgets from this, not from our tokens: without
-     it the calendar button inside <input type="date"> stays a black glyph on a
-     dark field, and the scrollbars stay light. */
+  /* The browser paints its own widgets from this: without it the calendar
+     button inside <input type="date"> stays a black glyph on a dark field. */
   color-scheme: dark;
 
-  --color-surface: #131917;
-  --color-surface-muted: #1a2220;
-  --color-surface-sunken: #0b100f;
-  --color-surface-raised: #232c29;
-  --color-border-grid: #2d3835;
-  --color-border-grid-half: #222b29;
+  --color-surface: #18221e;
+  --color-surface-sunken: #0e1512;
+  --color-surface-muted: #1e2a25;
+  --color-surface-raised: #26332d;
+
+  --color-border-grid: rgb(255 255 255 / 0.09);
+  --color-border-grid-half: rgb(255 255 255 / 0.05);
   --color-border-control: #5f6d69;
-  --color-text-primary: #ecf1ef;
-  --color-text-secondary: #a7b3af;
-  --color-text-tertiary: #7c8a85;
-  --color-accent-own-booking: #37cfae;
-  --color-accent-own-ink: #9beeda;
-  --color-accent-own-surface: #0f3831;
-  --color-accent-own-past: #516c65;
-  --color-accent-own-on: #04120f;
-  --color-booking-other-author: #6ba8e0;
-  --color-booking-other-hatch: #39443f;
-  --color-danger: #ef6a5c;
-  --color-danger-ink: #ffb4a9;
-  --color-danger-surface: #391c18;
-  --color-success: #37cfae;
-  --color-success-ink: #9beeda;
-  --color-success-surface: #0f3831;
-  --color-warning-ink: #e9c98a;
-  --color-warning-surface: #332712;
-  --color-warning-border: #584821;
-  --color-now-line: #ff7b5c;
-  --color-now-label: #e86546;
-  --color-today-column: #14211e;
-  --color-focus-ring: #37cfae;
-  --color-skeleton: #1e2624;
-  --color-skeleton-highlight: #28322f;
+
+  --color-text-primary: #eaf2ee;
+  --color-text-secondary: #9db0a8;
+  /* The handoff's #6B7C75 is 3.7:1 on this surface; this is 5.2:1. */
+  --color-text-tertiary: #849590;
+
+  --color-accent-own-booking: #2fcf9e;
+  --color-accent-own-ink: #4fd1a5;
+  --color-accent-own-surface: rgb(47 207 158 / 0.16);
+  --color-accent-own-fill: rgb(47 207 158 / 0.18);
+  --color-accent-own-past: rgb(79 209 165 / 0.55);
+  --color-accent-own-on: #0e1512;
+
+  --color-accent-grad-from: #2fcf9e;
+  --color-accent-grad-to: #17a67c;
+  --color-accent-glow: rgb(23 166 124 / 0.5);
+
+  --color-booking-other-author: #7c9bf5;
+  --color-booking-other-ink: #a9bef9;
+  --color-booking-other-surface: rgb(124 155 245 / 0.18);
+
+  --color-now-line: #f0a752;
+  --color-now-label: #f0a752;
+  --color-today-column: rgb(47 207 158 / 0.07);
+
+  --color-warning-ink: #f0a752;
+  --color-warning-surface: rgb(232 114 12 / 0.16);
+  --color-warning-border: rgb(240 167 82 / 0.3);
+
+  --color-danger: #ef6a6f;
+  --color-danger-solid: #e5484d;
+  --color-danger-ink: #ff9d9f;
+  --color-danger-surface: rgb(229 72 77 / 0.16);
+  --color-danger-border: rgb(229 72 77 / 0.38);
+
+  --color-success: #2fcf9e;
+  --color-success-ink: #4fd1a5;
+  --color-success-surface: rgb(47 207 158 / 0.16);
+
+  --color-focus-ring: #2fcf9e;
+  --color-skeleton: #202b27;
+  --color-skeleton-highlight: #2a3733;
+
+  --color-glass: rgb(24 34 30 / 0.82);
+  --color-glass-edge: rgb(255 255 255 / 0.12);
+
   /* On a near-black canvas a tinted shadow is invisible, so the dark half drops
      the hue and buys separation with opacity instead. */
-  --shadow-rest: 0 1px 3px rgb(0 0 0 / 0.55);
-  --shadow-panel:
-    0 10px 30px -8px rgb(0 0 0 / 0.7), 0 2px 8px rgb(0 0 0 / 0.55);
-  --shadow-modal:
-    0 40px 80px -20px rgb(0 0 0 / 0.8), 0 6px 16px rgb(0 0 0 / 0.7);
+  --shadow-rest: 0 1px 3px rgb(0 0 0 / 0.5);
+  --shadow-card: 0 20px 50px -30px rgb(0 0 0 / 0.7), 0 1px 3px rgb(0 0 0 / 0.5);
+  --shadow-panel: 0 30px 70px -24px rgb(0 0 0 / 0.75), 0 2px 8px rgb(0 0 0 / 0.5);
+  --shadow-modal: 0 40px 90px -30px rgb(0 0 0 / 0.85), 0 6px 16px rgb(0 0 0 / 0.6);
 }
 
 /* A taller half hour once there is room for one. A 185px wide column at a 28px
@@ -169,6 +226,39 @@
   }
 }
 
+/* The atmosphere behind the application: a single jade bloom off the top right
+   corner. It is what stops a full-width page of white cards from reading as a
+   spreadsheet, and it costs one element. */
+@utility app-bloom {
+  background-image: radial-gradient(
+    1100px 500px at 82% -10%,
+    rgb(23 166 124 / 0.08),
+    transparent 60%
+  );
+
+  :where([data-theme="dark"]) & {
+    background-image: radial-gradient(
+      1100px 500px at 82% -10%,
+      rgb(23 166 124 / 0.14),
+      transparent 60%
+    );
+  }
+}
+
+/* The two jade gradients. The brand one is vivid and carries no small text; the
+   button one is a step deeper so white sits on it at 4.7:1 or better. */
+@utility brand-gradient {
+  background-image: linear-gradient(150deg, #17a67c, #0e8a66);
+}
+
+@utility accent-gradient {
+  background-image: linear-gradient(
+    150deg,
+    var(--color-accent-grad-from),
+    var(--color-accent-grad-to)
+  );
+}
+
 /* A light band sweeping across the placeholder: it reads as "loading" better
    than a pulse, because it moves in one direction instead of blinking. */
 @utility skeleton {
@@ -186,11 +276,10 @@
 /* An inline link inside a sentence. Tailwind's preflight strips link styling,
    and a link in running text still has to look like one. */
 @utility text-link {
-  color: var(--color-accent-own-booking);
-  font-weight: 600;
+  color: var(--color-accent-own-ink);
+  font-weight: 700;
 
   &:hover {
-    color: var(--color-accent-own-ink);
     text-decoration: underline;
   }
 }
@@ -224,10 +313,52 @@
    texture rather than a second shade of the same hue. */
 @utility hatch {
   background-image: repeating-linear-gradient(
-    135deg,
-    var(--color-booking-other-hatch) 0 1px,
-    var(--color-surface) 1px 7px
+    45deg,
+    rgb(62 99 221 / 0.16) 0 6px,
+    rgb(62 99 221 / 0.05) 6px 12px
   );
+
+  :where([data-theme="dark"]) & {
+    background-image: repeating-linear-gradient(
+      45deg,
+      rgb(124 155 245 / 0.22) 0 6px,
+      rgb(124 155 245 / 0.07) 6px 12px
+    );
+  }
+}
+
+/* The row lines of a day column, drawn as a background rather than as 20
+   bordered children: half hours in the hairline, whole hours a shade stronger,
+   so the axis reads as a scale instead of as forty equal rows. */
+@utility grid-rows-day {
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0 calc(var(--spacing-slot) - 1px),
+      var(--color-border-grid-half) calc(var(--spacing-slot) - 1px) var(--spacing-slot)
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0 calc(var(--spacing-slot) * 2 - 1px),
+      var(--color-border-grid) calc(var(--spacing-slot) * 2 - 1px)
+        calc(var(--spacing-slot) * 2)
+    );
+}
+
+@utility grid-rows-day-touch {
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0 calc(var(--spacing-slot-touch) - 1px),
+      var(--color-border-grid-half) calc(var(--spacing-slot-touch) - 1px)
+        var(--spacing-slot-touch)
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0 calc(var(--spacing-slot-touch) * 2 - 1px),
+      var(--color-border-grid) calc(var(--spacing-slot-touch) * 2 - 1px)
+        calc(var(--spacing-slot-touch) * 2)
+    );
 }
 
 @keyframes wave {
@@ -280,7 +411,7 @@
 @keyframes block-in {
   from {
     opacity: 0;
-    transform: scaleY(0.92);
+    transform: translateY(4px);
   }
   to {
     opacity: 1;
@@ -304,7 +435,7 @@
 @keyframes panel-in {
   from {
     opacity: 0;
-    transform: translateY(12px) scale(0.98);
+    transform: translateY(8px) scale(0.98);
   }
   to {
     opacity: 1;
@@ -329,6 +460,19 @@
   }
   to {
     transform: none;
+  }
+}
+
+/* The unread counter arrives with a beat, so a warning that appears while the
+   page is open is noticed without anything moving on the grid. */
+@keyframes badge-pop {
+  from {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
   }
 }
 
