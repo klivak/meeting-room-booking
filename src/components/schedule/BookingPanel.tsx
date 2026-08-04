@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleAlert, Repeat, X } from "lucide-react";
+import { CircleAlert, Clock, Repeat, X } from "lucide-react";
 import { DateTime } from "luxon";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -43,9 +43,11 @@ const WIDE_SCREEN = "(min-width: 640px)";
 /** Element the floating panel is placed against. */
 export const SCHEDULE_ANCHOR_ID = "schedule-section";
 
-// One look for all three selects; they differ only in what they list.
+// One look for all three selects and the date field; they differ only in what
+// they hold. The focus state is a 1.5px edge plus a soft ring of the same
+// colour, so a focused field reads as lit rather than as suddenly heavier.
 const SELECT_CLASS =
-  "focus-ring-tight border-border-control bg-surface text-text-primary rounded-control min-h-11 min-w-0 border px-2 text-sm transition hover:border-text-tertiary focus-visible:border-accent-own-booking sm:min-h-[38px]";
+  "border-border-grid bg-surface text-text-primary rounded-control min-h-11 min-w-0 border px-2.5 text-sm font-semibold transition outline-none hover:border-border-control focus-visible:border-accent-own-booking focus-visible:border-[1.5px] focus-visible:shadow-[0_0_0_3px_var(--color-accent-own-surface)] sm:min-h-10";
 
 function subscribeToWideScreen(onChange: () => void) {
   const query = window.matchMedia(WIDE_SCREEN);
@@ -501,7 +503,7 @@ function BookingForm({
       // No backdrop above the sm breakpoint: the point of the panel is that the
       // schedule stays readable while it is open. On a phone there is no room
       // for both, so it covers the screen as before.
-      className="fixed inset-0 z-50 flex items-end justify-center bg-[rgb(14_22_20/0.5)] sm:pointer-events-none sm:inset-auto sm:top-20 sm:right-6 sm:block sm:bg-transparent"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-[rgb(14_22_20/0.45)] backdrop-blur-[2px] sm:pointer-events-none sm:inset-auto sm:top-24 sm:right-8 sm:block sm:bg-transparent sm:backdrop-blur-none"
       style={panelStyle}
       onClick={(event) => {
         // Only the phone overlay closes on a tap outside it.
@@ -515,8 +517,11 @@ function BookingForm({
         role="dialog"
         aria-modal="false"
         aria-labelledby="booking-form-title"
+        // Glass from sm up: the panel sits over the grid, and the point of it
+        // is that the week stays readable underneath. On a phone it covers the
+        // screen and there is nothing to see through, so it stays solid.
         // The sheet scrolls instead of pushing its buttons out of reach.
-        className="rounded-panel bg-surface border-border-grid shadow-modal animate-sheet sm:animate-panel flex max-h-[92vh] w-full flex-col overflow-hidden rounded-b-none border sm:pointer-events-auto sm:max-h-[85vh] sm:w-[364px] sm:rounded-b-panel"
+        className="rounded-sheet bg-surface border-border-grid shadow-modal animate-sheet sm:animate-panel sm:bg-glass sm:border-glass-edge flex max-h-[92vh] w-full flex-col overflow-hidden rounded-b-none border sm:pointer-events-auto sm:max-h-[85vh] sm:w-[364px] sm:rounded-b-[18px] sm:backdrop-blur-xl"
         // Escape means "Close" here as much as it does in the cancel dialog. The
         // panel is not modal, so it only answers when the focus is inside it —
         // which it is, the title field takes it as the panel opens.
@@ -534,22 +539,24 @@ function BookingForm({
           onPointerMove={keepDragging}
           onPointerUp={stopDragging}
           onPointerCancel={stopDragging}
-          className="border-border-grid bg-surface-muted relative flex flex-none touch-none items-center gap-2.5 border-b px-3.5 py-3 sm:cursor-grab sm:active:cursor-grabbing"
+          className="border-border-grid relative flex flex-none touch-none items-center gap-2.5 border-b px-[18px] pt-4 pb-3.5 sm:cursor-grab sm:active:cursor-grabbing"
         >
-          {/* A grab handle on the phone sheet, three grip lines on the desktop
-              panel: the same affordance in the idiom of each. */}
+          {/* A grabber on the phone sheet, two grip lines on the desktop panel:
+              the same affordance in the idiom of each. */}
           <span
             aria-hidden="true"
-            className="bg-border-control absolute top-1.5 left-1/2 h-1 w-8 -translate-x-1/2 rounded-full sm:hidden"
+            className="bg-border-control absolute top-2 left-1/2 h-1 w-10 -translate-x-1/2 rounded-full sm:hidden"
           />
-          <span aria-hidden="true" className="hidden w-2.5 flex-none flex-col gap-[3px] sm:flex">
-            <span className="bg-border-control h-px rounded-full" />
-            <span className="bg-border-control h-px rounded-full" />
-            <span className="bg-border-control h-px rounded-full" />
+          <span
+            aria-hidden="true"
+            className="hidden w-5 flex-none flex-col gap-[3px] sm:flex"
+          >
+            <span className="bg-text-tertiary h-0.5 rounded-full" />
+            <span className="bg-text-tertiary h-0.5 rounded-full" />
           </span>
           <h2
             id="booking-form-title"
-            className="flex-1 text-[15px] font-semibold tracking-tight"
+            className="flex-1 text-[17px] font-extrabold tracking-[-0.01em] sm:text-base"
           >
             {booking ? t("editBooking") : t("newBooking")}
           </h2>
@@ -557,9 +564,9 @@ function BookingForm({
             type="button"
             onClick={() => close(roomId)}
             aria-label={t("closeLabel")}
-            className="focus-ring text-text-tertiary hover:bg-surface-raised hover:text-text-primary rounded-control flex h-11 w-11 items-center justify-center transition sm:h-7 sm:w-7"
+            className="focus-ring text-text-tertiary hover:bg-surface-muted hover:text-text-primary rounded-control flex h-9 w-9 items-center justify-center transition sm:h-7 sm:w-7"
           >
-            <X aria-hidden="true" className="size-4" />
+            <X aria-hidden="true" className="size-[18px]" />
           </button>
         </div>
 
@@ -568,26 +575,26 @@ function BookingForm({
           className="flex min-h-0 flex-1 flex-col overflow-y-auto"
           noValidate
         >
-          <div className="flex flex-col gap-3 p-3.5">
+          <div className="flex flex-col gap-[13px] px-[18px] pt-4 pb-[18px]">
             {generalError ? (
               <p
                 role="alert"
-                className="bg-danger-surface border-danger text-danger-ink rounded-control flex gap-2 border px-3 py-2.5 text-[13px] leading-snug"
+                className="bg-danger-surface border-danger-border text-danger-ink rounded-control flex gap-2.5 border px-3.5 py-3 text-[13px] leading-snug font-semibold"
               >
-                <CircleAlert aria-hidden="true" className="mt-0.5 size-4 flex-none" />
+                <CircleAlert aria-hidden="true" className="mt-px size-4 flex-none" />
                 {generalError}
               </p>
             ) : null}
 
             {booking?.seriesId ? (
-              <p className="bg-warning-surface border-warning-border text-warning-ink rounded-control border px-3 py-2.5 text-[13px] leading-snug">
+              <p className="bg-warning-surface text-warning-ink rounded-control px-3.5 py-3 text-[13px] leading-snug font-semibold">
                 <Repeat aria-hidden="true" className="mr-1.5 inline size-3.5 align-[-2px]" />
                 {t("seriesNote")}
               </p>
             ) : null}
 
             <div className="flex flex-col gap-1">
-              <label htmlFor="room" className="text-text-secondary text-xs font-semibold">
+              <label htmlFor="room" className="text-text-secondary text-[11.5px] font-bold">
                 {t("room")}
               </label>
               <select
@@ -616,7 +623,7 @@ function BookingForm({
                 picked without dragging. */}
             <div className="flex flex-wrap gap-2">
               <div className="flex w-full min-w-0 flex-col gap-1">
-                <label htmlFor="date" className="text-text-secondary text-xs font-semibold">
+                <label htmlFor="date" className="text-text-secondary text-[11.5px] font-bold">
                   {t("date")}
                 </label>
                 <input
@@ -640,7 +647,7 @@ function BookingForm({
               <div className="flex min-w-0 flex-1 flex-col gap-1">
                 <label
                   htmlFor="start"
-                  className="text-text-secondary text-xs font-semibold"
+                  className="text-text-secondary text-[11.5px] font-bold"
                 >
                   {t("start")}
                 </label>
@@ -659,7 +666,7 @@ function BookingForm({
               </div>
 
               <div className="flex min-w-0 flex-1 flex-col gap-1">
-                <label htmlFor="end" className="text-text-secondary text-xs font-semibold">
+                <label htmlFor="end" className="text-text-secondary text-[11.5px] font-bold">
                   {t("end")}
                 </label>
                 <select
@@ -692,9 +699,9 @@ function BookingForm({
             {clashes ? (
               <p
                 aria-live="polite"
-                className="border-danger bg-danger-surface text-danger-ink rounded-control flex items-start gap-2 border px-2.5 py-2 text-[13px]"
+                className="border-danger-border bg-danger-surface text-danger-ink rounded-control flex items-start gap-2.5 border px-3.5 py-3 text-[13px] leading-snug font-semibold"
               >
-                <X aria-hidden="true" className="mt-0.5 size-3.5 flex-none" />
+                <CircleAlert aria-hidden="true" className="mt-px size-4 flex-none" />
                 {t("clash")}
               </p>
             ) : null}
@@ -705,11 +712,11 @@ function BookingForm({
                 tour of the six rooms into one click, with the day and the time
                 kept as they are. */}
             {clashes && alternatives.length > 0 ? (
-              <div className="flex flex-col gap-1.5">
-                <span className="text-text-tertiary text-xs font-semibold">
+              <div className="flex flex-col gap-2">
+                <span className="text-text-secondary text-xs font-bold">
                   {t("freeInstead")}
                 </span>
-                <span className="flex flex-wrap gap-1.5">
+                <span className="flex flex-wrap gap-2">
                   {alternatives.map((room) => (
                     <button
                       key={room.id}
@@ -720,10 +727,10 @@ function BookingForm({
                         floor: room.floor,
                         capacity: room.capacity,
                       })}
-                      className="focus-ring border-border-grid bg-surface hover:border-accent-own-booking text-text-primary rounded-control flex items-center gap-1.5 border px-2 py-1 text-[13px] font-medium transition"
+                      className="focus-ring bg-accent-own-surface text-accent-own-ink rounded-chip flex items-center gap-1.5 px-3 py-2 text-[12.5px] font-bold transition hover:brightness-95"
                     >
                       {room.name}
-                      <span className="text-text-tertiary font-mono text-[11px]">
+                      <span className="font-mono text-[11px] opacity-70">
                         {room.capacity}
                       </span>
                     </button>
@@ -732,13 +739,12 @@ function BookingForm({
               </div>
             ) : null}
 
-            <p className="bg-surface-muted text-text-secondary rounded-control flex items-center gap-2 px-2.5 py-2 text-[13px]">
-              <span className="font-semibold">{t("duration")}</span>
-              <span className="text-text-primary font-mono font-semibold">
-                {durationLabel(durationMinutes, tDuration)}
-              </span>
-              <span className="flex-1" />
-              <span className="text-text-tertiary text-xs">
+            {/* The one number the form is really about, said once in the
+                accent colour rather than three times in grey. */}
+            <p className="bg-accent-own-surface text-accent-own-ink rounded-chip flex items-center gap-2 px-3 py-2">
+              <Clock aria-hidden="true" className="size-3.5 flex-none" />
+              <span className="font-mono text-xs font-semibold">
+                {t("duration")} {durationLabel(durationMinutes, tDuration)} ·{" "}
                 {t("maxDuration", { hours: MAX_DURATION_MINUTES / 60 })}
               </span>
             </p>
@@ -771,15 +777,15 @@ function BookingForm({
             />
 
             {booking ? null : (
-              <div className="border-border-grid rounded-control flex flex-wrap items-center gap-2.5 border p-2.5">
+              <div className="border-border-grid rounded-control flex flex-wrap items-center gap-2.5 border p-3">
                 <input
                   id="repeat"
                   type="checkbox"
                   checked={repeat}
                   onChange={(event) => setRepeat(event.target.checked)}
-                  className="accent-accent-own-booking focus-ring h-4 w-4"
+                  className="accent-accent-own-booking focus-ring size-[18px] rounded-[5px]"
                 />
-                <label htmlFor="repeat" className="flex-1 text-[13px]">
+                <label htmlFor="repeat" className="flex-1 text-[13px] font-semibold">
                   <Repeat aria-hidden="true" className="mr-1.5 inline size-3.5 align-[-2px]" />
                   {t("repeat")}
                 </label>
@@ -809,25 +815,20 @@ function BookingForm({
               they never share a word. Three buttons never fit one 364px row, so
               instead of letting them wrap ragged the destructive one takes a row
               of its own under the pair that ends the form. */}
-          <div className="border-border-grid bg-surface-muted flex flex-none flex-col gap-2 border-t p-3.5">
-            <div className="flex items-center gap-2">
+          <div className="border-border-grid flex flex-none flex-col gap-2 border-t px-[18px] py-4">
+            <div className="flex items-center gap-2.5">
               <Button
                 type="button"
                 variant="secondary"
                 size="lg"
-                className="flex-1 sm:min-h-[38px]"
+                className="min-w-0 flex-none"
                 onClick={() => close(roomId)}
               >
                 {t("close")}
               </Button>
               {/* Wider than "Close": of the two ways out of the form, this is
                   the one the panel was opened for. */}
-              <Button
-                type="submit"
-                size="lg"
-                disabled={pending}
-                className="flex-[1.4] sm:min-h-[38px]"
-              >
+              <Button type="submit" size="lg" disabled={pending} className="flex-1">
                 {pending ? t("saving") : booking ? t("save") : t("book")}
               </Button>
             </div>
@@ -839,7 +840,7 @@ function BookingForm({
                 isRecurring={booking.seriesId !== null}
                 redirectTo={`/rooms/${roomId}?week=${weekParam}`}
                 disabled={pending}
-                className="w-full sm:min-h-[38px]"
+                className="w-full"
               />
             ) : null}
           </div>
