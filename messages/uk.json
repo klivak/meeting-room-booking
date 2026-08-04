@@ -99,6 +99,7 @@
     "pastWeek": "минулий тиждень",
     "pastDay": "Цей день уже минув — забронювати можна лише майбутній час.",
     "slotPast": "Час уже минув",
+    "slotTooLong": "Максимум {hours} год",
     "officeHours": "Робочі години {from}–{to} за {officeZone}"
   },
   "shortcuts": {

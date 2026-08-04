@@ -200,7 +200,10 @@ function pastRows(day: DateTime, now: number | null): number {
 
   const elapsed = +moment - +getSlotStart(day, 0);
 
-  return Math.max(0, Math.min(SLOT_COUNT, Math.floor(elapsed / (SLOT_MINUTES * 60_000))));
+  return Math.max(
+    0,
+    Math.min(SLOT_COUNT, Math.floor(elapsed / (SLOT_MINUTES * 60_000))),
+  );
 }
 
 /**
@@ -292,6 +295,12 @@ export function Schedule({
   const weekStartDateTime = DateTime.fromISO(weekStart, { zone: OFFICE_TZ });
   const days = getWeekDays(weekStartDateTime);
   const labels = getSlotLabels(days[0], timeZone);
+  // The axis labels start-of-row times, so the closing hour never appears: the
+  // last row is labelled 18:30 and the line under it is unnamed. It is drawn
+  // once, on the bottom edge of the last row.
+  const closingLabel = getSlotStart(days[0], SLOT_COUNT)
+    .setZone(timeZone)
+    .toFormat("HH:mm");
   const nowMarker = now ? getNowMarker(new Date(now), weekStartDateTime) : null;
   const todayIso = DateTime.now().setZone(OFFICE_TZ).toISODate();
   const weekParam = weekStartDateTime.toISODate();
@@ -306,7 +315,8 @@ export function Schedule({
   const day = days[dayIndex];
   // Compared as office dates, because "already over" is a question about the
   // working day, not about the viewer's clock.
-  const isPastDay = (option: DateTime) => (option.toISODate() ?? "") < (todayIso ?? "");
+  const isPastDay = (option: DateTime) =>
+    (option.toISODate() ?? "") < (todayIso ?? "");
 
   /** Link to another day, moving to the neighbouring week when it runs out. */
   const dayHref = (target: DateTime) =>
@@ -345,12 +355,18 @@ export function Schedule({
    * applies to the form — this asks, it does not decide — so a refusal comes
    * back as its own message and the block returns to where it was saved.
    */
-  const saveShape = async (id: string, targetDay: number, rows: {
-    rowStart: number;
-    rowEnd: number;
-  }) => {
-    const startsAt = getSlotStart(days[targetDay], rows.rowStart).toUTC().toISO() ?? "";
-    const endsAt = getSlotStart(days[targetDay], rows.rowEnd).toUTC().toISO() ?? "";
+  const saveShape = async (
+    id: string,
+    targetDay: number,
+    rows: {
+      rowStart: number;
+      rowEnd: number;
+    },
+  ) => {
+    const startsAt =
+      getSlotStart(days[targetDay], rows.rowStart).toUTC().toISO() ?? "";
+    const endsAt =
+      getSlotStart(days[targetDay], rows.rowEnd).toUTC().toISO() ?? "";
 
     setPendingShape({ id, startsAt, endsAt });
 
@@ -402,7 +418,8 @@ export function Schedule({
       dayIndex: placement.dayIndex,
       rowStart: placement.rowStart,
       rowEnd: placement.rowStart + placement.rowSpan,
-      grabOffset: mode === "move" ? clamp(grabbedRow, 0, placement.rowSpan - 1) : 0,
+      grabOffset:
+        mode === "move" ? clamp(grabbedRow, 0, placement.rowSpan - 1) : 0,
       moved: false,
     });
   };
@@ -438,7 +455,11 @@ export function Schedule({
       return;
     }
 
-    if (dayIndex === placement.dayIndex && rowStart === placement.rowStart && rowEnd === placement.rowStart + span) {
+    if (
+      dayIndex === placement.dayIndex &&
+      rowStart === placement.rowStart &&
+      rowEnd === placement.rowStart + span
+    ) {
       return;
     }
 
@@ -500,7 +521,9 @@ export function Schedule({
         // to the column rather than to the weekday, so the single-column day
         // view always has one too.
         tabIndex={
-          focusCell.column === columnIndex && focusCell.row === rowIndex ? 0 : -1
+          focusCell.column === columnIndex && focusCell.row === rowIndex
+            ? 0
+            : -1
         }
         aria-disabled={canBook ? undefined : true}
         onFocus={() => setFocusCell({ column: columnIndex, row: rowIndex })}
@@ -511,7 +534,11 @@ export function Schedule({
           }
           // Keeps the browser from selecting text across the cells.
           event.preventDefault();
-          setDrag({ dayIndex: cellDayIndex, anchorRow: rowIndex, focusRow: rowIndex });
+          setDrag({
+            dayIndex: cellDayIndex,
+            anchorRow: rowIndex,
+            focusRow: rowIndex,
+          });
         }}
         onPointerEnter={() => {
           if (drag && drag.dayIndex === cellDayIndex) {
@@ -598,7 +625,10 @@ export function Schedule({
     }
 
     const finish = () => {
-      const { rowStart, rowEnd } = getSelectionRows(drag.anchorRow, drag.focusRow);
+      const { rowStart, rowEnd } = getSelectionRows(
+        drag.anchorRow,
+        drag.focusRow,
+      );
       setDrag(null);
       openForm(days[drag.dayIndex], rowStart, rowEnd);
     };
@@ -626,7 +656,8 @@ export function Schedule({
       const rows = dragToRows(bookingDrag, cell.row);
       // A move follows the pointer across the week; a resize belongs to the day
       // the booking is already on.
-      const dayIndex = bookingDrag.mode === "move" ? cell.dayIndex : bookingDrag.dayIndex;
+      const dayIndex =
+        bookingDrag.mode === "move" ? cell.dayIndex : bookingDrag.dayIndex;
 
       if (
         rows.rowStart === bookingDrag.rowStart &&
@@ -694,7 +725,10 @@ export function Schedule({
     const placement =
       shapeOf(booking) ??
       placeBooking(
-        { startsAt: new Date(booking.startsAt), endsAt: new Date(booking.endsAt) },
+        {
+          startsAt: new Date(booking.startsAt),
+          endsAt: new Date(booking.endsAt),
+        },
         weekStartDateTime,
       );
 
@@ -750,7 +784,9 @@ export function Schedule({
             : undefined
         }
         onKeyDown={
-          canReshape ? (event) => nudgeBooking(booking, placement, event) : undefined
+          canReshape
+            ? (event) => nudgeBooking(booking, placement, event)
+            : undefined
         }
         // A release that ends a drag also fires a click on the link underneath,
         // and opening the form on top of the move just made is not what the
@@ -772,7 +808,10 @@ export function Schedule({
         invalid={
           isDragging &&
           selectionClashes(
-            getSlotStart(days[placement.dayIndex], placement.rowStart).toJSDate(),
+            getSlotStart(
+              days[placement.dayIndex],
+              placement.rowStart,
+            ).toJSDate(),
             getSlotStart(
               days[placement.dayIndex],
               placement.rowStart + placement.rowSpan,
@@ -797,11 +836,19 @@ export function Schedule({
    */
   const selectionFor = (
     targetDay: number,
-  ): { rowStart: number; rowEnd: number } | null => {
+  ): { rowStart: number; rowEnd: number; overLimit?: boolean } | null => {
     if (drag) {
-      return drag.dayIndex === targetDay
-        ? getSelectionRows(drag.anchorRow, drag.focusRow)
-        : null;
+      if (drag.dayIndex !== targetDay) {
+        return null;
+      }
+
+      // The rows are clamped to the longest allowed booking, so pulling further
+      // simply stops the block growing. Without saying why, that reads as the
+      // grid having frozen; the range turns red for as long as the pointer is
+      // past the limit, and goes back to jade the moment it returns.
+      const overLimit = Math.abs(drag.focusRow - drag.anchorRow) + 1 > MAX_ROWS;
+
+      return { ...getSelectionRows(drag.anchorRow, drag.focusRow), overLimit };
     }
 
     // Ahead of the address on purpose: see justPicked above.
@@ -819,10 +866,16 @@ export function Schedule({
     const end = selectedSlotEnd
       ? new Date(selectedSlotEnd)
       : new Date(+start + SLOT_MINUTES * 60_000);
-    const placement = placeBooking({ startsAt: start, endsAt: end }, weekStartDateTime);
+    const placement = placeBooking(
+      { startsAt: start, endsAt: end },
+      weekStartDateTime,
+    );
 
     return placement && placement.dayIndex === targetDay
-      ? { rowStart: placement.rowStart, rowEnd: placement.rowStart + placement.rowSpan }
+      ? {
+          rowStart: placement.rowStart,
+          rowEnd: placement.rowStart + placement.rowSpan,
+        }
       : null;
   };
 
@@ -840,7 +893,12 @@ export function Schedule({
     bookings.some(
       (booking) =>
         booking.id !== exceptId &&
-        intervalsOverlap(start, end, new Date(booking.startsAt), new Date(booking.endsAt)),
+        intervalsOverlap(
+          start,
+          end,
+          new Date(booking.startsAt),
+          new Date(booking.endsAt),
+        ),
     );
 
   const renderSelection = (
@@ -865,7 +923,7 @@ export function Schedule({
     // Only once the clock is known — on the server render it is not, and a range
     // wrongly called past would be worse than one called nothing at all.
     const inPast = now !== null && +startsAt <= now;
-    const refused = clashes || inPast;
+    const refused = clashes || inPast || rows.overLimit === true;
 
     return (
       <div
@@ -896,12 +954,19 @@ export function Schedule({
           {refused ? (
             <>
               <X aria-hidden="true" className="size-3" />
-              {clashes ? t("taken") : t("slotPast")}
+              {clashes
+                ? t("taken")
+                : inPast
+                  ? t("slotPast")
+                  : t("slotTooLong", { hours: MAX_DURATION_MINUTES / 60 })}
             </>
           ) : (
             <>
               {from}–{to} ·{" "}
-              {durationLabel((rows.rowEnd - rows.rowStart) * SLOT_MINUTES, tDuration)}
+              {durationLabel(
+                (rows.rowEnd - rows.rowStart) * SLOT_MINUTES,
+                tDuration,
+              )}
             </>
           )}
         </span>
@@ -933,23 +998,34 @@ export function Schedule({
     labels.map((label, rowIndex) => (
       <div
         key={`${label}-${rowIndex}`}
-        className="flex items-start justify-end pr-2.5"
+        className="relative flex items-start justify-end pr-2.5"
         style={{ height: rowHeight }}
       >
         {/* Lifted onto the line it marks, the way a calendar axis reads —
             except the first, which has only the header above it and would be
-            clipped by the top edge of the grid. Whole hours carry the weight;
-            the half hours between them go unlabelled, so the axis reads as a
-            scale instead of forty equal numbers. */}
+            clipped by the top edge of the grid, so it drops clear of the line
+            instead. Whole hours carry the weight; the half hours between them
+            go unlabelled, so the axis reads as a scale instead of forty equal
+            numbers. */}
         <span
           className={`font-mono text-xs leading-none sm:text-[10.5px] ${
-            rowIndex === 0 ? "" : "-translate-y-[5px]"
+            rowIndex === 0 ? "translate-y-[3px]" : "-translate-y-[5px]"
           } ${
-            rowIndex % 2 === 0 ? "text-text-tertiary font-semibold" : "text-transparent"
+            rowIndex % 2 === 0
+              ? "text-text-tertiary font-semibold"
+              : "text-transparent"
           }`}
         >
           {label}
         </span>
+
+        {/* Sits inside the last row rather than on the line below it: the card
+            clips anything hanging past its bottom edge. */}
+        {rowIndex === SLOT_COUNT - 1 ? (
+          <span className="text-text-tertiary absolute right-2.5 bottom-0.5 font-mono text-xs leading-none font-semibold sm:text-[10.5px]">
+            {closingLabel}
+          </span>
+        ) : null}
       </div>
     ));
 
@@ -963,7 +1039,11 @@ export function Schedule({
    * screen, and both of them need it.
    */
   const emptyWeekNote = isWeekEmpty ? (
-    <div className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 px-4 text-center">
+    // It sits over the slots it is inviting the user to click, so it steps
+    // aside as soon as the pointer is on the grid and comes back when the
+    // pointer leaves. Hover only, which is exactly right: on a touch screen
+    // there is no pointer hanging over the note in the first place.
+    <div className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 px-4 text-center transition-opacity duration-150 group-hover:opacity-0">
       <SlotMotif className="hidden sm:flex" />
       <SlotMotif small className="sm:hidden" />
       <span className="text-lg font-extrabold tracking-[-0.02em] sm:text-xl">
@@ -979,14 +1059,21 @@ export function Schedule({
   // week header. Two sets rather than one: the strip repeats the ownership
   // colours of the blocks below it, so a glance at the header already says
   // whether the busy part of a day is yours.
-  const busyByDay = new Map<number, { mine: Set<number>; others: Set<number> }>();
+  const busyByDay = new Map<
+    number,
+    { mine: Set<number>; others: Set<number> }
+  >();
   for (const { booking, placement } of placements) {
     const day = busyByDay.get(placement.dayIndex) ?? {
       mine: new Set<number>(),
       others: new Set<number>(),
     };
     const target = booking.isMine ? day.mine : day.others;
-    for (let row = placement.rowStart; row < placement.rowStart + placement.rowSpan; row += 1) {
+    for (
+      let row = placement.rowStart;
+      row < placement.rowStart + placement.rowSpan;
+      row += 1
+    ) {
       target.add(row);
     }
     busyByDay.set(placement.dayIndex, day);
@@ -1011,7 +1098,9 @@ export function Schedule({
             </span>
             <span className="text-text-tertiary font-mono text-xs">
               {day.toFormat("dd.MM")}
-              {day.toISODate() === todayIso ? ` · ${t("today").toLowerCase()}` : ""}
+              {day.toISODate() === todayIso
+                ? ` · ${t("today").toLowerCase()}`
+                : ""}
             </span>
           </span>
           <Link
@@ -1048,7 +1137,9 @@ export function Schedule({
                     : `bg-surface-muted ${
                         // A dimmer word, not a dimmer layer: opacity on the pill
                         // took its label under the contrast floor.
-                        isPastDay(option) ? "text-text-tertiary" : "text-text-secondary"
+                        isPastDay(option)
+                          ? "text-text-tertiary"
+                          : "text-text-secondary"
                       }`
                 }`}
               >
@@ -1068,7 +1159,7 @@ export function Schedule({
           nextHref={dayHref(day.plus({ days: 1 }))}
         >
           <div className="bg-surface border-border-grid rounded-card shadow-rest overflow-hidden border">
-            <div className="relative flex">
+            <div className="group relative flex">
               <div className="border-border-grid grid-rows-day-touch w-14 flex-none border-r">
                 {timeAxis(DAY_ROW_H)}
               </div>
@@ -1108,7 +1199,9 @@ export function Schedule({
                     }}
                   >
                     <span className="bg-now-label rounded-booking absolute -top-2.5 left-1.5 px-1.5 py-px font-mono text-[11px] font-bold text-white">
-                      {DateTime.fromMillis(now).setZone(timeZone).toFormat("HH:mm")}
+                      {DateTime.fromMillis(now)
+                        .setZone(timeZone)
+                        .toFormat("HH:mm")}
                     </span>
                   </div>
                 ) : null}
@@ -1186,7 +1279,7 @@ export function Schedule({
             })}
           </div>
 
-          <div className="relative flex">
+          <div className="group relative flex">
             <div className="bg-surface border-border-grid sticky left-0 z-11 w-axis flex-none border-r">
               {timeAxis(ROW_H)}
             </div>
@@ -1250,7 +1343,9 @@ export function Schedule({
                 <div className="bg-now-line ml-axis animate-now h-0.5 origin-left shadow-[0_0_8px_var(--color-now-line)]" />
                 <span className="w-axis absolute -top-2 left-0 pr-1.5 text-right">
                   <span className="text-now-label bg-surface rounded px-1 font-mono text-[10.5px] font-bold">
-                    {DateTime.fromMillis(now).setZone(timeZone).toFormat("HH:mm")}
+                    {DateTime.fromMillis(now)
+                      .setZone(timeZone)
+                      .toFormat("HH:mm")}
                   </span>
                 </span>
               </div>
@@ -1258,7 +1353,6 @@ export function Schedule({
           </div>
         </div>
       </div>
-
     </div>
   );
 }
