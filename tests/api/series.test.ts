@@ -54,12 +54,17 @@ describe("creating a series", () => {
     expect(bookings).toHaveLength(4);
     expect(new Set(bookings.map((booking) => booking.seriesId)).size).toBe(1);
 
-    // Exactly seven days apart, week after week.
+    // A week apart in office time, not 7×24 hours: a series that crosses the
+    // switch to winter time keeps its wall-clock 10:00, and the interval in UTC
+    // is an hour longer that week. Comparing in UTC would call that a bug.
     for (let index = 1; index < bookings.length; index++) {
-      const days =
-        (bookings[index].startsAt.getTime() - bookings[index - 1].startsAt.getTime()) /
-        (24 * 60 * 60 * 1000);
-      expect(days).toBe(7);
+      const previous = DateTime.fromJSDate(bookings[index - 1].startsAt).setZone(
+        OFFICE_TZ,
+      );
+      const current = DateTime.fromJSDate(bookings[index].startsAt).setZone(OFFICE_TZ);
+
+      expect(current.diff(previous, "days").days).toBe(7);
+      expect(current.toFormat("HH:mm")).toBe(previous.toFormat("HH:mm"));
     }
   });
 
