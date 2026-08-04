@@ -39,6 +39,7 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/meeting_room_booking?schema=public
       SESSION_SECRET: ${SESSION_SECRET:-dev-secret-change-me-in-production}
       NOTIFY_BEFORE_MINUTES: ${NOTIFY_BEFORE_MINUTES:-10}
+      SITE_URL: ${SITE_URL:-http://localhost:3000}
       # The port is published straight to the host here, so nothing rewrites
       # X-Forwarded-For and the header must not be believed.
       TRUST_PROXY: ${TRUST_PROXY:-false}

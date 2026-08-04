@@ -1,9 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
 import { JetBrains_Mono, Manrope } from "next/font/google";
 
 import { THEME_STORAGE_KEY } from "@/components/theme";
+import { env } from "@/lib/server/env";
 
 import "./globals.css";
 
@@ -36,13 +37,46 @@ const THEME_SCRIPT = `(function(){try{var s=localStorage.getItem(${JSON.stringif
   THEME_STORAGE_KEY,
 )});var d=s==="dark"||(s!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.dataset.theme=d?"dark":"light"}catch(e){}})()`;
 
+// The browser chrome on a phone takes the brand jade rather than the default
+// white, so the app does not end below a strip of someone else's colour.
+export const viewport: Viewport = {
+  themeColor: "#0d8460",
+};
+
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("app");
+  const locale = await getLocale();
+
+  // The social preview carries the headline as baked-in text, so it has to
+  // follow the language the visitor is reading the app in.
+  const image = {
+    url: locale === "uk" ? "/og-uk.jpg" : "/og-en.jpg",
+    width: 1200,
+    height: 630,
+    alt: t("description"),
+  };
 
   return {
+    // og:image must be absolute; without a base Next leaves it relative and the
+    // card silently does not render.
+    metadataBase: new URL(env.SITE_URL),
     // Every page fills in the template, so the tab always says where you are.
     title: { default: t("title"), template: `%s · ${t("title")}` },
     description: t("description"),
+    // Neither block states a title or a description: left out, Next fills them
+    // from the resolved title and description of the page being rendered, and a
+    // shared link then says which page it points at instead of always naming the
+    // application.
+    openGraph: {
+      type: "website",
+      locale: locale === "uk" ? "uk_UA" : "en_US",
+      siteName: t("title"),
+      images: [image],
+    },
+    twitter: {
+      card: "summary_large_image",
+      images: [image],
+    },
   };
 }
 

@@ -12,6 +12,9 @@ const envSchema = z.object({
     .string()
     .min(16, "SESSION_SECRET must be at least 16 characters long"),
   NOTIFY_BEFORE_MINUTES: z.coerce.number().int().positive().default(10),
+  // Public origin of the deployment. Only the social preview needs it: og:image
+  // has to be an absolute URL, and a relative one shows no card at all.
+  SITE_URL: z.url().default("http://localhost:3000"),
   // Whether a reverse proxy in front of the app rewrites X-Forwarded-For. With
   // nothing in front, that header is written by whoever is sending the request,
   // so believing it would let one caller look like a thousand.

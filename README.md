@@ -156,7 +156,7 @@ npm run dev                 # http://localhost:3000
 
 ## Змінні оточення
 
-Усі описані в `.env.example`: `DATABASE_URL`, `SESSION_SECRET`, `NEXT_PUBLIC_WEEK_START_DAY` (перший день тижня, 1 = понеділок), `NEXT_PUBLIC_DEMO_LOGIN` (кнопка демо-акаунта на сторінці входу), `NOTIFY_BEFORE_MINUTES`, `TRUST_PROXY`. Реальний `.env` у git не потрапляє.
+Усі описані в `.env.example`: `DATABASE_URL`, `SESSION_SECRET`, `NEXT_PUBLIC_WEEK_START_DAY` (перший день тижня, 1 = понеділок), `NEXT_PUBLIC_DEMO_LOGIN` (кнопка демо-акаунта на сторінці входу), `SITE_URL` (публічний origin — з нього будується абсолютний `og:image`), `NOTIFY_BEFORE_MINUTES`, `TRUST_PROXY`. Реальний `.env` у git не потрапляє.
 
 `NEXT_PUBLIC_WEEK_START_DAY` і `NEXT_PUBLIC_DEMO_LOGIN` вшиваються в клієнтський бандл під час збірки, тому в Docker вони передаються як build-аргументи, а не як змінні оточення контейнера.
 
