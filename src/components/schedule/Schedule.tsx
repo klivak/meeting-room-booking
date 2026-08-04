@@ -590,7 +590,11 @@ export function Schedule({
         // to zero width wherever its parent is not a flex container.
         // The row lines are painted by the column behind it, so the cell itself
         // carries no border: forty of them stacked read as a spreadsheet.
-        className={`focus-ring-inset group relative flex w-full items-center justify-center transition ${
+        // The group is named: the whole grid is a plain `group` too (the empty
+        // week note steps aside when the pointer is anywhere on it), and an
+        // unnamed group-hover here matched that outer one as well, so hovering
+        // a single cell lit the time label in all 140 of them.
+        className={`focus-ring-inset group/slot relative flex w-full items-center justify-center transition ${
           canBook ? "cursor-pointer" : "cursor-default"
         }`}
         style={{ height: rowHeight }}
@@ -601,8 +605,8 @@ export function Schedule({
         <span
           className={`rounded-booking pointer-events-none absolute inset-x-1 inset-y-[2px] flex items-center justify-center gap-1 font-mono text-xs opacity-0 transition-opacity sm:text-[11px] ${
             canBook
-              ? "border-accent-own-booking bg-accent-own-surface text-accent-own-ink border-[1.5px] border-dashed font-bold group-hover:opacity-100 group-focus-visible:opacity-100"
-              : "text-text-tertiary group-focus-visible:opacity-100"
+              ? "border-accent-own-booking bg-accent-own-surface text-accent-own-ink border-[1.5px] border-dashed font-bold group-hover/slot:opacity-100 group-focus-visible/slot:opacity-100"
+              : "text-text-tertiary group-focus-visible/slot:opacity-100"
           }`}
         >
           {canBook ? <Plus aria-hidden="true" className="size-3" /> : null}
