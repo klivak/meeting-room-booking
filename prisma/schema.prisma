@@ -126,7 +126,11 @@ model Booking {
 
   // Week view of a room and the "my bookings" list are the only read paths.
   @@index([roomId, startsAt])
-  @@index([userId, startsAt])
+  // The "my bookings" list splits on endsAt and orders by startsAt, so the
+  // filter columns come first and the sort column last. Without canceledAt and
+  // endsAt in here, every page read the user's whole history to throw most of
+  // it away.
+  @@index([userId, canceledAt, endsAt, startsAt])
   // Cancelling a series updates all of its occurrences in one updateMany
   // filtered by seriesId, which had nothing to read but the whole table.
   @@index([seriesId])
