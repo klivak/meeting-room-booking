@@ -370,6 +370,15 @@ export default async function RoomPage({
   }
 
   const now = new Date();
+  const roomsByFloor = rooms.reduce<Map<number, typeof rooms>>(
+    (groups, option) => {
+      const floorRooms = groups.get(option.floor) ?? [];
+      floorRooms.push(option);
+      groups.set(option.floor, floorRooms);
+      return groups;
+    },
+    new Map(),
+  );
 
   // The filters live in the query, so a foreign, canceled or already finished id
   // in the URL simply yields nothing instead of being trusted. They mirror
@@ -423,60 +432,77 @@ export default async function RoomPage({
         {/* Below lg the strip runs to both edges of the screen instead of
             stopping inside the page padding: a chip cut off by the window reads
             as "scroll me", the same chip cut off 16px early reads as broken. */}
-        <ul className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 lg:mx-0 lg:flex-col lg:gap-[3px] lg:overflow-visible lg:px-0 lg:pb-0">
-          {rooms.map((option) => {
-            const isCurrent = option.id === room.id;
-            const availability = getRoomAvailability(
-              todaysBookings.filter((booking) => booking.roomId === option.id),
-              now,
-              dayStart,
-              dayEnd,
-            );
-            const dot =
-              availability.kind === "free"
-                ? "free"
-                : availability.kind === "freeFrom"
-                  ? "freeFrom"
-                  : "quiet";
+        <div className="-mx-4 flex gap-4 overflow-x-auto px-4 pb-1 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0 lg:pb-0">
+          {Array.from(roomsByFloor).map(([floor, floorRooms]) => (
+            <section key={floor} className="shrink-0">
+              <h2 className="border-border-grid bg-surface-muted text-text-primary mb-2 flex items-center gap-2 rounded-md border px-2.5 py-1.5 font-mono text-[11px] font-extrabold tracking-[0.08em] uppercase">
+                <span
+                  aria-hidden="true"
+                  className="bg-accent-own-booking size-1.5 shrink-0 rounded-full"
+                />
+                <span>{tRooms("floorHeading", { floor })}</span>
+              </h2>
+              <ul className="flex gap-1.5 lg:flex-col lg:gap-[3px]">
+                {floorRooms.map((option) => {
+                  const isCurrent = option.id === room.id;
+                  const availability = getRoomAvailability(
+                    todaysBookings.filter(
+                      (booking) => booking.roomId === option.id,
+                    ),
+                    now,
+                    dayStart,
+                    dayEnd,
+                  );
+                  const dot =
+                    availability.kind === "free"
+                      ? "free"
+                      : availability.kind === "freeFrom"
+                        ? "freeFrom"
+                        : "quiet";
 
-            return (
-              <li key={option.id} className="shrink-0 lg:shrink">
-                <Link
-                  href={`/rooms/${option.id}?week=${weekStart.toISODate()}`}
-                  aria-current={isCurrent ? "page" : undefined}
-                  className={`focus-ring rounded-control flex min-h-11 items-center justify-between gap-2.5 px-2.5 py-2 no-underline transition lg:min-h-0 ${
-                    isCurrent
-                      ? "bg-accent-own-surface shadow-[inset_3px_0_0_var(--color-accent-own-booking)]"
-                      : "bg-surface hover:bg-surface-muted lg:bg-transparent"
-                  }`}
-                >
-                  <span className="flex min-w-0 flex-col gap-0.5">
-                    <span
-                      className={`text-[13.5px] leading-tight font-bold ${
-                        isCurrent ? "text-accent-own-ink" : "text-text-primary"
-                      }`}
-                    >
-                      {option.name}
-                    </span>
-                    <span className="text-text-tertiary font-mono text-xs whitespace-nowrap sm:text-[11px]">
-                      {tRooms("roomMeta", {
-                        floor: option.floor,
-                        capacity: option.capacity,
-                      })}
-                    </span>
-                  </span>
-                  {/* Free, free later, or nothing left today — the same three
-                      answers the room cards give, so the rail is a shortcut and
-                      never a second opinion. */}
-                  <span
-                    aria-hidden="true"
-                    className={`size-2 shrink-0 rounded-full ${RAIL_DOTS[dot]}`}
-                  />
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+                  return (
+                    <li key={option.id} className="shrink-0 lg:shrink">
+                      <Link
+                        href={`/rooms/${option.id}?week=${weekStart.toISODate()}`}
+                        aria-current={isCurrent ? "page" : undefined}
+                        className={`focus-ring rounded-control flex min-h-11 items-center justify-between gap-2.5 px-2.5 py-2 no-underline transition lg:min-h-0 ${
+                          isCurrent
+                            ? "bg-accent-own-surface shadow-[inset_3px_0_0_var(--color-accent-own-booking)]"
+                            : "bg-surface hover:bg-surface-muted lg:bg-transparent"
+                        }`}
+                      >
+                        <span className="flex min-w-0 flex-col gap-0.5">
+                          <span
+                            className={`text-[13.5px] leading-tight font-bold ${
+                              isCurrent
+                                ? "text-accent-own-ink"
+                                : "text-text-primary"
+                            }`}
+                          >
+                            {option.name}
+                          </span>
+                          <span className="text-text-tertiary font-mono text-xs whitespace-nowrap sm:text-[11px]">
+                            {tRooms("roomMeta", {
+                              floor: option.floor,
+                              capacity: option.capacity,
+                            })}
+                          </span>
+                        </span>
+                        {/* Free, free later, or nothing left today — the same three
+                            answers the room cards give, so the rail is a shortcut and
+                            never a second opinion. */}
+                        <span
+                          aria-hidden="true"
+                          className={`size-2 shrink-0 rounded-full ${RAIL_DOTS[dot]}`}
+                        />
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ))}
+        </div>
       </nav>
 
       {/* Keyed by the room so React remounts this column when another room is

@@ -59,6 +59,7 @@
     "capacity": "Seats",
     "any": "Any",
     "floor": "floor {floor}",
+    "floorHeading": "Floor {floor}",
     "seats": "{count, plural, one {# seat} other {# seats}}",
     "roomLine": "{name} · floor {floor} · {capacity, plural, one {# seat} other {# seats}}",
     "roomMeta": "Floor {floor} · {capacity, plural, one {# seat} other {# seats}}",

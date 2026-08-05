@@ -114,66 +114,90 @@ async function RoomsList({ capacityMin }: { capacityMin?: number }) {
   }
 
   const now = new Date();
+  const roomsByFloor = rooms.reduce<Map<number, typeof rooms>>(
+    (groups, room) => {
+      const floorRooms = groups.get(room.floor) ?? [];
+      floorRooms.push(room);
+      groups.set(room.floor, floorRooms);
+      return groups;
+    },
+    new Map(),
+  );
+  const roomIndexes = new Map(rooms.map((room, index) => [room.id, index]));
 
   return (
-    <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-      {rooms.map((room, index) => {
-        const availability = getRoomAvailability(
-          todaysBookings.filter((booking) => booking.roomId === room.id),
-          now,
-          dayStart,
-          dayEnd,
-        );
+    <div className="flex flex-col gap-7">
+      {Array.from(roomsByFloor).map(([floor, floorRooms]) => (
+        <section key={floor} aria-labelledby={`floor-${floor}`}>
+          <h2
+            id={`floor-${floor}`}
+            className="text-text-tertiary mb-3 font-mono text-xs font-bold tracking-[0.08em] uppercase"
+          >
+            {t("floorHeading", { floor })}
+          </h2>
+          <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {floorRooms.map((room) => {
+              const availability = getRoomAvailability(
+                todaysBookings.filter((booking) => booking.roomId === room.id),
+                now,
+                dayStart,
+                dayEnd,
+              );
 
-        const view: RoomAvailabilityView =
-          availability.kind === "freeFrom"
-            ? { kind: "freeFrom", at: availability.at.toISOString() }
-            : { kind: availability.kind };
+              const view: RoomAvailabilityView =
+                availability.kind === "freeFrom"
+                  ? { kind: "freeFrom", at: availability.at.toISOString() }
+                  : { kind: availability.kind };
 
-        return (
-          <li key={room.id}>
-            {/* The whole card is the link: the name alone would be a small
-                target for the most common action on this screen. The cards
-                arrive one after another rather than all at once, so the eye
-                reads the grid in the order it is laid out. */}
-            <Link
-              href={`/rooms/${room.id}`}
-              style={{ animationDelay: `${index * 60}ms` }}
-              className="focus-ring border-border-grid bg-surface rounded-card shadow-card hover:border-accent-own-booking hover:shadow-panel animate-block relative flex flex-col overflow-hidden border p-[22px] text-inherit no-underline transition hover:-translate-y-0.5"
-            >
-              {/* The capacity again, as a watermark: it gives the card a scale
-                  and a face without another line of text. Drawn by a pseudo
-                  element rather than as a text node — at 6% it is a texture, and
-                  a contrast checker is right to call that unreadable prose. */}
-              <span
-                aria-hidden="true"
-                data-capacity={room.capacity}
-                className="text-accent-own-booking/[0.06] pointer-events-none absolute -top-8 -right-2.5 font-mono text-[120px] leading-none font-bold after:content-[attr(data-capacity)]"
-              />
+              return (
+                <li key={room.id}>
+                  {/* The whole card is the link: the name alone would be a small
+                      target for the most common action on this screen. The cards
+                      arrive one after another rather than all at once, so the eye
+                      reads the grid in the order it is laid out. */}
+                  <Link
+                    href={`/rooms/${room.id}`}
+                    style={{
+                      animationDelay: `${(roomIndexes.get(room.id) ?? 0) * 60}ms`,
+                    }}
+                    className="focus-ring border-border-grid bg-surface rounded-card shadow-card hover:border-accent-own-booking hover:shadow-panel animate-block relative flex flex-col overflow-hidden border p-[22px] text-inherit no-underline transition hover:-translate-y-0.5"
+                  >
+                    {/* The capacity again, as a watermark: it gives the card a scale
+                        and a face without another line of text. Drawn by a pseudo
+                        element rather than as a text node — at 6% it is a texture, and
+                        a contrast checker is right to call that unreadable prose. */}
+                    <span
+                      aria-hidden="true"
+                      data-capacity={room.capacity}
+                      className="text-accent-own-booking/[0.06] pointer-events-none absolute -top-8 -right-2.5 font-mono text-[120px] leading-none font-bold after:content-[attr(data-capacity)]"
+                    />
 
-              <span className="flex items-start justify-between gap-3">
-                <span className="flex flex-col gap-1">
-                  <span className="text-[21px] font-extrabold tracking-[-0.02em]">
-                    {room.name}
-                  </span>
-                  <span className="text-text-tertiary font-mono text-xs font-semibold">
-                    {t("floor", { floor: room.floor })}
-                  </span>
-                </span>
-                <span className="bg-surface-muted text-text-secondary border-border-grid relative flex shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-[5px] font-mono text-xs font-bold">
-                  <Users aria-hidden="true" className="size-[13px]" />
-                  {t("seats", { count: room.capacity })}
-                </span>
-              </span>
+                    <span className="flex items-start justify-between gap-3">
+                      <span className="flex flex-col gap-1">
+                        <span className="text-[21px] font-extrabold tracking-[-0.02em]">
+                          {room.name}
+                        </span>
+                        <span className="text-text-tertiary font-mono text-xs font-semibold">
+                          {t("floor", { floor: room.floor })}
+                        </span>
+                      </span>
+                      <span className="bg-surface-muted text-text-secondary border-border-grid relative flex shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-[5px] font-mono text-xs font-bold">
+                        <Users aria-hidden="true" className="size-[13px]" />
+                        {t("seats", { count: room.capacity })}
+                      </span>
+                    </span>
 
-              <span className="bg-border-grid mt-[18px] mb-3.5 h-px" />
+                    <span className="bg-border-grid mt-[18px] mb-3.5 h-px" />
 
-              <RoomAvailability availability={view} />
-            </Link>
-          </li>
-        );
-      })}
-    </ul>
+                    <RoomAvailability availability={view} />
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ))}
+    </div>
   );
 }
 

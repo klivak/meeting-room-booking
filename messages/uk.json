@@ -59,6 +59,7 @@
     "capacity": "Місткість",
     "any": "Будь-яка",
     "floor": "{floor} поверх",
+    "floorHeading": "{floor} поверх",
     "seats": "{count, plural, one {# місце} few {# місця} other {# місць}}",
     "roomLine": "{name} · {floor} поверх · {capacity, plural, one {# місце} few {# місця} other {# місць}}",
     "roomMeta": "{floor} поверх · {capacity, plural, one {# місце} few {# місця} other {# місць}}",
