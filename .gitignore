@@ -55,7 +55,6 @@ next-env.d.ts
 # local working notes and agent tooling, not part of the deliverable
 /.claude
 /skills-lock.json
-/CLAUDE.md
 /TODO.md
 /docs/prompt-plan-bronyuvannya-peregovornykh.md
 /DESIGN-PROMPT.md
