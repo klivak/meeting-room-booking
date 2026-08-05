@@ -85,21 +85,25 @@ export async function getDueNotifications(
     }
 
     dueBookingIds.push(booking.id);
-
-    // The unique index on (bookingId, type) is what makes this exactly once,
-    // even if two polls arrive at the same moment.
-    await prisma.notification.upsert({
-      where: {
-        bookingId_type: { bookingId: booking.id, type: BOOKING_ENDING },
-      },
-      update: {},
-      create: { userId, bookingId: booking.id, type: BOOKING_ENDING },
-    });
   }
 
   if (dueBookingIds.length === 0) {
     return [];
   }
+
+  // One statement rather than an upsert per booking: every open tab polls this
+  // every thirty seconds, and a loop of round trips grows with a number the
+  // caller does not control. The unique index on (bookingId, type) is still
+  // what makes a warning happen exactly once, even for two polls arriving
+  // together — skipDuplicates only says that losing that race is not an error.
+  await prisma.notification.createMany({
+    data: dueBookingIds.map((bookingId) => ({
+      userId,
+      bookingId,
+      type: BOOKING_ENDING,
+    })),
+    skipDuplicates: true,
+  });
 
   const unread = await prisma.notification.findMany({
     // Only bookings that are due right now: the row surviving in the table is
