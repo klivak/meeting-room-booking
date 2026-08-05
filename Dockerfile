@@ -3,15 +3,19 @@
 # Debian rather than Alpine: bcrypt is a native module and ships prebuilt
 # binaries for glibc, so musl would force a compile toolchain into the image.
 
-FROM node:22-slim AS deps
+FROM node:22-slim AS base
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends openssl \
+  && rm -rf /var/lib/apt/lists/*
+
+FROM base AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-# The postinstall hook runs prisma generate, which needs the schema and config.
-COPY prisma ./prisma
-COPY prisma.config.ts ./
-RUN npm ci
+# Lifecycle scripts include a local Git hook setup, but Git does not belong in
+# the image. Prisma Client is generated explicitly in the build stage below.
+RUN npm ci --ignore-scripts
 
-FROM node:22-slim AS build
+FROM base AS build
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -36,7 +40,7 @@ RUN npx prisma generate \
   && npm cache clean --force \
   && rm -rf .next/cache
 
-FROM node:22-slim AS runner
+FROM base AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 # The build stage already dropped the toolchain that has no job at runtime.
