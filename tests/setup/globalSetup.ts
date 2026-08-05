@@ -1,9 +1,11 @@
 import { spawn, execSync, type ChildProcess } from "node:child_process";
+import { appendFileSync, writeFileSync } from "node:fs";
 
 import { PrismaPg } from "@prisma/adapter-pg";
 
 import { PrismaClient } from "@/generated/prisma/client";
 import { TEST_DATABASE_URL } from "../helpers/db";
+import { SERVER_LOG_PATH } from "../helpers/serverLog";
 
 const PORT = Number(process.env.TEST_PORT ?? 3100);
 const BASE_URL = `http://localhost:${PORT}`;
@@ -100,6 +102,9 @@ export default async function setup() {
       // The suite creates a new account for almost every test, which is far
       // more than the production ceiling on registrations is meant to allow.
       REGISTER_LIMIT: "1000",
+      // The confirmation link is built from this rather than from the request,
+      // so it has to name the port the tests are actually calling.
+      SITE_URL: BASE_URL,
       NODE_ENV: "development",
       // Its own build directory, so the tests can run while a dev server is up:
       // Next refuses to start a second dev server sharing one.
@@ -109,8 +114,15 @@ export default async function setup() {
     shell: process.platform === "win32",
   });
 
+  // The whole output also goes to a file, because that log is where the
+  // confirmation link is "sent": the token in the table is only a hash of it,
+  // so reading the log is the only way a test can follow the link a person
+  // would. The in-memory tail stays for the startup failure message.
+  writeFileSync(SERVER_LOG_PATH, "");
+
   let log = "";
   const collect = (chunk: Buffer) => {
+    appendFileSync(SERVER_LOG_PATH, chunk.toString());
     log = `${log}${chunk.toString()}`.slice(-2000);
   };
   server.stdout?.on("data", collect);

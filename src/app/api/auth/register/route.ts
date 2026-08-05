@@ -66,7 +66,7 @@ export async function POST(request: Request) {
 
   // Registration signs the user in right away, but booking stays closed until
   // the address is confirmed through the link printed to the server log.
-  await sendVerificationLink(user.id, new URL(request.url).origin);
+  await sendVerificationLink(user.id);
   await createSession(user.id);
 
   return NextResponse.json(

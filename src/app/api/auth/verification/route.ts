@@ -9,7 +9,7 @@ const MAX_RESENDS = 5;
 const RESEND_WINDOW_MS = 60 * 60 * 1000;
 
 /** Issues a fresh confirmation link, which in development means printing it. */
-export async function POST(request: Request) {
+export async function POST() {
   const user = await getCurrentUser();
   if (!user) {
     return await unauthorizedError();
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
 
   // Nothing to do for a confirmed address, and saying so is not worth an error.
   if (!user.emailVerified) {
-    await sendVerificationLink(user.id, new URL(request.url).origin);
+    await sendVerificationLink(user.id);
   }
 
   return new NextResponse(null, { status: 204 });

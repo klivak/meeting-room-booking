@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { OFFICE_TZ } from "@/lib/domain/constants";
 import { BASE_URL, api, registerUnverifiedUser } from "../helpers/api";
 import { createRoom, resetDatabase, testPrisma } from "../helpers/db";
+import { lastVerificationLink } from "../helpers/serverLog";
 
 type ErrorBody = { error: { code: string } };
 
@@ -35,9 +36,17 @@ const book = (cookie: string) =>
     body: { roomId, title: "Зустріч", ...slot() },
   });
 
-/** Follows the confirmation link the way a person would, without redirects. */
-const openVerificationLink = (token: string) =>
-  fetch(`${BASE_URL}/api/auth/verify?token=${token}`, { redirect: "manual" });
+/** Follows a confirmation link the way a person would, without redirects. */
+const open = (link: string) => fetch(link, { redirect: "manual" });
+
+/**
+ * The link the server has just printed.
+ *
+ * The table holds only a hash of the token, so this is the one place a test can
+ * learn the token itself — exactly as a test against a real mailer would read
+ * the message rather than the database.
+ */
+const openLatestLink = () => open(lastVerificationLink());
 
 describe("email verification", () => {
   it("registers an unconfirmed user and issues one token", async () => {
@@ -47,9 +56,17 @@ describe("email verification", () => {
       where: { id: user.id },
     });
     expect(stored.emailVerifiedAt).toBeNull();
-    expect(
-      await testPrisma.verificationToken.count({ where: { userId: user.id } }),
-    ).toBe(1);
+
+    const tokens = await testPrisma.verificationToken.findMany({
+      where: { userId: user.id },
+    });
+    expect(tokens).toHaveLength(1);
+
+    // The token in the link is the whole credential, so the table must hold
+    // only a hash of it: a database dump must not confirm anyone's address.
+    const sent = new URL(lastVerificationLink()).searchParams.get("token");
+    expect(sent).toBeTruthy();
+    expect(tokens[0].token).not.toBe(sent);
   });
 
   it("refuses booking until the address is confirmed, then allows it", async () => {
@@ -59,10 +76,7 @@ describe("email verification", () => {
     expect(refused.status).toBe(403);
     expect(refused.body.error.code).toBe("EMAIL_NOT_VERIFIED");
 
-    const { token } = await testPrisma.verificationToken.findFirstOrThrow({
-      where: { userId: user.id },
-    });
-    const visit = await openVerificationLink(token);
+    const visit = await openLatestLink();
     expect(visit.status).toBe(307);
     expect(visit.headers.get("location")).toContain("verified=1");
 
@@ -72,17 +86,15 @@ describe("email verification", () => {
 
   it("spends the token: a second visit does not confirm anything", async () => {
     const user = await registerUnverifiedUser("fresh@example.com");
-    const { token } = await testPrisma.verificationToken.findFirstOrThrow({
-      where: { userId: user.id },
-    });
+    const link = lastVerificationLink();
 
-    await openVerificationLink(token);
+    await open(link);
     await testPrisma.user.update({
       where: { id: user.id },
       data: { emailVerifiedAt: null },
     });
 
-    const replay = await openVerificationLink(token);
+    const replay = await open(link);
     expect(replay.headers.get("location")).toContain("verified=0");
 
     const stored = await testPrisma.user.findUniqueOrThrow({
@@ -93,15 +105,12 @@ describe("email verification", () => {
 
   it("refuses an expired token", async () => {
     const user = await registerUnverifiedUser("fresh@example.com");
-    const { token } = await testPrisma.verificationToken.findFirstOrThrow({
+    await testPrisma.verificationToken.updateMany({
       where: { userId: user.id },
-    });
-    await testPrisma.verificationToken.update({
-      where: { token },
       data: { expiresAt: new Date(Date.now() - 1000) },
     });
 
-    const visit = await openVerificationLink(token);
+    const visit = await openLatestLink();
 
     expect(visit.headers.get("location")).toContain("verified=0");
     expect(
@@ -111,14 +120,15 @@ describe("email verification", () => {
   });
 
   it("refuses a token that was never issued", async () => {
-    const visit = await openVerificationLink("made-up-token");
+    const visit = await open(`${BASE_URL}/api/auth/verify?token=made-up-token`);
 
     expect(visit.headers.get("location")).toContain("verified=0");
   });
 
   it("replaces the old token when a new link is requested", async () => {
     const user = await registerUnverifiedUser("fresh@example.com");
-    const first = await testPrisma.verificationToken.findFirstOrThrow({
+    const firstLink = lastVerificationLink();
+    const firstStored = await testPrisma.verificationToken.findFirstOrThrow({
       where: { userId: user.id },
     });
 
@@ -132,10 +142,10 @@ describe("email verification", () => {
       where: { userId: user.id },
     });
     expect(tokens).toHaveLength(1);
-    expect(tokens[0].token).not.toBe(first.token);
+    expect(tokens[0].token).not.toBe(firstStored.token);
 
     // The superseded link must stop working.
-    const oldLink = await openVerificationLink(first.token);
+    const oldLink = await open(firstLink);
     expect(oldLink.headers.get("location")).toContain("verified=0");
   });
 
