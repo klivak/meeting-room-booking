@@ -24,6 +24,14 @@ const nextConfig: NextConfig = {
           // booking grid is a real if unglamorous attack.
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-Content-Type-Options", value: "nosniff" },
+          // A year, and only over https: the session cookie is the thing worth
+          // protecting from a first request that goes out in the clear. Sent
+          // unconditionally because browsers ignore it on a plain http origin,
+          // so it costs localhost nothing.
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=31536000; includeSubDomains",
+          },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           {
             key: "Permissions-Policy",

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
+import { headers } from "next/headers";
 import { JetBrains_Mono, Manrope } from "next/font/google";
 
 import { THEME_STORAGE_KEY } from "@/components/theme";
@@ -89,6 +90,11 @@ export default async function RootLayout({
   // components receive, so it is resolved once here.
   const locale = await getLocale();
 
+  // Put on the request by the middleware, which named the same value in the
+  // Content-Security-Policy. Without it the browser refuses the script below and
+  // a dark-theme user gets the white flash it exists to prevent.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     <html
       lang={locale}
@@ -99,7 +105,10 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+        <script
+          nonce={nonce}
+          dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }}
+        />
       </head>
       <body className="bg-surface-sunken text-text-primary flex min-h-full flex-col">
         <NextIntlClientProvider>{children}</NextIntlClientProvider>
