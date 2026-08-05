@@ -45,7 +45,11 @@ model VerificationToken {
 // Server-side session: the cookie only carries this row's id, so logout
 // is a row delete and a session survives a page reload.
 model Session {
-  id        String   @id @default(cuid())
+  // No cuid() default on purpose: a cuid is a timestamp, a counter and only a
+  // few random characters, and this id IS the credential. createSession fills
+  // it from the system CSPRNG instead, so guessing one is hopeless even if the
+  // signing secret ever leaked.
+  id        String   @id
   userId    String
   createdAt DateTime @default(now())
   expiresAt DateTime

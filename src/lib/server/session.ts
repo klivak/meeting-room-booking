@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 
 import { cache } from "react";
 
@@ -55,7 +55,12 @@ export async function createSession(userId: string): Promise<void> {
   const expiresAt = new Date(
     Date.now() + SESSION_TTL_DAYS * 24 * 60 * 60 * 1000,
   );
-  const session = await prisma.session.create({ data: { userId, expiresAt } });
+  // 256 bits from the system CSPRNG. The signature below still rejects a forged
+  // cookie, but it is not what a session should have to rely on: with a random
+  // id, a leaked SESSION_SECRET no longer means every session is forgeable.
+  const session = await prisma.session.create({
+    data: { id: randomBytes(32).toString("base64url"), userId, expiresAt },
+  });
 
   const cookieStore = await cookies();
   cookieStore.set(COOKIE_NAME, `${session.id}.${sign(session.id)}`, {
