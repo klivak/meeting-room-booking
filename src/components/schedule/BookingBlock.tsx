@@ -208,7 +208,14 @@ export function BookingBlock({
 
   // The full sentence for a screen reader: the grid position that carries the
   // day and the time visually means nothing when it is read out.
-  const label = `${booking.title}, ${range}, ${booking.user.name}`;
+  //
+  // It opens with the same words the block shows, in the same order, because
+  // someone driving the browser by voice says what they can see — and a name
+  // that did not contain it left them with a block they could not name. That is
+  // why the time comes first here even though the title is the interesting part:
+  // the time is what the eye meets first. The compact block shows only the start,
+  // so it says only the start.
+  const label = `${compact ? start : range}, ${booking.title}, ${booking.user.name}`;
 
   // Without a link the booking is visible but offers no action at all, which is
   // the UI half of the ownership rule. Someone else's block also has no hover

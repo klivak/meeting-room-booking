@@ -75,7 +75,10 @@
      under white text, the ink for a sentence. */
   --color-danger: #e5484d;
   --color-danger-solid: #ce3439;
-  --color-danger-ink: #c93a3f;
+  /* Deep enough to clear 4.5:1 on danger-surface, which is where it is always
+     read: every error message and the cancel button sit on that tint, and at
+     13px bold the old #c93a3f measured 4.44 — failing by hundredths. */
+  --color-danger-ink: #bd3439;
   --color-danger-surface: rgb(229 72 77 / 0.1);
   --color-danger-border: rgb(229 72 77 / 0.3);
 

@@ -60,3 +60,6 @@ next-env.d.ts
 /docs/prompt-plan-bronyuvannya-peregovornykh.md
 /DESIGN-PROMPT.md
 /docs/design/
+
+# Lighthouse output: generated on demand, never part of the deliverable
+/lighthouse-report/
