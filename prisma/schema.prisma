@@ -40,6 +40,9 @@ model VerificationToken {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  // Issuing a link sweeps away everyone's expired tokens, and that sweep has
+  // nothing but this index to find them by.
+  @@index([expiresAt])
 }
 
 // Server-side session: the cookie only carries this row's id, so logout
@@ -57,6 +60,9 @@ model Session {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  // Signing in sweeps away expired sessions; without this the sweep would read
+  // every row in the table to find them.
+  @@index([expiresAt])
 }
 
 model Room {

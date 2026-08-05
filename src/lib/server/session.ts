@@ -52,6 +52,14 @@ function readSignedSessionId(cookieValue: string): string | null {
 }
 
 export async function createSession(userId: string): Promise<void> {
+  // Expired rows are already refused below, but nothing ever removed them, so
+  // the table only grew — thirty days per row, forever. Signing in is the right
+  // moment to sweep: it is rare, it is already writing to this table, and it
+  // needs no scheduler that a single-container deployment does not have.
+  await prisma.session.deleteMany({
+    where: { expiresAt: { lte: new Date() } },
+  });
+
   const expiresAt = new Date(
     Date.now() + SESSION_TTL_DAYS * 24 * 60 * 60 * 1000,
   );
