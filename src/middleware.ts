@@ -1,15 +1,20 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { THEME_SCRIPT_HASH } from "@/components/themeScript";
+
 // The Content-Security-Policy lives here rather than in next.config.ts because
 // it carries a nonce, and a nonce has to be new for every response — a value
 // baked into the config would be a constant, which is the one thing a nonce
 // must not be.
 //
-// Why a nonce at all: the document head runs an inline script that applies the
-// stored theme before the first paint, and Next injects inline scripts of its
-// own for hydration. The alternative to naming them by nonce is 'unsafe-inline',
-// which allows every other inline script too and leaves the policy meaning
-// almost nothing.
+// Why a nonce at all: Next injects inline scripts of its own for hydration, and
+// the alternative to naming them is 'unsafe-inline', which allows every other
+// inline script too and leaves the policy meaning almost nothing.
+//
+// The one inline script this application writes itself — the theme script in the
+// head — is named by hash instead. A browser blanks the nonce attribute once it
+// has applied the policy, so React reads "" on the client where the server wrote
+// a value and calls it a hydration mismatch on every page.
 
 /** The policy for one response, with the nonce that response's scripts carry. */
 function contentSecurityPolicy(nonce: string): string {
@@ -21,7 +26,7 @@ function contentSecurityPolicy(nonce: string): string {
     // bundle, so the chunk file names do not have to be listed here.
     // The dev server compiles pages in the browser with eval, which production
     // never does.
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${development ? " 'unsafe-eval'" : ""}`,
+    `script-src 'self' 'nonce-${nonce}' '${THEME_SCRIPT_HASH}' 'strict-dynamic'${development ? " 'unsafe-eval'" : ""}`,
     // Tailwind ships a stylesheet, but next/font and React both write inline
     // style attributes, and a nonce cannot cover those.
     "style-src 'self' 'unsafe-inline'",

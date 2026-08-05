@@ -1,10 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
-import { headers } from "next/headers";
 import { JetBrains_Mono, Manrope } from "next/font/google";
 
-import { THEME_STORAGE_KEY } from "@/components/theme";
+import { THEME_SCRIPT } from "@/components/themeScript";
 import { env } from "@/lib/server/env";
 
 import "./globals.css";
@@ -31,12 +30,6 @@ const jetBrainsMono = JetBrains_Mono({
   display: "swap",
   preload: true,
 });
-
-// Resolves the stored preference before the first paint, so switching to the
-// dark theme and reloading does not flash a white page.
-const THEME_SCRIPT = `(function(){try{var s=localStorage.getItem(${JSON.stringify(
-  THEME_STORAGE_KEY,
-)});var d=s==="dark"||(s!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.dataset.theme=d?"dark":"light"}catch(e){}})()`;
 
 // The browser chrome on a phone takes the brand jade rather than the default
 // white, so the app does not end below a strip of someone else's colour.
@@ -90,11 +83,6 @@ export default async function RootLayout({
   // components receive, so it is resolved once here.
   const locale = await getLocale();
 
-  // Put on the request by the middleware, which named the same value in the
-  // Content-Security-Policy. Without it the browser refuses the script below and
-  // a dark-theme user gets the white flash it exists to prevent.
-  const nonce = (await headers()).get("x-nonce") ?? undefined;
-
   return (
     <html
       lang={locale}
@@ -105,10 +93,11 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <script
-          nonce={nonce}
-          dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }}
-        />
+        {/* Allowed by its hash in the policy, not by a nonce: browsers blank
+            the nonce attribute once the policy is applied, and React then reads
+            "" on the client where the server wrote a value and reports a
+            hydration mismatch on every page. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
       <body className="bg-surface-sunken text-text-primary flex min-h-full flex-col">
         <NextIntlClientProvider>{children}</NextIntlClientProvider>
