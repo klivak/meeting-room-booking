@@ -1,13 +1,36 @@
 import { NextResponse } from "next/server";
 
 import { registerSchema } from "@/lib/domain/auth";
-import { apiError, validationError } from "@/lib/server/apiError";
+import {
+  apiError,
+  tooManyAttemptsError,
+  validationError,
+} from "@/lib/server/apiError";
 import { prisma } from "@/lib/server/db";
+import { env } from "@/lib/server/env";
 import { hashPassword } from "@/lib/server/password";
+import { clientAddress, recordAttempt } from "@/lib/server/rateLimit";
 import { createSession } from "@/lib/server/session";
 import { sendVerificationLink } from "@/lib/server/verification";
 
+// Hashing a password costs a few hundred milliseconds of CPU, and registration
+// pays that whether the request is genuine or not — so a handful of parallel
+// callers can hold the process busy without ever guessing anything. Unlike the
+// login limit this one counts every request, successful ones included.
+//
+// Without a proxy in front clientAddress is a constant, so this becomes one
+// counter for everybody. That is why the ceiling is env-configurable rather
+// than hardcoded: it has to stay far above what a real office needs, and the
+// integration suite creates more accounts in two minutes than an office does
+// in a year.
+const REGISTER_WINDOW_MS = 10 * 60 * 1000;
+
 export async function POST(request: Request) {
+  const key = `register:${clientAddress(request)}`;
+  if (recordAttempt(key, env.REGISTER_LIMIT, REGISTER_WINDOW_MS)) {
+    return await tooManyAttemptsError();
+  }
+
   const body = await request.json().catch(() => null);
 
   // The schema normalizes the email, so everything below works with the stored form.

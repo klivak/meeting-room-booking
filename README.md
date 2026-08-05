@@ -187,7 +187,7 @@ Playwright (`npm run e2e`) — не про коректність, а про «�
 
 ## Змінні оточення
 
-Усі описані в `.env.example`: `DATABASE_URL`, `SESSION_SECRET`, `NEXT_PUBLIC_WEEK_START_DAY` (перший день тижня, 1 = понеділок), `NEXT_PUBLIC_DEMO_LOGIN` (кнопка демо-акаунта на сторінці входу), `SITE_URL` (публічний origin — з нього будується абсолютний `og:image`), `NOTIFY_BEFORE_MINUTES`, `TRUST_PROXY`. Реальний `.env` у git не потрапляє.
+Усі описані в `.env.example`: `DATABASE_URL`, `SESSION_SECRET`, `NEXT_PUBLIC_WEEK_START_DAY` (перший день тижня, 1 = понеділок), `NEXT_PUBLIC_DEMO_LOGIN` (кнопка демо-акаунта на сторінці входу), `SITE_URL` (публічний origin — з нього будується абсолютний `og:image`), `NOTIFY_BEFORE_MINUTES`, `REGISTER_LIMIT` (скільки акаунтів можна створити за десять хвилин), `TRUST_PROXY`. Реальний `.env` у git не потрапляє.
 
 `NEXT_PUBLIC_WEEK_START_DAY` і `NEXT_PUBLIC_DEMO_LOGIN` вшиваються в клієнтський бандл під час збірки, тому в Docker вони передаються як build-аргументи, а не як змінні оточення контейнера.
 

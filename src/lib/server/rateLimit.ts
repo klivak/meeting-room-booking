@@ -1,20 +1,22 @@
 import { env } from "@/lib/server/env";
 
-// Counts failed attempts per key in memory. It exists to make password
-// guessing expensive, not to be a complete defence: the counters live in the
-// process, so several instances count separately and a restart forgets
-// everything. A shared store would be the next step if this ever ran clustered.
+// Counts attempts per key in memory. It exists to make guessing and flooding
+// expensive, not to be a complete defence: the counters live in the process, so
+// several instances count separately and a restart forgets everything. A shared
+// store would be the next step if this ever ran clustered.
+//
+// What counts as an attempt is the caller's decision: the login route records
+// only failures, so ordinary use never meets the limit, while registration
+// records every request, because there the cost is paid whether or not it
+// succeeds.
 
 const attempts = new Map<string, number[]>();
 
 // Guards against unbounded growth if keys keep changing (many addresses tried).
 const MAX_KEYS = 10_000;
 
-/**
- * Records one failed attempt and reports whether the key is now over the limit.
- * Only failures are counted, so ordinary use never runs into it.
- */
-export function registerFailedAttempt(
+/** Records one attempt and reports whether the key is now over the limit. */
+export function recordAttempt(
   key: string,
   limit: number,
   windowMs: number,

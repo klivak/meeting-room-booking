@@ -12,6 +12,10 @@ const envSchema = z.object({
     .string()
     .min(16, "SESSION_SECRET must be at least 16 characters long"),
   NOTIFY_BEFORE_MINUTES: z.coerce.number().int().positive().default(10),
+  // How many accounts may be created per ten minutes. Configurable because the
+  // right number depends on the deployment: an office needs a handful a month,
+  // while the integration suite creates dozens in a couple of minutes.
+  REGISTER_LIMIT: z.coerce.number().int().positive().default(20),
   // Public origin of the deployment. Only the social preview needs it: og:image
   // has to be an absolute URL, and a relative one shows no card at all.
   SITE_URL: z.url().default("http://localhost:3000"),

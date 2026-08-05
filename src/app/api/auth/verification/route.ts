@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { tooManyAttemptsError, unauthorizedError } from "@/lib/server/apiError";
-import { registerFailedAttempt } from "@/lib/server/rateLimit";
+import { recordAttempt } from "@/lib/server/rateLimit";
 import { getCurrentUser } from "@/lib/server/session";
 import { sendVerificationLink } from "@/lib/server/verification";
 
@@ -18,7 +18,7 @@ export async function POST(request: Request) {
   // Each request invalidates the previous link, so an unlimited button would be
   // a way to keep anyone from ever confirming.
   const key = `verification:${user.id}`;
-  if (registerFailedAttempt(key, MAX_RESENDS, RESEND_WINDOW_MS)) {
+  if (recordAttempt(key, MAX_RESENDS, RESEND_WINDOW_MS)) {
     return await tooManyAttemptsError();
   }
 

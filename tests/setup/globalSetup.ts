@@ -97,6 +97,9 @@ export default async function setup() {
       ...process.env,
       DATABASE_URL: TEST_DATABASE_URL,
       SESSION_SECRET: "integration-test-secret-value",
+      // The suite creates a new account for almost every test, which is far
+      // more than the production ceiling on registrations is meant to allow.
+      REGISTER_LIMIT: "1000",
       NODE_ENV: "development",
       // Its own build directory, so the tests can run while a dev server is up:
       // Next refuses to start a second dev server sharing one.

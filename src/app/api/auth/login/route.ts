@@ -9,7 +9,7 @@ import {
 import {
   clientAddress,
   isRateLimited,
-  registerFailedAttempt,
+  recordAttempt,
 } from "@/lib/server/rateLimit";
 import { prisma } from "@/lib/server/db";
 import { verifyPassword } from "@/lib/server/password";
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
 
   if (!user || !passwordMatches) {
     // Only failures count, so ordinary use never meets the limit.
-    if (registerFailedAttempt(key, MAX_FAILED_LOGINS, LOGIN_WINDOW_MS)) {
+    if (recordAttempt(key, MAX_FAILED_LOGINS, LOGIN_WINDOW_MS)) {
       return await tooManyAttemptsError();
     }
 
