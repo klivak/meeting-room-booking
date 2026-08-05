@@ -100,9 +100,22 @@ export const getCurrentUser = cache(
       return null;
     }
 
+    // Named columns rather than the whole user row: `include` pulled the
+    // password hash into memory on every request that touches a page, and the
+    // one thing this function never needs is the password hash.
     const session = await prisma.session.findUnique({
       where: { id: sessionId },
-      include: { user: true },
+      select: {
+        expiresAt: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            emailVerifiedAt: true,
+          },
+        },
+      },
     });
 
     // An expired row is treated exactly like a missing one.

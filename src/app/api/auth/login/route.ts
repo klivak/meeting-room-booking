@@ -21,6 +21,16 @@ import { createSession } from "@/lib/server/session";
 const MAX_FAILED_LOGINS = 10;
 const LOGIN_WINDOW_MS = 5 * 60 * 1000;
 
+// Past this many failures the request is refused before the password is checked
+// at all.
+//
+// It exists because of the rule below: to be sure a throttled owner can still
+// sign in, a throttled request has to be verified, and verifying costs a bcrypt
+// either way. Without a second ceiling, someone could hold the process busy by
+// failing forever. Ten times the first limit, so nobody typing their own
+// password badly will ever reach it.
+const REFUSE_WITHOUT_CHECKING = MAX_FAILED_LOGINS * 10;
+
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
 
@@ -37,6 +47,15 @@ export async function POST(request: Request) {
   // The address half collapses to a constant unless TRUST_PROXY is set, so
   // without a proxy in front the ceiling is per account — see clientAddress.
   const key = `login:${email}:${clientAddress(request)}`;
+
+  if (isRateLimited(key, REFUSE_WITHOUT_CHECKING, LOGIN_WINDOW_MS)) {
+    // Recorded so that hammering keeps the ceiling in place rather than letting
+    // it lapse while the hammering continues.
+    recordAttempt(key, REFUSE_WITHOUT_CHECKING, LOGIN_WINDOW_MS);
+
+    return await tooManyAttemptsError();
+  }
+
   const throttled = isRateLimited(key, MAX_FAILED_LOGINS, LOGIN_WINDOW_MS);
 
   const user = await prisma.user.findUnique({ where: { email } });
