@@ -53,7 +53,7 @@ export async function POST(
     return await apiError(400, "VALIDATION_ERROR", "BOOKING_FINISHED");
   }
 
-  const restored = await restoreBooking(id, booking.roomId);
+  const restored = await restoreBooking(id, booking.roomId, user.id);
   if (!restored) {
     return await apiError(409, "SLOT_TAKEN", "SLOT_TAKEN");
   }

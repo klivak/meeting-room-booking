@@ -140,12 +140,19 @@ export async function createBookingSeries(
  * A canceled booking stops blocking its slot the instant it is canceled, so the
  * room has to be locked and the overlap checked again, exactly as for a new one.
  */
-export async function restoreBooking(id: string, roomId: string) {
+export async function restoreBooking(
+  id: string,
+  roomId: string,
+  userId: string,
+) {
   return prisma.$transaction(async (tx) => {
     await lockRoom(tx, roomId);
 
+    // The owner is part of the filter rather than only checked in the route:
+    // this function resurrects a row, and a rule that lives one call away is a
+    // rule the next caller can forget.
     const booking = await tx.booking.findFirst({
-      where: { id, canceledAt: { not: null } },
+      where: { id, userId, canceledAt: { not: null } },
       select: { startsAt: true, endsAt: true },
     });
 
@@ -165,28 +172,51 @@ export async function restoreBooking(id: string, roomId: string) {
   });
 }
 
+/** Why an edit did not happen. The two refusals need different answers. */
+export type UpdateResult =
+  | { booking: Awaited<ReturnType<typeof createBooking>> }
+  | { refused: "clash" | "canceled" };
+
 /**
- * Moves or renames an existing booking, or returns null when the target slot is
- * taken. The booking itself is excluded from the check, otherwise it would
- * clash with itself and could not even be renamed.
+ * Moves or renames an existing booking. The booking itself is excluded from the
+ * overlap check, otherwise it would clash with itself and could not even be
+ * renamed.
  */
-export async function updateBooking(id: string, input: BookingWrite) {
+export async function updateBooking(
+  id: string,
+  input: BookingWrite,
+): Promise<UpdateResult> {
   return prisma.$transaction(async (tx) => {
     await lockRoom(tx, input.roomId);
 
     if (await findClash(tx, { ...input, excludeId: id })) {
-      return null;
+      return { refused: "clash" };
     }
 
-    return tx.booking.update({
-      where: { id },
+    // canceledAt belongs in the filter, not only in the check the route made
+    // earlier: that read happened outside this transaction, so the same owner
+    // cancelling in another tab in between would otherwise have the edit bring
+    // the booking back from the dead. updateMany, because a filter matching
+    // nothing has to mean "no" rather than throw.
+    const { count } = await tx.booking.updateMany({
+      where: { id, canceledAt: null },
       data: {
         roomId: input.roomId,
         title: input.title,
         startsAt: input.startsAt,
         endsAt: input.endsAt,
       },
-      select: BOOKING_FIELDS,
     });
+
+    if (count === 0) {
+      return { refused: "canceled" };
+    }
+
+    return {
+      booking: await tx.booking.findUniqueOrThrow({
+        where: { id },
+        select: BOOKING_FIELDS,
+      }),
+    };
   });
 }

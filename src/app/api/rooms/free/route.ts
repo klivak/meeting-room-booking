@@ -5,13 +5,23 @@ import { unauthorizedError, validationError } from "@/lib/server/apiError";
 import { prisma } from "@/lib/server/db";
 import { getCurrentUser } from "@/lib/server/session";
 
-const querySchema = z.object({
-  // Dictionary keys, not sentences: see the note in bookingInput.
-  startsAt: z.iso.datetime({ offset: true, message: "TIME_INVALID" }),
-  endsAt: z.iso.datetime({ offset: true, message: "TIME_INVALID" }),
-  /** The booking being edited, which must not count as occupying its own room. */
-  exclude: z.string().optional(),
-});
+const querySchema = z
+  .object({
+    // Dictionary keys, not sentences: see the note in bookingInput.
+    startsAt: z.iso.datetime({ offset: true, message: "TIME_INVALID" }),
+    endsAt: z.iso.datetime({ offset: true, message: "TIME_INVALID" }),
+    /** The booking being edited, which must not count as occupying its own room. */
+    exclude: z.string().optional(),
+  })
+  // A backwards range overlaps nothing, so without this check every room would
+  // come back free — the opposite of the truth, and the one answer this route
+  // must never give.
+  // Parsed rather than compared as text: the two strings may carry different
+  // offsets, and then their alphabetical order is not their order in time.
+  .refine((query) => new Date(query.startsAt) < new Date(query.endsAt), {
+    message: "END_BEFORE_START",
+    path: ["endsAt"],
+  });
 
 /**
  * Rooms with nothing booked over [startsAt, endsAt).

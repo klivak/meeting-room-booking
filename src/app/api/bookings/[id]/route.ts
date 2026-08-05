@@ -109,18 +109,22 @@ export async function PATCH(
     });
   }
 
-  const updated = await updateBooking(id, {
+  const result = await updateBooking(id, {
     roomId: nextRoomId,
     title: nextTitle.trim(),
     startsAt: nextStart,
     endsAt: nextEnd,
   });
 
-  if (!updated) {
-    return await apiError(409, "SLOT_TAKEN", "SLOT_TAKEN");
+  if ("refused" in result) {
+    // Cancelled from another tab while this edit was in flight: the booking is
+    // gone, which is a different thing from the slot being someone else's.
+    return result.refused === "canceled"
+      ? await apiError(404, "NOT_FOUND", "NOT_FOUND")
+      : await apiError(409, "SLOT_TAKEN", "SLOT_TAKEN");
   }
 
-  return NextResponse.json(updated);
+  return NextResponse.json(result.booking);
 }
 
 /** Cancels one occurrence, or the whole series with ?scope=series. */
