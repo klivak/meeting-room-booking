@@ -137,6 +137,32 @@ describe("login", () => {
     // Telling them apart would reveal which addresses are registered.
     expect(wrongPassword.body.error).toEqual(unknownEmail.body.error);
   });
+
+  it("throttles guessing without locking the owner out of their own account", async () => {
+    // One more than the limit, so the counter is certainly over it.
+    for (let attempt = 0; attempt < 11; attempt += 1) {
+      await api("/api/auth/login", {
+        method: "POST",
+        body: { email: "alice@example.com", password: `wrong-${attempt}` },
+      });
+    }
+
+    const guess = await api<{ error: { code: string } }>("/api/auth/login", {
+      method: "POST",
+      body: { email: "alice@example.com", password: "another-guess" },
+    });
+    expect(guess.status).toBe(429);
+    expect(guess.body.error.code).toBe("TOO_MANY_ATTEMPTS");
+
+    // The whole point: anyone can spend someone else's counter, so spending it
+    // must not be a way to keep them out.
+    const owner = await api("/api/auth/login", {
+      method: "POST",
+      body: { email: "alice@example.com", password: "password123" },
+    });
+    expect(owner.status).toBe(200);
+    expect(owner.cookie).toBeDefined();
+  });
 });
 
 describe("session", () => {

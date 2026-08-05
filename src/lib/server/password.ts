@@ -22,3 +22,25 @@ export function verifyPassword(
 ): Promise<boolean> {
   return bcrypt.compare(password, hash);
 }
+
+// A bcrypt hash at the same cost as every stored one, of 32 random bytes that
+// were never written down. Baked in as a constant rather than computed at
+// import: hashing it would block startup for the same few hundred milliseconds
+// it exists to spend, and nothing about it needs to be secret — no password can
+// match it either way.
+const DECOY_HASH =
+  "$2b$12$D8Aex0yXoLxicji9XRcgnu4HXlH4gSMrPYdQmwBMcL/0QDn7lKNJu";
+
+/**
+ * Spends the same time a real check would, and always says no.
+ *
+ * Without this an unknown address answers in a millisecond while a registered
+ * one answers in three hundred, so the response time tells anyone who measures
+ * it which addresses have accounts — exactly what the identical error message
+ * is there to hide.
+ */
+export function verifyPasswordAgainstNobody(
+  password: string,
+): Promise<boolean> {
+  return bcrypt.compare(password, DECOY_HASH);
+}

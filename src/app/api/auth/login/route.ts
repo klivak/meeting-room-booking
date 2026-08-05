@@ -12,7 +12,10 @@ import {
   recordAttempt,
 } from "@/lib/server/rateLimit";
 import { prisma } from "@/lib/server/db";
-import { verifyPassword } from "@/lib/server/password";
+import {
+  verifyPassword,
+  verifyPasswordAgainstNobody,
+} from "@/lib/server/password";
 import { createSession } from "@/lib/server/session";
 
 const MAX_FAILED_LOGINS = 10;
@@ -34,17 +37,25 @@ export async function POST(request: Request) {
   // The address half collapses to a constant unless TRUST_PROXY is set, so
   // without a proxy in front the ceiling is per account — see clientAddress.
   const key = `login:${email}:${clientAddress(request)}`;
-  if (isRateLimited(key, MAX_FAILED_LOGINS, LOGIN_WINDOW_MS)) {
-    return await tooManyAttemptsError();
-  }
+  const throttled = isRateLimited(key, MAX_FAILED_LOGINS, LOGIN_WINDOW_MS);
 
   const user = await prisma.user.findUnique({ where: { email } });
-  const passwordMatches =
-    user !== null && (await verifyPassword(password, user.passwordHash));
+  // An address with no account is checked against a decoy hash, so the answer
+  // takes the same time either way and the clock stops naming who is registered.
+  const passwordMatches = user
+    ? await verifyPassword(password, user.passwordHash)
+    : await verifyPasswordAgainstNobody(password);
 
+  // The throttle is applied only to a request that got the password wrong.
+  // Refusing the right one too would hand anybody a way to lock any account out
+  // of its own login by failing ten times on its address: the key is per
+  // account, and without a proxy in front the caller half of it is a constant.
   if (!user || !passwordMatches) {
-    // Only failures count, so ordinary use never meets the limit.
-    if (recordAttempt(key, MAX_FAILED_LOGINS, LOGIN_WINDOW_MS)) {
+    if (
+      throttled ||
+      // Only failures count, so ordinary use never meets the limit.
+      recordAttempt(key, MAX_FAILED_LOGINS, LOGIN_WINDOW_MS)
+    ) {
       return await tooManyAttemptsError();
     }
 
