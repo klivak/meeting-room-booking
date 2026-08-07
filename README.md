@@ -1,216 +1,198 @@
-# Бронювання переговорних
+# Meeting Room Booking
 
-[English version](README.en.md)
+[Українська версія](README.uk.md)
 
-Вебзастосунок для бронювання переговорних кімнат в офісі. Користувач бачить тижневий розклад кімнати, бронює вільні слоти, редагує і скасовує лише свої бронювання; чужі видно з іменем автора, але змінити їх не можна ні через інтерфейс, ні прямим запитом до API.
+A web application for booking meeting rooms in an office. Users see a room's weekly schedule, book free slots, and edit or cancel only their own bookings. Other users' bookings remain visible with the author's name, but cannot be changed through either the interface or direct API requests.
 
-Стек: Next.js (App Router) + TypeScript, Prisma + PostgreSQL, Tailwind CSS, Luxon, Zod, bcrypt, Vitest, next-intl.
+Stack: Next.js (App Router) + TypeScript, Prisma + PostgreSQL, Tailwind CSS, Luxon, Zod, bcrypt, Vitest, and next-intl.
 
-Інтерфейс і повідомлення API — українською та англійською; світла і темна теми перемикаються в хедері.
+The interface and API messages are available in Ukrainian and English. Light and dark themes can be switched in the header.
 
-## Запуск через Docker
+## Run with Docker
 
-Потрібен лише Docker. Одна команда піднімає базу і застосунок, застосовує міграції та сід:
+Only Docker is required. One command starts the database and application, applies migrations, and runs the seed:
 
 ```bash
 cp .env.example .env
 docker compose up --build
 ```
 
-Далі відкрийте http://localhost:3000. Перший старт займає кілька хвилин на збірку образу, наступні — близько десяти секунд.
+Then open http://localhost:3000. The first start takes a few minutes while the image is built; later starts take about ten seconds.
 
-## Запуск через npm
+## Run with npm
 
-Потрібні Node 20+ і Docker (лише для бази).
+Node 20+ and Docker for the database are required.
 
 ```bash
 cp .env.example .env
-docker compose up -d db     # тільки postgres, на localhost:5432
-npm install                 # postinstall одразу генерує Prisma Client
-npx prisma migrate dev      # створити схему
-npx prisma db seed          # кімнати, користувачі та демо-бронювання
+docker compose up -d db     # PostgreSQL only, on localhost:5432
+npm install                 # postinstall generates Prisma Client
+npx prisma migrate dev      # create the schema
+npx prisma db seed          # rooms, users, and demo bookings
 npm run dev                 # http://localhost:3000
 ```
 
-Сід ідемпотентний: повторний запуск не дублює дані й не перезаписує пароль, який ви могли змінити. Демо-бронювання прив'язані до поточного тижня, тому не застарівають.
+The seed is idempotent: running it again does not duplicate data or overwrite a password you changed. Demo bookings are tied to the current week, so they do not become stale.
 
-## Тестові користувачі
+## Test Users
 
-| Пошта               | Пароль        | Ім'я        |
+| Email               | Password      | Name        |
 | ------------------- | ------------- | ----------- |
-| `alice@example.com` | `password123` | Аліса Тест  |
-| `bob@example.com`   | `password123` | Богдан Демо |
+| `alice@example.com` | `password123` | Alisa Test  |
+| `bob@example.com`   | `password123` | Bohdan Demo |
 
-Обидва мають бронювання в сіді, тож видно і свої, і чужі: увійдіть під одним, і бронювання іншого в сітці будуть без кнопок дій.
+Both users have seeded bookings. Sign in as either one to see both owned and foreign bookings; the other user's entries have no action buttons.
 
-З `NEXT_PUBLIC_DEMO_LOGIN=true` (так у `.env.example`) на сторінці входу є кнопка «Підставити демо-акаунт», яка заповнює форму першим із цих користувачів. У будь-якому справжньому середовищі змінну треба лишити вимкненою.
+With `NEXT_PUBLIC_DEMO_LOGIN=true`, as in `.env.example`, the login page includes a button that fills the form with the first demo account. Keep this variable disabled in any real environment.
 
-Покроковий маршрут огляду — у `docs/demo.md`: що клікати, щоб побачити кожну можливість, включно з тими, які за замовчуванням не видно (чужий часовий пояс, мобільний вигляд, підтвердження email, сповіщення, повтори).
+See `docs/demo.md` for a step-by-step product walkthrough, including features that are not visible by default: another timezone, the mobile view, email verification, notifications, and recurring bookings.
 
-## Команди
+## Commands
 
-| Команда                             | Що робить                                                                     |
-| ----------------------------------- | ----------------------------------------------------------------------------- |
-| `npm run dev`                       | dev-сервер                                                                    |
-| `npm run build`                     | продакшн-збірка                                                               |
-| `npm run verify`                    | усе перед здачею: типи, ESLint, формат, юніт- та інтеграційні тести           |
-| `npm test`                          | юніт-тести, далі інтеграційні                                                 |
-| `npm run test:unit`                 | лише юніт-тести, без бази                                                     |
-| `npm run test:integration`          | лише інтеграційні тести API                                                   |
-| `npm run typecheck`                 | перевірка типів                                                               |
-| `npm run lint`                      | ESLint                                                                        |
-| `npm run format`                    | Prettier: відформатувати                                                      |
-| `npm run format:check`              | Prettier: лише перевірити                                                     |
-| `npm run e2e`                       | Playwright: проходить живими екранами і знімає скріншоти в `e2e/screenshots/` |
-| `npm run db:up` / `npm run db:down` | підняти / зупинити Postgres                                                   |
-| `npm run db:migrate`                | створити й застосувати міграцію (dev)                                         |
-| `npm run db:deploy`                 | застосувати наявні міграції (prod)                                            |
-| `npm run db:seed`                   | сід: кімнати, користувачі, демо-бронювання                                    |
-| `npm run db:reset`                  | скинути базу, накатити міграції заново і сідувати                             |
-| `npm run db:studio`                 | Prisma Studio                                                                 |
+| Command                             | Purpose                                                                        |
+| ----------------------------------- | ------------------------------------------------------------------------------ |
+| `npm run dev`                       | Development server                                                             |
+| `npm run build`                     | Production build                                                               |
+| `npm run verify`                    | Types, ESLint, formatting, unit tests, and integration tests                   |
+| `npm test`                          | Unit tests followed by integration tests                                       |
+| `npm run test:unit`                 | Unit tests only, without a database                                            |
+| `npm run test:integration`          | API integration tests only                                                     |
+| `npm run typecheck`                 | Type checking                                                                  |
+| `npm run lint`                      | ESLint                                                                         |
+| `npm run format`                    | Format with Prettier                                                           |
+| `npm run format:check`              | Check formatting with Prettier                                                 |
+| `npm run e2e`                       | Run Playwright through live screens and save screenshots to `e2e/screenshots/` |
+| `npm run db:up` / `npm run db:down` | Start or stop PostgreSQL                                                       |
+| `npm run db:migrate`                | Create and apply a migration in development                                    |
+| `npm run db:deploy`                 | Apply existing migrations in production                                        |
+| `npm run db:seed`                   | Seed rooms, users, and demo bookings                                           |
+| `npm run db:reset`                  | Reset the database, reapply migrations, and seed                               |
+| `npm run db:studio`                 | Prisma Studio                                                                  |
 
-## Тести
+## Tests
 
-`npm test` — 123 юніт-тести і 59 інтеграційних.
+`npm test` runs 123 unit tests and 59 integration tests.
 
-Юніт-тести (`src/**/*.test.ts`) покривають доменні правила: перетини інтервалів, робочі години з переходом на літній час, кратність, тривалість, «лише в майбутньому», геометрію тижневої сітки, вибір мови з Accept-Language, ключі повідомлень схем, нормалізацію email і хешування паролів. Бази вони не потребують. Тест на гонку перевіряє блокування Postgres, тому працює проти справжньої бази і запускається разом з інтеграційними.
+Unit tests in `src/**/*.test.ts` cover domain rules: interval overlap, working hours across daylight-saving transitions, time granularity, duration, future-only creation, weekly-grid geometry, locale selection from `Accept-Language`, schema message keys, email normalization, and password hashing. They do not require a database. The race-condition test exercises PostgreSQL locking and runs with the integration suite.
 
-Інтеграційні тести (`tests/api/` плюс тест на гонку) ганяють справжній застосунок через HTTP: `globalSetup` створює окрему базу `meeting_room_booking_test`, застосовує міграції й піднімає застосунок на порту 3100. Робоча база при цьому не змінюється. Покрито повний цикл автентифікації, усі відмови валідації бронювання і перевірки власності — причому для чужого бронювання перевіряється не лише код 403, а й те, що рядок у базі не змінився. Окремо перевірено, що обмеження спроб входу не замикає власника поза власним акаунтом, що посилання підтвердження зберігається в базі лише хешем, і що посторінковий перегляд «моїх бронювань» видає кожен рядок рівно один раз.
+Integration tests in `tests/api/`, plus the race test, exercise the real application over HTTP. `globalSetup` creates a separate `meeting_room_booking_test` database, applies migrations, and starts the application on port 3100. The working database is not modified. The suite covers authentication, booking validation failures, ownership enforcement, login throttling, hashed verification tokens, and stable pagination of the user's bookings.
 
-Інтеграційний набір потребує піднятої бази; якщо її немає, він падає з підказкою `docker compose up -d`. Юніт-набір працює без неї.
+The integration suite requires a running database and suggests `docker compose up -d` when it cannot connect. The unit suite works without a database.
 
-`npm run verify` проганяє типи, ESLint, перевірку формату і обидва набори тестів однією командою — це те, що має бути зеленим перед здачею.
+`npm run verify` runs type checking, ESLint, formatting checks, and both test suites. It should be green before delivery.
 
-Перед кожним комітом спрацьовує хук `.githooks/pre-commit`: він проганяє Prettier і ESLint **лише по файлах цього коміту**, тому займає секунди, а не хвилину. Шлях до хуків прописує `npm install` (скрипт `prepare`, `git config core.hooksPath .githooks`) — окремо налаштовувати нічого не треба. Типи й тести хук не запускає: це робота `npm run verify` наприкінці етапу, а не кожного коміту.
+The `.githooks/pre-commit` hook runs Prettier and ESLint only for files in the commit. `npm install` configures the hook path through the `prepare` script. Type checking and tests remain the responsibility of `npm run verify` at the end of a stage.
 
-Єдиний виняток серед e2e — `e2e/overflow.spec.ts`: він міряє, чи не ширша сторінка за екран, на якому стоїть. Горизонтальний скрол на телефоні ніхто ніколи не робить свідомо, і побачити його можна лише в справжньому браузері.
+The sole correctness-oriented e2e exception is `e2e/overflow.spec.ts`, which verifies that a page is not wider than its viewport. Playwright otherwise serves as a visual walkthrough: it opens live screens and captures 1366×768, 768, and 360 screenshots in light and dark themes. Run `docker compose up -d` and `npx tsx prisma/seed.ts` first.
 
-Playwright (`npm run e2e`) — не про коректність, а про «подивитися застосунок»: він проходить живими екранами в браузері і знімає скріншоти в `e2e/screenshots/` на 1366×768, 768 і 360, у світлій і темній темах. Працює проти dev-сервера і сідованої бази, тож перед ним потрібні `docker compose up -d` і `npx tsx prisma/seed.ts`.
+## How Overlap Checking Works
 
-## Як влаштована перевірка перетинів
+A booking is a half-open interval `[start, end)`: its starting minute belongs to it, while its ending minute does not. Two bookings for the same room conflict exactly when `A.start < B.end && B.start < A.end`. Strict comparisons make adjacent bookings legal, so `10:00–11:00` and `11:00–12:00` can coexist, while partial overlap, exact matches, and containment remain conflicts.
 
-Бронювання — напіввідкритий інтервал `[start, end)`: хвилина початку належить бронюванню, хвилина кінця вже ні. Два бронювання однієї кімнати конфліктують тоді й лише тоді, коли `A.start < B.end && B.start < A.end`. Строге порівняння тут — уся суть правила: воно робить бронювання впритул легальними, тож `10:00–11:00` і `11:00–12:00` спокійно співіснують, тоді як `<=` помилково відхилило б друге. Часткове перекриття, повний збіг і вкладеність при цьому лишаються конфліктом, а сусідні дні — ні.
+The rule intentionally exists in two forms. The pure `intervalsOverlap` function in `src/lib/domain/overlap.ts` is tested and used for intervals already in memory. The same expression appears in the database query in `src/lib/server/bookings.ts`, because loading every room booking just to check overlap would be wasteful. Canceled bookings are excluded with `canceledAt IS NULL`.
 
-Правило живе двічі й свідомо. Чиста функція `intervalsOverlap` у `src/lib/domain/overlap.ts` покрита тестами і використовується там, де інтервали вже в пам'яті. Той самий вираз повторений як умова запиту в `src/lib/server/bookings.ts` (`startsAt < :end AND endsAt > :start`), бо перевіряти перетин у базі перебором усіх бронювань кімнати було б марно. Скасовані бронювання відфільтровані (`canceledAt IS NULL`), тому скасований слот одразу вільний.
+The check and insert happen in one transaction under `pg_advisory_xact_lock`; otherwise two concurrent requests could both observe the slot as free.
 
-Перевірка і вставка виконуються в одній транзакції під `pg_advisory_xact_lock`, інакше два одночасні запити могли б обидва побачити слот вільним.
+## How Time Is Stored
 
-## Як зберігається час
+The database stores UTC only through Prisma `DateTime`. Working hours, 09:00–19:00, are always validated in the office timezone `Europe/Kyiv`, regardless of the user's location. Luxon uses IANA timezone rules, so daylight-saving changes are handled automatically.
 
-У базі лежить лише UTC (`DateTime` у Prisma). Робочі години 09:00–19:00 перевіряються **за часом офісу** `Europe/Kyiv` незалежно від того, де сидить користувач: обидві межі бронювання конвертуються в київський час через Luxon, який бере правила з бази IANA. Через це перехід на літній час обробляється сам: «09:00 за Києвом» — це 07:00 UTC взимку і 06:00 UTC влітку, і жодна захардкоджена дельта тут не працювала б. На цей випадок є окремий тест.
+The interface displays time in the browser timezone from `Intl.DateTimeFormat().resolvedOptions().timeZone`. Grid rows remain tied to office time, while axis labels show the same instants in the user's timezone. The timezone notice below the room name explains the offset and office hours, and becomes visually prominent outside Kyiv time.
 
-В інтерфейсі час показується в поясі браузера (`Intl.DateTimeFormat().resolvedOptions().timeZone`). Рядки сітки прив'язані до офісного часу — рядок `i` це «09:00 за Києвом плюс i×30 хвилин», — а підписи осі показують той самий момент у поясі користувача. Тому в Берліні офісний день виглядає як 08:00–18:00, а сітка лишається прямокутною навіть у Токіо, де офісне вікно перетинає локальну північ. Під назвою кімнати завжди стоїть рядок із вашим зсувом і робочими годинами офісу; якщо ваш пояс не київський, він стає теплим і прямо каже, що сітка зсунута.
+Server rendering initially uses office time and replaces it with browser-local values after hydration, avoiding server/client markup mismatches.
 
-Серверний рендер завжди дає офісний час, і лише після гідратації значення підмінюється на браузерний пояс — інакше розмітка сервера і клієнта не збігалася б.
+## Implemented Bonuses
 
-## Реалізовані бонуси
+| Bonus                                   | Status | Where to look                                                                                |
+| --------------------------------------- | ------ | -------------------------------------------------------------------------------------------- |
+| BONUS-1 Full application Docker Compose | ✅     | `Dockerfile`, `docker/entrypoint.sh`, `docker-compose.yml`                                   |
+| BONUS-4 Race-condition protection       | ✅     | `src/lib/server/bookings.ts`, `bookings.race.test.ts`                                        |
+| BONUS-6 API integration tests           | ✅     | `tests/api/`                                                                                 |
+| BONUS-7 Room capacity filter            | ✅     | Home page, `GET /api/rooms?capacityMin=`                                                     |
+| BONUS-2 Development email verification  | ✅     | `src/lib/server/verification.ts`, `VerificationBanner.tsx`                                   |
+| BONUS-3 Weekly recurring bookings       | ✅     | `src/lib/domain/recurrence.ts`, `src/lib/server/bookings.ts`                                 |
+| BONUS-5 End-of-booking notifications    | ✅     | `src/lib/domain/notifications.ts`, `src/lib/server/notifications.ts`, `NotificationBell.tsx` |
+| BONUS-8 Complete mobile flow            | ✅     | `src/components/schedule/Schedule.tsx`, `SwipeArea.tsx`                                      |
 
-| Бонус                                    | Стан | Де дивитися                                                                                  |
-| ---------------------------------------- | ---- | -------------------------------------------------------------------------------------------- |
-| BONUS-1 Docker compose всього застосунку | ✅   | `Dockerfile`, `docker/entrypoint.sh`, `docker-compose.yml`                                   |
-| BONUS-4 захист від гонки                 | ✅   | `src/lib/server/bookings.ts`, тест `bookings.race.test.ts`                                   |
-| BONUS-6 інтеграційні тести API           | ✅   | `tests/api/`                                                                                 |
-| BONUS-7 фільтр кімнат за місткістю       | ✅   | головна сторінка, `GET /api/rooms?capacityMin=`                                              |
-| BONUS-2 підтвердження email у dev        | ✅   | `src/lib/server/verification.ts`, `VerificationBanner.tsx`                                   |
-| BONUS-3 щотижневі повтори                | ✅   | `src/lib/domain/recurrence.ts`, `src/lib/server/bookings.ts`                                 |
-| BONUS-5 сповіщення про кінець бронювання | ✅   | `src/lib/domain/notifications.ts`, `src/lib/server/notifications.ts`, `NotificationBell.tsx` |
-| BONUS-8 повноцінний мобільний сценарій   | ✅   | `src/components/schedule/Schedule.tsx`, `SwipeArea.tsx`                                      |
+### Weekly Recurring Bookings
 
-### Як влаштовані щотижневі повтори
+The creation form can repeat a booking weekly from 2 to 12 times. Weeks are added in office time rather than as fixed 7×24-hour durations, preserving wall-clock time across daylight-saving transitions. Every occurrence passes the same validation rules.
 
-У формі створення є чекбокс «Повторювати щотижня» і кількість від 2 до 12. Тижні додаються **в офісному часі**, а не як 7×24 години, тому серія, що перетинає перехід на літній час, зберігає настінний час: 10:00 за Києвом лишається 10:00, хоча в UTC той тиждень коротший на годину. Кожне входження проходить ті самі правила, тож пізніший тиждень не може опинитися поза робочими годинами.
+Creation is all-or-nothing in one transaction. A conflict response names the affected dates. Users can cancel one occurrence or the remaining series; series cancellation never rewrites the past. A single canceled booking offers a short undo window, but restoration reacquires the advisory lock and can return 409 if another user has taken the slot.
 
-Створення — усе або нічого в одній транзакції. Наполовину створена серія гірша за відмову: користувач не бачить, які тижні пройшли. У відмові названі конкретні дати конфлікту («Цей час уже зайнятий: 20.10»), бо формат помилки не має місця під список, а знати проблемні тижні — і є сенс відмови.
+Editing deliberately affects one occurrence only. To move a whole series, cancel it and create a replacement.
 
-Скасувати можна окреме входження або всю серію: діалог пропонує вибір «Лише це» / «Всю серію» перемикачем, а не двома руйнівними кнопками — обрати і підтвердити мають бути різними діями. Серія чіпає лише ті входження, що ще не відбулися: скасування не переписує минуле.
+### Email Verification
 
-Після скасування одного бронювання тост кілька секунд пропонує «Повернути». Це саме скорочення, а не обіцянка: слот вільний з моменту скасування, тож `POST /api/bookings/:id/restore` заново бере advisory lock і перевіряє перетини — якщо слот встигли зайняти, повертається 409 і про це прямо сказано. Серії undo не пропонується: чесно повернути вісім входжень, частину яких могли зайняти, одна кнопка не може.
+Registration creates a one-time token and prints the verification link in the server log, so development does not require SMTP. The link uses `SITE_URL`, not the request's `Host` header. Until verification, booking creation and editing return `403 EMAIL_NOT_VERIFIED`; cancellation remains allowed because it only releases a slot.
 
-**Свідоме спрощення:** редагування завжди стосується лише одного входження. Змінити час усієї серії не можна — для цього її треба скасувати і створити заново. Модалка редагування прямо про це попереджає.
+Tokens are single-use. Resending deletes the previous token, and the database stores only a SHA-256 hash of the random 32-byte value. Seeded users are already verified.
 
-### Як влаштоване підтвердження email
+### End-of-Booking Notifications
 
-Після реєстрації створюється одноразовий токен, а посилання підтвердження друкується **в лог сервера** в помітній рамці — реальний SMTP у dev не потрібен. Адреса в посиланні береться з `SITE_URL`, а не з запиту: заголовок `Host` пише той, хто дзвонить. Якщо запускаєте застосунок не на 3000, змініть і `SITE_URL`, інакше посилання вкаже не на той порт. До підтвердження створення і редагування бронювань відповідають `403 EMAIL_NOT_VERIFIED`, а над сторінкою висить банер із кнопкою «Надіслати ще раз». Скасування лишається дозволеним: воно лише звільняє слот, і замкнути користувача з бронюванням, яке він не може скасувати, було б гірше за саме правило.
+When another booking begins immediately after yours, the header shows a bell and a one-time toast `NOTIFY_BEFORE_MINUTES` before the end. Nothing is shown when the following slot is free. Notifications become read through the explicit “Mark all as read” action.
 
-Токен одноразовий і видаляється при переході за посиланням незалежно від того, чи був він дійсний, тож перехоплене посилання не спрацює вдруге. Повторне надсилання спершу видаляє попередній токен — працює лише найновіше посилання. У базі лежить не сам токен, а його SHA-256: токен — це вся перепустка, і з дампа бази ніхто не має підтверджувати чужу адресу. Солі немає свідомо — це 32 випадкові байти, а не пароль, тут нема чого підбирати.
+The tested `isEndingNotificationDue` function requires both bookings to be active and exactly adjacent. Notifications are calculated when the client polls rather than by a background timer. A unique `(bookingId, type)` index guarantees at-most-once creation under concurrent requests.
 
-Тестові користувачі з сіду вже підтверджені, тому демо працює одразу.
+For a manual demonstration, set a large value such as `NOTIFY_BEFORE_MINUTES=600`, create adjacent bookings in one room as different users, and open the app as the first author.
 
-`EMAIL_NOT_VERIFIED` — єдиний код поза списком у специфікації. Специфікація просить не вигадувати нових кодів без потреби; потреба тут у тому, що цю відмову користувач може виправити сам, на відміну від звичайного `FORBIDDEN`.
+### Mobile View
 
-### Як влаштовані сповіщення про кінець бронювання
+Seven columns are unreadable on a phone, so below the `sm` breakpoint the schedule shows one day with arrows, a weekday ribbon, and horizontal swipe navigation. The selected day lives in `?day=`, and crossing a week boundary navigates to the adjacent week.
 
-Якщо одразу після вашого бронювання кімнату займає хтось інший, за `NOTIFY_BEFORE_MINUTES` хвилин до кінця в хедері з'являється дзвіночок із лічильником і разовий toast. Якщо наступний слот вільний, попереджати нема про що — сповіщення не створюється. Прочитаними вони стають від кнопки «Прочитати всі» в панелі, а не від самого її відкриття: попередження, яке зникло, бо на нього глянули, повернути вже нема як.
+Both desktop and mobile views are rendered and CSS chooses between them. Shared geometry helpers keep their cells and booking blocks consistent without a hydration layout jump.
 
-Правило винесене в чисту функцію `isEndingNotificationDue` і покрите тестами: обидва бронювання мають бути активні, наступне має починатися **точно** в момент закінчення вашого, а вікно попередження напіввідкрите справа — після завершення бронювання попереджати вже пізно.
+### Why an Advisory Lock
 
-Сповіщення обчислюються на момент запиту клієнта, а не фоновим таймером. Сповіщення всередині застосунку потрібне тому, хто застосунок відкрив, а він і так опитує сервер раз на 30 секунд; таймер довелося б переживати перезапуски й стежити, щоб він не працював двічі на два процеси. Гарантію «рівно один раз» дає унікальний індекс `(bookingId, type)`: два одночасні запити не створять двох рядків, бо другий відхилить база.
+Booking creation is a check-then-insert operation and is vulnerable to concurrency. Both write paths acquire `pg_advisory_xact_lock(hashtext('room-' || roomId))` inside the transaction. The lock lasts until transaction completion, while the room-based key lets unrelated rooms proceed independently.
 
-Набір належних сповіщень перераховується щоразу, а не береться з таблиці. Рядок у таблиці відповідає за те, щоб попередження показалося **один раз**, а не за те, щоб воно показувалося далі: щойно будь-яке з двох бронювань скасують, воно зникає.
+A PostgreSQL exclusion constraint would move the overlap rule out of the tested domain layer. `SERIALIZABLE` isolation would instead produce a serialization failure that the API would need to recognize and translate into 409. `bookings.race.test.ts` submits ten simultaneous requests and requires exactly one database row.
 
-Щоб побачити це вручну, поставте велике значення (наприклад `NOTIFY_BEFORE_MINUTES=600`), створіть два бронювання впритул у одній кімнаті різними користувачами і відкрийте застосунок під автором першого.
+### Two Languages
 
-### Як влаштований мобільний вигляд
+Strings live in `messages/uk.json` and `messages/en.json` and are loaded by next-intl. Locale comes from the `locale` cookie, then `Accept-Language`, with Ukrainian as the fallback. URLs intentionally remain locale-neutral, so saved `/rooms/<id>` links work in either language.
 
-Сім колонок на телефоні нечитабельні, тому нижче брейкпоїнта `sm` розклад показує один день: стрілки, смужка днів тижня і свайп убік. Обраний день живе в URL (`?day=`), а стрілки на краях тижня переходять у сусідній — з понеділка назад ведуть на неділю попереднього тижня.
+API error messages are localized because they are displayed directly. Luxon formats dates and month names in the selected locale; times remain in the browser timezone.
 
-Обидва вигляди рендеряться, а обирає між ними CSS. Так сервер не мусить угадувати ширину екрана, і не виникає стрибка після гідратації. Клітинки й блоки бронювань в обох виглядах будуються спільними хелперами, тож розійтися вони не можуть.
+Social previews use `public/og-uk.jpg` and `public/og-en.jpg`, selected by request locale. `SITE_URL` provides the absolute URL. Only `/login` and `/register` are public to crawlers; authenticated pages use `noindex` and `robots.txt` mirrors that policy.
 
-### Чому саме advisory lock
+## Structure
 
-Створення бронювання — це «перевір і встав», і саме ця форма ламається під конкурентністю: два запити можуть обидва побачити слот вільним. Обидва шляхи запису беруть `pg_advisory_xact_lock(hashtext('room-' || roomId))` всередині транзакції. Лок тримається до кінця транзакції, тож перевірка і вставка не можуть перемежуватися, а ключ від id кімнати означає, що різні кімнати не чекають одна на одну.
+| Directory              | Contents                                                                                    |
+| ---------------------- | ------------------------------------------------------------------------------------------- |
+| `src/app`              | Pages and API routes                                                                        |
+| `src/lib/domain`       | Pure overlap, time-rule, and grid-geometry logic, independent of the database and framework |
+| `src/lib/server`       | Database, sessions, passwords, and booking service                                          |
+| `src/components`       | UI                                                                                          |
+| `messages`             | Ukrainian and English UI and API strings                                                    |
+| `prisma`               | Schema, migrations, and seed                                                                |
+| `tests/api`            | API integration tests                                                                       |
+| `e2e`                  | Playwright scenarios and screenshots                                                        |
+| `docs/demo.md`         | Project walkthrough                                                                         |
+| `docs/api-examples.md` | curl examples for manual API checks                                                         |
 
-Альтернативи і чому не вони: exclusion constraint над `tstzrange` переносить правило в базу і забирає його з доменного шару, де воно зараз під тестами; рівень `SERIALIZABLE` змусив би другий запит падати з помилкою серіалізації, яку API довелося б розпізнавати і перетворювати на 409.
+## Environment Variables
 
-Тест `bookings.race.test.ts` запускає десять одночасних створень одного слота і вимагає рівно один рядок у базі. Він має зуби: якщо прибрати блокування, тест падає з двома рядками.
+All variables are documented in `.env.example`: `DATABASE_URL`, `SESSION_SECRET`, `NEXT_PUBLIC_WEEK_START_DAY`, `NEXT_PUBLIC_DEMO_LOGIN`, `SITE_URL`, `NOTIFY_BEFORE_MINUTES`, `REGISTER_LIMIT`, and `TRUST_PROXY`. The real `.env` is excluded from Git.
 
-### Як влаштовані дві мови
+`NEXT_PUBLIC_WEEK_START_DAY` and `NEXT_PUBLIC_DEMO_LOGIN` are embedded in the client bundle during the build, so Docker passes them as build arguments rather than runtime container variables.
 
-Рядки лежать у `messages/uk.json` і `messages/en.json`, читає їх next-intl. Мова береться з cookie `locale`, а якщо його немає — з `Accept-Language`, з відкотом на українську; перемикач у хедері просто переписує cookie. В адресі мови немає свідомо: `/rooms/<id>` лишається тим самим посиланням для всіх, і жодне збережене посилання не ламається від зміни мови. Через це немає й `hreflang` — альтернативних URL просто не існує.
+Enable `TRUST_PROXY` only behind a reverse proxy that overwrites `X-Forwarded-For`. With a directly published port, trusting this client-controlled header would defeat failed-login throttling.
 
-`message` у помилках API теж перекладається, бо цей текст показується користувачу як є. Дати й місяці форматує Luxon у вибраній мові, а час — завжди в поясі браузера.
+**Always set your own `SESSION_SECRET` for a real deployment** with `openssl rand -base64 32`. The `.env.example` value is public and exists only so the demo starts with one command; production mode prints a prominent warning when it is used.
 
-Соцмережа отримує свою картинку на кожну мову (`public/og-uk.jpg`, `public/og-en.jpg`, 1200×630): заголовок у неї вшитий текстом, тож локаль запиту вибирає файл. Абсолютний URL для неї будується з `SITE_URL`. Публічні для пошуковика лише `/login` і `/register` — решта під `noindex`, і `robots.txt` каже те саме.
+## Security
 
-## Структура
+Passwords use bcrypt with cost 12. Session cookies are `httpOnly`, `sameSite=lax`, `secure` in production, and HMAC-signed. The server checks ownership for every modification, not merely by hiding UI buttons, and integration tests verify both the 403 response and the unchanged database row.
 
-| Тека                   | Що всередині                                                                                 |
-| ---------------------- | -------------------------------------------------------------------------------------------- |
-| `src/app`              | сторінки і API-роути                                                                         |
-| `src/lib/domain`       | чиста логіка: перетини, правила часу, геометрія сітки. Без залежностей від бази і фреймворка |
-| `src/lib/server`       | база, сесії, паролі, сервіс бронювань                                                        |
-| `src/components`       | UI                                                                                           |
-| `messages`             | рядки інтерфейсу і повідомлень API: `uk.json`, `en.json`                                     |
-| `prisma`               | схема, міграції, сід                                                                         |
-| `tests/api`            | інтеграційні тести API                                                                       |
-| `e2e`                  | Playwright: сценарії і скріншоти екранів                                                     |
-| `docs/demo.md`         | маршрут огляду проєкту                                                                       |
-| `docs/api-examples.md` | curl-приклади для ручної перевірки API                                                       |
+Zod validates request bodies and strips unexpected fields such as `userId`, `id`, `seriesId`, and `canceledAt`. The only raw SQL is the parameterized advisory lock.
 
-## Змінні оточення
+Session identifiers contain 256 random bits from the system CSPRNG. Expired sessions and verification tokens are removed on later writes to their respective tables.
 
-Усі описані в `.env.example`: `DATABASE_URL`, `SESSION_SECRET`, `NEXT_PUBLIC_WEEK_START_DAY` (перший день тижня, 1 = понеділок), `NEXT_PUBLIC_DEMO_LOGIN` (кнопка демо-акаунта на сторінці входу), `SITE_URL` (публічний origin — з нього будуються абсолютний `og:image` і посилання підтвердження email), `NOTIFY_BEFORE_MINUTES`, `REGISTER_LIMIT` (скільки акаунтів можна створити за десять хвилин), `TRUST_PROXY`. Реальний `.env` у git не потрапляє.
+Failed login attempts are counted by address and source. Ten invalid-password attempts in five minutes produce `429 TOO_MANY_ATTEMPTS`; successful credentials are not blocked by an attacker's failed attempts against the same address. Unknown addresses are checked against a decoy hash of equal cost to reduce account enumeration through timing.
 
-`NEXT_PUBLIC_WEEK_START_DAY` і `NEXT_PUBLIC_DEMO_LOGIN` вшиваються в клієнтський бандл під час збірки, тому в Docker вони передаються як build-аргументи, а не як змінні оточення контейнера.
+Registration is separately limited by `REGISTER_LIMIT`, which defaults to 20 attempts per ten minutes. Verification-email resends have their own limit. Verification tokens are stored only as SHA-256 hashes, and links are based on `SITE_URL`, not a caller-controlled `Host` header.
 
-`TRUST_PROXY` вмикайте лише тоді, коли перед застосунком стоїть зворотний проксі, який сам перезаписує `X-Forwarded-For`. Якщо порт опублікований напряму (як у `docker-compose.yml`), цей заголовок пише той, хто надсилає запит, і довіра до нього обнуляла б лічильник невдалих спроб входу на кожному запиті.
+Responses set `Content-Security-Policy`, `Strict-Transport-Security`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, and `Permissions-Policy`, while hiding the framework version.
 
-**Для реального розгортання обов'язково задайте власний `SESSION_SECRET`** (`openssl rand -base64 32`). Значення з `.env.example` публічне: з ним будь-хто зможе підписати cookie сесії. Застосунок стартує з ним, щоб демо піднімалося однією командою, але в продакшн-режимі друкує помітне попередження.
-
-## Що зроблено для безпеки
-
-Пароль зберігається хешем bcrypt (cost 12), cookie сесії — `httpOnly`, `sameSite=lax`, `secure` у проді й підписана HMAC, тож підроблену не приймуть навіть до звернення в базу. Власність перевіряється на сервері для кожної зміни, а не лише схованими кнопками: спроба відредагувати чи скасувати чуже бронювання прямим запитом дає 403, і це під інтеграційним тестом разом із перевіркою, що рядок у базі не змінився.
-
-Тіла запитів проходять через Zod, тому зайві поля (`userId`, `id`, `seriesId`, `canceledAt`) просто відкидаються — підмінити власника бронювання через тіло запиту не вийде. Єдиний сирий SQL у застосунку — параметризований advisory lock.
-
-Ідентифікатор сесії — 256 випадкових біт із системного CSPRNG, а не `cuid`. Підпис лишається, але як другий замок: витік `SESSION_SECRET` більше не означає, що підробити можна будь-яку сесію. Прострочені сесії й токени підтвердження видаляються при наступному запису у власну таблицю, тож жодна з них не росте нескінченно.
-
-Невдалі спроби входу рахуються за парою «адреса + джерело»: після 10 за 5 хвилин застосунок відповідає `429 TOO_MANY_ATTEMPTS`. Ліміт застосовується **лише до запиту з неправильним паролем** — інакше будь-хто міг би десятьма хибними спробами на чужу адресу замкнути її власника поза власним акаунтом на п'ять хвилин. Адреса без акаунта перевіряється проти хеша-приманки тієї ж вартості, тож час відповіді не видає, які адреси зареєстровані.
-
-Реєстрація теж має стелю (`REGISTER_LIMIT`, за замовчуванням 20 за 10 хвилин): вона хешує пароль на кожному запиті, тобто платить сотні мілісекунд процесора незалежно від того, чи запит справжній. Повторне надсилання листа підтвердження обмежене окремо.
-
-Токен підтвердження зберігається в базі лише хешем SHA-256, а посилання будується з `SITE_URL`, а не з заголовка `Host`, який пише той, хто дзвонить.
-
-Заголовки: `Content-Security-Policy`, `Strict-Transport-Security`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`; версія фреймворка не оголошується.
-
-CSP побудована на nonce, а не на `unsafe-inline`. Інлайнові скрипти тут справді є: один у `<head>` застосовує збережену тему до першого малювання, решту додає Next для гідратації. Дозволити інлайн загалом означало б дозволити і будь-який вставлений — тобто написати директиву, яка нічого не забороняє. Nonce мусить бути новий на кожну відповідь, тому політика живе в `src/middleware.ts`, а не в `next.config.ts`; статичного рендерингу це не коштує нічого, бо кожна сторінка застосунку і так читає сесію. `unsafe-eval` — лише в dev, де сервер компілює в браузері.
+The CSP uses a per-response nonce rather than `unsafe-inline`. One inline script applies the saved theme before first paint, while Next.js adds hydration scripts. The nonce policy lives in `src/middleware.ts`; `unsafe-eval` is enabled only in development.

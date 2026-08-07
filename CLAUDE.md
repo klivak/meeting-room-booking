@@ -8,7 +8,7 @@ A web app for booking meeting rooms in an office. A user registers, sees the wee
 
 ## Documentation languages
 
-- `README.md` is the Ukrainian project documentation; `README.en.md` is its English counterpart.
+- `README.md` is the default English project documentation; `README.uk.md` is its Ukrainian counterpart.
 - Any content change to either README must be reflected in the other README in the same change.
 - Keep their headings, commands, feature descriptions, and operational guidance aligned.
 
