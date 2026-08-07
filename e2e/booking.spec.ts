@@ -63,7 +63,7 @@ async function cancelBooking(
     .click();
   await page
     .getByRole("alertdialog")
-    .getByRole("button", { name: "Так, скасувати" })
+    .getByRole("button", { name: "Скасувати", exact: true })
     .click();
   await expect(page.getByRole("status")).toContainText("Бронювання скасовано");
 }
@@ -81,7 +81,7 @@ test("books a dragged range, refuses to double-book it, then cancels it", async 
   const panel = page.getByRole("dialog", { name: "Нове бронювання" });
   await expect(panel).toBeVisible();
   // The drag decided the duration, and the panel says so in words.
-  await expect(panel.getByText("1 год 30 хв", { exact: true })).toBeVisible();
+  await expect(panel.getByText(/Тривалість: 1 год 30 хв/)).toBeVisible();
 
   await panel.getByLabel("Назва").fill(TITLE);
   await panel.getByRole("button", { name: "Забронювати" }).click();
@@ -156,7 +156,7 @@ test("moves and resizes an own booking on the grid itself", async ({
 
   await expect(page.getByRole("status")).toContainText("Бронювання перенесено");
   await expect(
-    page.getByRole("link", { name: new RegExp(`${MOVE_TITLE}, 12:00–13:30`) }),
+    page.getByRole("link", { name: new RegExp(`12:00–13:30, ${MOVE_TITLE}`) }),
   ).toBeVisible();
 
   // The same two gestures from the keyboard: Alt moves it, Shift changes how
@@ -167,7 +167,7 @@ test("moves and resizes an own booking on the grid itself", async ({
     .focus();
   await page.keyboard.press("Alt+ArrowDown");
   await expect(
-    page.getByRole("link", { name: new RegExp(`${MOVE_TITLE}, 12:30–14:00`) }),
+    page.getByRole("link", { name: new RegExp(`12:30–14:00, ${MOVE_TITLE}`) }),
   ).toBeVisible();
 
   await page
@@ -176,7 +176,7 @@ test("moves and resizes an own booking on the grid itself", async ({
     .focus();
   await page.keyboard.press("Shift+ArrowDown");
   await expect(
-    page.getByRole("link", { name: new RegExp(`${MOVE_TITLE}, 12:30–14:30`) }),
+    page.getByRole("link", { name: new RegExp(`12:30–14:30, ${MOVE_TITLE}`) }),
   ).toBeVisible();
 
   await cancelBooking(page, MOVE_TITLE);
@@ -286,10 +286,10 @@ test("picks a range with the keyboard alone", async ({ page }) => {
   // Sunday 15:00, half an hour, exactly where the arrows landed.
   const panel = page.getByRole("dialog", { name: "Нове бронювання" });
   await expect(panel).toBeVisible();
-  await expect(panel.getByText("30 хв", { exact: true })).toBeVisible();
+  await expect(panel.getByText(/Тривалість: 30 хв/)).toBeVisible();
 
   await panel.getByLabel("Кінець").selectOption({ label: "17:00 · 2 год" });
-  await expect(panel.getByText("2 год", { exact: true })).toBeVisible();
+  await expect(panel.getByText(/Тривалість: 2 год/)).toBeVisible();
 
   await panel.getByLabel("Назва").fill(KEYBOARD_TITLE);
   await panel.getByRole("button", { name: "Забронювати" }).click();

@@ -56,7 +56,7 @@ export default async function AppLayout({
           the schedule keep sticking to the viewport. */}
       <main
         id="main"
-        className="relative mx-auto w-full max-w-[1560px] flex-1 overflow-x-clip px-4 py-4 sm:px-6"
+        className="relative mx-auto w-full max-w-[1560px] flex-1 overflow-x-clip px-4 py-4 sm:px-6 lg:py-3"
       >
         {children}
       </main>

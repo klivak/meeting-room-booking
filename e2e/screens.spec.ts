@@ -69,10 +69,14 @@ for (const theme of ["light", "dark"] as const) {
         // 1366×768 laptop without the page scrolling. Every 8px of padding
         // added anywhere above comes out of the grid, so it is asserted rather
         // than trusted.
-        const scrolls = await page.evaluate(
-          () => document.documentElement.scrollHeight > window.innerHeight,
-        );
-        expect(scrolls, "the whole week must fit 1366×768").toBe(false);
+        const viewport = await page.evaluate(() => ({
+          innerHeight: window.innerHeight,
+          scrollHeight: document.documentElement.scrollHeight,
+        }));
+        expect(
+          viewport.scrollHeight,
+          "the whole week must fit 1366×768",
+        ).toBeLessThanOrEqual(viewport.innerHeight);
       }
 
       await shot(page, testInfo, "schedule");
