@@ -2,9 +2,13 @@
   <img src="public/logo.svg" width="104" height="104" alt="Логотип Meeting Room Booking">
 </p>
 
-# Бронювання переговорних
+<h1 align="center">Бронювання переговорних</h1>
 
-[English version](README.md)
+<p align="center">
+  <a href="README.md">English version</a>
+</p>
+
+https://github.com/user-attachments/assets/3556a1a8-688c-43ef-afe1-cd2bfbe577a8
 
 Вебзастосунок для бронювання переговорних кімнат в офісі. Користувач бачить тижневий розклад кімнати, бронює вільні слоти, редагує і скасовує лише свої бронювання; чужі видно з іменем автора, але змінити їх не можна ні через інтерфейс, ні прямим запитом до API.
 
@@ -179,8 +183,6 @@ Playwright (`npm run e2e`) — не про коректність, а про «�
 ## Промо-відео
 
 `marketing/` — ізольований Remotion-проєкт з українською та англійською версіями 36-секундного промо 1920×1080. Кожна версія використовує локалізовані Playwright-скріншоти й містить фонову музику.
-
-https://github.com/user-attachments/assets/3556a1a8-688c-43ef-afe1-cd2bfbe577a8
 
 ```bash
 cd marketing

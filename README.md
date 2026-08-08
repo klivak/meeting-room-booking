@@ -2,9 +2,13 @@
   <img src="public/logo.svg" width="104" height="104" alt="Meeting Room Booking logo">
 </p>
 
-# Meeting Room Booking
+<h1 align="center">Meeting Room Booking</h1>
 
-[Українська версія](README.uk.md)
+<p align="center">
+  <a href="README.uk.md">Українська версія</a>
+</p>
+
+https://github.com/user-attachments/assets/a9d2410d-f711-44d4-9f02-58e3a3f6bcd1
 
 A web application for booking meeting rooms in an office. Users see a room's weekly schedule, book free slots, and edit or cancel only their own bookings. Other users' bookings remain visible with the author's name, but cannot be changed through either the interface or direct API requests.
 
@@ -163,8 +167,6 @@ Social previews use `public/og-uk.jpg` and `public/og-en.jpg`, selected by reque
 ## Marketing Video
 
 `marketing/` is an isolated Remotion project for Ukrainian and English versions of a 36-second, 1920×1080 product promo. Each version uses localized Playwright captures and includes background music.
-
-https://github.com/user-attachments/assets/a9d2410d-f711-44d4-9f02-58e3a3f6bcd1
 
 ```bash
 cd marketing
