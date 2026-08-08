@@ -74,7 +74,6 @@ Codes (do not invent new ones without a real need): `EMAIL_TAKEN`, `INVALID_CRED
 
 ## Repository notes
 
-- `TODO.md` is a local working document. Never stage, commit, or push it.
 - `CLAUDE.md` is tracked repository guidance. Keep its README synchronization rule and the Next.js-managed block below intact.
 - Commit history matters for grading: keep to "one stage = 1–2 commits", commit after each green checklist. One giant commit is penalized.
 

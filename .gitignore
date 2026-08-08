@@ -55,7 +55,6 @@ next-env.d.ts
 # local working notes and agent tooling, not part of the deliverable
 /.claude
 /skills-lock.json
-/TODO.md
 
 # Lighthouse output: generated on demand, never part of the deliverable
 /lighthouse-report/
