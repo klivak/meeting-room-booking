@@ -4,7 +4,7 @@
 
 Вебзастосунок для бронювання переговорних кімнат в офісі. Користувач бачить тижневий розклад кімнати, бронює вільні слоти, редагує і скасовує лише свої бронювання; чужі видно з іменем автора, але змінити їх не можна ні через інтерфейс, ні прямим запитом до API.
 
-Стек: Next.js (App Router) + TypeScript, Prisma + PostgreSQL, Tailwind CSS, Luxon, Zod, bcrypt, Vitest, next-intl.
+Стек: Next.js (App Router) + TypeScript, Prisma + PostgreSQL, Tailwind CSS, React Aria Components, Luxon, Zod, bcrypt, Vitest, next-intl.
 
 Інтерфейс і повідомлення API — українською та англійською; світла і темна теми перемикаються в хедері.
 

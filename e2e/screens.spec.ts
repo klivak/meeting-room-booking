@@ -89,6 +89,13 @@ for (const theme of ["light", "dark"] as const) {
 
       const panel = page.getByRole("dialog", { name: "Нове бронювання" });
       await expect(panel).toBeVisible();
+      if (testInfo.project.name === "phone") {
+        const expand = panel.getByRole("button", {
+          name: "Розгорнути панель бронювання",
+        });
+        await expect(expand).toHaveAttribute("aria-expanded", "false");
+        await expand.click();
+      }
       await expect(panel.getByText("Тривалість:")).toBeVisible();
 
       await shot(page, testInfo, "panel", { fullPage: false });

@@ -1,31 +1,111 @@
-import { ChevronDown } from "lucide-react";
+"use client";
 
-// One look for the panel's selects and the date field; they differ only in what
-// they hold. The focus state is a 1.5px edge plus a soft ring of the same
-// colour, so a focused field reads as lit rather than as suddenly heavier.
+import { Check, ChevronDown } from "lucide-react";
+import {
+  Button,
+  Label,
+  ListBox,
+  ListBoxItem,
+  Popover,
+  Select as AriaSelect,
+  SelectValue,
+} from "react-aria-components";
+
 export const CONTROL_CLASS =
-  "border-border-grid bg-surface text-text-primary rounded-control min-h-11 min-w-0 border px-2.5 text-sm font-semibold transition outline-none hover:border-border-control focus-visible:border-accent-own-booking focus-visible:border-[1.5px] focus-visible:shadow-[0_0_0_3px_var(--color-accent-own-surface)] sm:min-h-10";
+  "border-border-grid bg-surface text-text-primary rounded-control min-h-11 min-w-0 border px-2.5 text-sm font-semibold transition outline-none hover:border-border-control data-[focus-visible]:border-accent-own-booking data-[focus-visible]:border-[1.5px] data-[focus-visible]:shadow-[0_0_0_3px_var(--color-accent-own-surface)] sm:min-h-10";
 
-// A real <select> with the system arrow hidden and our own drawn over it. The
-// element itself stays native, so a phone still opens its built-in picker and
-// keyboard and screen-reader behaviour need no code of ours.
+export type SelectOption = {
+  value: string;
+  label: string;
+};
+
+type SelectProps = {
+  id?: string;
+  label?: string;
+  ariaLabel?: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: readonly SelectOption[];
+  disabled?: boolean;
+  invalid?: boolean;
+  className?: string;
+};
+
+/** Accessible select whose behaviour comes from React Aria and appearance from our tokens. */
 export function Select({
+  id,
+  label,
+  ariaLabel,
+  value,
+  onChange,
+  options,
+  disabled = false,
+  invalid = false,
   className,
-  children,
-  ...props
-}: React.ComponentProps<"select">) {
+}: SelectProps) {
   return (
-    <span className="relative flex min-w-0">
-      <select
-        className={`${CONTROL_CLASS} peer w-full appearance-none pe-8 ${className ?? ""}`}
-        {...props}
+    <AriaSelect
+      id={id}
+      value={value}
+      onChange={(nextValue) => {
+        if (typeof nextValue === "string") {
+          onChange(nextValue);
+        }
+      }}
+      isDisabled={disabled}
+      isInvalid={invalid}
+      aria-label={ariaLabel}
+      className="flex min-w-0 flex-col gap-1"
+    >
+      {label ? (
+        <Label className="text-text-secondary text-[11.5px] font-bold">
+          {label}
+        </Label>
+      ) : ariaLabel ? (
+        <Label className="sr-only">{ariaLabel}</Label>
+      ) : null}
+      <Button
+        className={`${CONTROL_CLASS} flex w-full items-center gap-2 pe-2.5 text-start disabled:cursor-not-allowed disabled:opacity-[0.45] ${
+          invalid
+            ? "border-danger border-[1.5px] shadow-[0_0_0_3px_var(--color-danger-surface)]"
+            : ""
+        } ${className ?? ""}`}
       >
-        {children}
-      </select>
-      <ChevronDown
-        aria-hidden="true"
-        className="text-text-tertiary pointer-events-none absolute end-2.5 top-1/2 size-4 -translate-y-1/2 transition peer-hover:text-text-secondary peer-disabled:opacity-[0.45]"
-      />
-    </span>
+        <SelectValue className="min-w-0 flex-1 truncate" />
+        <ChevronDown
+          aria-hidden="true"
+          className="text-text-tertiary size-4 flex-none"
+        />
+      </Button>
+      <Popover
+        placement="bottom start"
+        offset={6}
+        className="bg-surface border-border-grid shadow-modal rounded-control z-100 max-h-[min(18rem,var(--available-height))] w-[var(--trigger-width)] min-w-[12rem] overflow-hidden border outline-none"
+      >
+        <ListBox className="max-h-[min(18rem,var(--available-height))] overflow-y-auto p-1.5 outline-none">
+          {options.map((option) => (
+            <ListBoxItem
+              key={option.value}
+              id={option.value}
+              textValue={option.label}
+              className="text-text-secondary data-[focused]:bg-surface-muted data-[focused]:text-text-primary data-[selected]:text-accent-own-ink rounded-[8px] flex min-h-10 cursor-default items-center gap-2 px-2.5 py-2 text-[13px] font-semibold outline-none data-[selected]:font-bold"
+            >
+              {({ isSelected }) => (
+                <>
+                  <span className="min-w-0 flex-1 truncate">
+                    {option.label}
+                  </span>
+                  <span className="flex w-4 flex-none justify-center">
+                    {isSelected ? (
+                      <Check aria-hidden="true" className="size-4" />
+                    ) : null}
+                  </span>
+                </>
+              )}
+            </ListBoxItem>
+          ))}
+        </ListBox>
+      </Popover>
+    </AriaSelect>
   );
 }

@@ -26,6 +26,17 @@ test.beforeEach(async ({ page }) => {
 
 type Cell = ReturnType<typeof cell>;
 
+/** Picks an item from the styled listbox rendered in a portal. */
+async function chooseOption(
+  page: import("@playwright/test").Page,
+  panel: import("@playwright/test").Locator,
+  label: string,
+  option: string,
+) {
+  await panel.getByRole("button", { name: new RegExp(`${label}$`) }).click();
+  await page.getByRole("option", { name: option, exact: true }).click();
+}
+
 /** Drags the pointer from one cell to another, which is how a range is picked. */
 async function dragOver(
   page: import("@playwright/test").Page,
@@ -97,9 +108,7 @@ test("books a dragged range, refuses to double-book it, then cancels it", async 
   // select — the client lets that be built, and the server is what says no.
   await cell(page, 6, 7).click();
   const second = page.getByRole("dialog", { name: "Нове бронювання" });
-  await second
-    .getByLabel("Кінець")
-    .selectOption({ label: "14:00 · 1 год 30 хв" });
+  await chooseOption(page, second, "Кінець", "14:00 · 1 год 30 хв");
 
   // The clash is named while the range is still being picked, and it comes with
   // the rooms that are free at exactly that time — one click away from the tour
@@ -288,7 +297,22 @@ test("picks a range with the keyboard alone", async ({ page }) => {
   await expect(panel).toBeVisible();
   await expect(panel.getByText(/Тривалість: 30 хв/)).toBeVisible();
 
-  await panel.getByLabel("Кінець").selectOption({ label: "17:00 · 2 год" });
+  // The calendar is a real accessible popup rather than the browser's native
+  // picker. Escape returns focus without changing the already selected day.
+  const calendarButton = panel.getByRole("button", { name: /календар/i });
+  await calendarButton.click();
+  await expect(page.getByRole("grid")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("grid")).toHaveCount(0);
+  await expect(calendarButton).toBeFocused();
+
+  const endSelect = panel.getByRole("button", { name: /Кінець$/ });
+  await endSelect.focus();
+  await page.keyboard.press("ArrowDown");
+  for (let step = 0; step < 3; step += 1) {
+    await page.keyboard.press("ArrowDown");
+  }
+  await page.keyboard.press("Enter");
   await expect(panel.getByText(/Тривалість: 2 год/)).toBeVisible();
 
   await panel.getByLabel("Назва").fill(KEYBOARD_TITLE);

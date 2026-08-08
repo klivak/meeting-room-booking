@@ -39,29 +39,46 @@ const SKELETON_CARDS = [
 // across the grid instead of all six blinking in lockstep.
 async function RoomsSkeleton() {
   const t = await getTranslations("rooms");
+  const floors = [
+    SKELETON_CARDS.slice(0, 2),
+    SKELETON_CARDS.slice(2, 4),
+    SKELETON_CARDS.slice(4, 6),
+  ];
 
   return (
     <>
       <p role="status" className="sr-only">
         {t("loading")}
       </p>
-      <ul aria-hidden className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {SKELETON_CARDS.map((card, index) => (
-          // 156px is what the loaded card measures: name, floor line, and the
-          // availability strip under its divider.
-          <li
-            key={index}
-            className="border-border-grid bg-surface rounded-card shadow-card flex h-[156px] flex-col gap-3 border p-[22px]"
-          >
-            <Skeleton
-              className={`h-5 ${card.name}`}
-              style={{ animationDelay: `${index * 110}ms` }}
-            />
-            <Skeleton className={`h-3 ${card.meta}`} />
-            <Skeleton className="mt-auto h-9 w-full" />
-          </li>
+      <div aria-hidden className="flex flex-col gap-7">
+        {floors.map((cards, floorIndex) => (
+          <section key={floorIndex}>
+            {/* The loaded list is grouped by floor, so the first heading must
+                reserve its line before the first card arrives. */}
+            <Skeleton className="mb-3 h-3 w-20" />
+            <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {cards.map((card, cardIndex) => {
+                const index = floorIndex * 2 + cardIndex;
+
+                return (
+                  <li
+                    key={index}
+                    className="border-border-grid bg-surface rounded-card shadow-card flex h-[156px] flex-col border p-[22px]"
+                  >
+                    <Skeleton
+                      className={`h-5 ${card.name}`}
+                      style={{ animationDelay: `${index * 110}ms` }}
+                    />
+                    <Skeleton className={`mt-1 h-3 ${card.meta}`} />
+                    <Skeleton className="mt-[18px] h-px w-full" />
+                    <Skeleton className="mt-3.5 h-8 w-full" />
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
         ))}
-      </ul>
+      </div>
     </>
   );
 }

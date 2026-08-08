@@ -4,7 +4,7 @@
 
 A web application for booking meeting rooms in an office. Users see a room's weekly schedule, book free slots, and edit or cancel only their own bookings. Other users' bookings remain visible with the author's name, but cannot be changed through either the interface or direct API requests.
 
-Stack: Next.js (App Router) + TypeScript, Prisma + PostgreSQL, Tailwind CSS, Luxon, Zod, bcrypt, Vitest, and next-intl.
+Stack: Next.js (App Router) + TypeScript, Prisma + PostgreSQL, Tailwind CSS, React Aria Components, Luxon, Zod, bcrypt, Vitest, and next-intl.
 
 The interface and API messages are available in Ukrainian and English. Light and dark themes can be switched in the header.
 

@@ -1,17 +1,25 @@
 "use client";
 
-import { CircleAlert, Clock, Repeat, X } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  CircleAlert,
+  Clock,
+  Repeat,
+  X,
+} from "lucide-react";
 import { DateTime } from "luxon";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { CancelBookingButton } from "@/components/CancelBookingButton";
 import { setDraftTitle } from "@/components/schedule/draftTitle";
 import { showToast } from "@/components/toast";
 import { Button } from "@/components/ui/Button";
+import { DatePicker } from "@/components/ui/DatePicker";
 import { Input } from "@/components/ui/Input";
-import { CONTROL_CLASS, Select } from "@/components/ui/Select";
+import { Select } from "@/components/ui/Select";
 import {
   noopSubscribe,
   readOfficeTimeZone,
@@ -135,6 +143,7 @@ function BookingForm({
   booking,
 }: BookingPanelProps) {
   const router = useRouter();
+  const locale = useLocale();
   const t = useTranslations("form");
   const tApi = useTranslations("api");
   const tDuration = useTranslations("duration");
@@ -171,6 +180,12 @@ function BookingForm({
   const [switchingTo, setSwitchingTo] = useState<string | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
   const [pending, setPending] = useState(false);
+  // Creation starts as a compact mobile sheet so the range handle remains
+  // reachable. Editing opens immediately because the time was already chosen.
+  const [collapsed, setCollapsed] = useState(!booking);
+  const formRef = useRef<HTMLFormElement>(null);
+  const sheetTouchStart = useRef<number | null>(null);
+  const suppressSheetClick = useRef(false);
 
   // Where the panel was dragged to; null means it sits where CSS put it.
   const [position, setPosition] = useState<{ x: number; y: number } | null>(
@@ -182,6 +197,34 @@ function BookingForm({
     readWide,
     readNotWide,
   );
+
+  useEffect(() => {
+    if (isWide || collapsed) {
+      return;
+    }
+
+    formRef.current?.querySelector<HTMLInputElement>("#title")?.focus();
+  }, [collapsed, isWide]);
+
+  useEffect(() => {
+    if (isWide || !collapsed) {
+      return;
+    }
+
+    const selection = Array.from(
+      document.querySelectorAll<HTMLElement>("[data-selection]"),
+    ).find((element) => element.getBoundingClientRect().width > 0);
+    if (!selection) {
+      return;
+    }
+
+    const rect = selection.getBoundingClientRect();
+    // Keep the resize handle above the compact sheet instead of merely drawing
+    // it underneath an element that receives the touch first.
+    if (rect.bottom > window.innerHeight - 88 || rect.top < 96) {
+      selection.scrollIntoView({ block: "center" });
+    }
+  }, [collapsed, isWide]);
 
   // The grid behind the panel draws the title on the range being picked. Only
   // while creating: an existing booking already carries its own name there, and
@@ -583,14 +626,36 @@ function BookingForm({
     }
   }
 
+  /** Remembers where a finger met the sheet handle so a vertical swipe can settle it. */
+  function startSheetGesture(event: React.TouchEvent<HTMLButtonElement>) {
+    sheetTouchStart.current = event.touches[0]?.clientY ?? null;
+  }
+
+  /** Swiping up expands and swiping down collapses; a short gesture remains a tap. */
+  function finishSheetGesture(event: React.TouchEvent<HTMLButtonElement>) {
+    const startY = sheetTouchStart.current;
+    const endY = event.changedTouches[0]?.clientY;
+    sheetTouchStart.current = null;
+
+    if (startY === null || endY === undefined || Math.abs(endY - startY) < 28) {
+      return;
+    }
+
+    suppressSheetClick.current = true;
+    setCollapsed(endY > startY);
+  }
+
   const switchingRoom = rooms.find((room) => room.id === switchingTo);
 
   return (
     <div
-      // No backdrop above the sm breakpoint: the point of the panel is that the
-      // schedule stays readable while it is open. On a phone there is no room
-      // for both, so it covers the screen as before.
-      className="fixed inset-0 z-50 flex items-end justify-center bg-[rgb(14_22_20/0.45)] backdrop-blur-[2px] sm:pointer-events-none sm:inset-auto sm:top-24 sm:right-8 sm:block sm:bg-transparent sm:backdrop-blur-none"
+      // The collapsed phone sheet has no backdrop and lets the schedule keep
+      // receiving touches. Expanded, it becomes the focused editing surface.
+      className={`fixed z-50 flex items-end justify-center sm:pointer-events-none sm:inset-auto sm:top-24 sm:right-8 sm:block sm:bg-transparent sm:backdrop-blur-none ${
+        collapsed
+          ? "pointer-events-none inset-x-0 bottom-0"
+          : "inset-0 bg-[rgb(14_22_20/0.45)] backdrop-blur-[2px]"
+      }`}
       style={panelStyle}
       onClick={(event) => {
         // Only the phone overlay closes on a tap outside it.
@@ -603,12 +668,12 @@ function BookingForm({
         ref={anchorToSchedule}
         role="dialog"
         aria-modal="false"
-        aria-labelledby="booking-form-title"
+        aria-label={booking ? t("editBooking") : t("newBooking")}
         // Glass from sm up: the panel sits over the grid, and the point of it
         // is that the week stays readable underneath. On a phone it covers the
         // screen and there is nothing to see through, so it stays solid.
         // The sheet scrolls instead of pushing its buttons out of reach.
-        className="rounded-sheet bg-surface border-border-grid shadow-modal animate-sheet sm:animate-panel sm:bg-glass sm:border-glass-edge flex max-h-[92vh] w-full flex-col overflow-hidden rounded-b-none border sm:pointer-events-auto sm:max-h-[85vh] sm:w-[364px] sm:rounded-b-[18px] sm:backdrop-blur-xl"
+        className="rounded-sheet bg-surface border-border-grid shadow-modal animate-sheet pointer-events-auto flex max-h-[92vh] w-full flex-col overflow-hidden rounded-b-none border sm:animate-panel sm:pointer-events-auto sm:max-h-[85vh] sm:w-[364px] sm:rounded-b-[18px] sm:border-glass-edge sm:bg-glass sm:backdrop-blur-xl"
         // Escape means "Close" here as much as it does in the cancel dialog. The
         // panel is not modal, so it only answers when the focus is inside it —
         // which it is, the title field takes it as the panel opens.
@@ -626,14 +691,41 @@ function BookingForm({
           onPointerMove={keepDragging}
           onPointerUp={stopDragging}
           onPointerCancel={stopDragging}
-          className="border-border-grid relative flex flex-none touch-none items-center gap-2.5 border-b px-[18px] pt-4 pb-3.5 sm:cursor-grab sm:active:cursor-grabbing"
+          className="border-border-grid relative flex flex-none touch-none items-center gap-2.5 border-b px-[18px] py-3 sm:cursor-grab sm:pt-4 sm:pb-3.5 sm:active:cursor-grabbing"
         >
-          {/* A grabber on the phone sheet, two grip lines on the desktop panel:
-              the same affordance in the idiom of each. */}
-          <span
-            aria-hidden="true"
-            className="bg-border-control absolute top-2 left-1/2 h-1 w-10 -translate-x-1/2 rounded-full sm:hidden"
-          />
+          <button
+            type="button"
+            aria-controls="booking-form-fields"
+            aria-expanded={!collapsed}
+            aria-label={collapsed ? t("expandPanel") : t("collapsePanel")}
+            onTouchStart={startSheetGesture}
+            onTouchEnd={finishSheetGesture}
+            onClick={() => {
+              if (suppressSheetClick.current) {
+                suppressSheetClick.current = false;
+                return;
+              }
+              setCollapsed((value) => !value);
+            }}
+            className="focus-ring -my-1 flex min-w-0 flex-1 items-center gap-2 rounded-lg py-1 text-start sm:hidden"
+          >
+            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span className="text-[16px] font-extrabold tracking-[-0.01em]">
+                {booking ? t("editBooking") : t("newBooking")}
+              </span>
+              <span className="text-text-tertiary truncate font-mono text-[11px] font-semibold">
+                {getSlotLabel(labelDay, startIndex, timeZone)}–
+                {getSlotLabel(labelDay, endIndex, timeZone)} ·{" "}
+                {durationLabel(durationMinutes, tDuration)}
+              </span>
+            </span>
+            {collapsed ? (
+              <ChevronUp aria-hidden="true" className="size-4 flex-none" />
+            ) : (
+              <ChevronDown aria-hidden="true" className="size-4 flex-none" />
+            )}
+          </button>
+          {/* Two grip lines keep the desktop panel visibly draggable. */}
           <span
             aria-hidden="true"
             className="hidden w-5 flex-none flex-col gap-[3px] sm:flex"
@@ -643,7 +735,7 @@ function BookingForm({
           </span>
           <h2
             id="booking-form-title"
-            className="flex-1 text-[17px] font-extrabold tracking-[-0.01em] sm:text-base"
+            className="hidden flex-1 text-base font-extrabold tracking-[-0.01em] sm:block"
           >
             {booking ? t("editBooking") : t("newBooking")}
           </h2>
@@ -658,8 +750,10 @@ function BookingForm({
         </div>
 
         <form
+          id="booking-form-fields"
+          ref={formRef}
           onSubmit={handleSubmit}
-          className="flex min-h-0 flex-1 flex-col overflow-y-auto"
+          className={`${collapsed ? "hidden sm:flex" : "flex"} min-h-0 flex-1 flex-col overflow-y-auto`}
           noValidate
         >
           <div className="flex flex-col gap-[13px] px-[18px] pt-4 pb-[18px]">
@@ -686,120 +780,77 @@ function BookingForm({
               </p>
             ) : null}
 
-            <div className="flex flex-col gap-1">
-              <label
-                htmlFor="room"
-                className="text-text-secondary text-[11.5px] font-bold"
-              >
-                {t("room")}
-              </label>
-              <Select
-                id="room"
-                value={selectedRoomId}
-                onChange={(event) => pickRoom(event.target.value)}
-              >
-                {/* Floor and capacity are how a room is actually chosen; the name
-                    alone means memorising which is which. */}
-                {rooms.map((room) => (
-                  <option key={room.id} value={room.id}>
-                    {t("roomOption", {
-                      name: room.name,
-                      floor: room.floor,
-                      capacity: room.capacity,
-                    })}
-                  </option>
-                ))}
-              </Select>
-            </div>
+            {/* Floor and capacity are how a room is actually chosen; the name
+                alone means memorising which is which. */}
+            <Select
+              id="room"
+              label={t("room")}
+              value={selectedRoomId}
+              onChange={pickRoom}
+              options={rooms.map((room) => ({
+                value: room.id,
+                label: t("roomOption", {
+                  name: room.name,
+                  floor: room.floor,
+                  capacity: room.capacity,
+                }),
+              }))}
+            />
 
             {/* The date takes its own line so the two time fields get half the
                 panel each. Three across 364px would clip "13:30 · 30 хв" to
                 "13:30 ·", and that duration is the whole reason a range can be
                 picked without dragging. */}
             <div className="flex flex-wrap gap-2">
-              <div className="flex w-full min-w-0 flex-col gap-1">
-                <label
-                  htmlFor="date"
-                  className="text-text-secondary text-[11.5px] font-bold"
-                >
-                  {t("date")}
-                </label>
-                <input
+              <div className="w-full min-w-0">
+                <DatePicker
                   id="date"
-                  type="date"
+                  label={t("date")}
+                  locale={locale}
                   value={date}
-                  onChange={(event) => setDate(event.target.value)}
-                  aria-invalid={fieldError("date") ? true : undefined}
-                  aria-describedby={
-                    fieldError("date") ? "date-error" : undefined
-                  }
-                  className={`${CONTROL_CLASS} font-mono text-[13px] ${
-                    fieldError("date") ? "border-danger" : ""
-                  }`}
+                  onChange={setDate}
+                  error={fieldError("date")}
                 />
-                {fieldError("date") ? (
-                  <p
-                    id="date-error"
-                    role="alert"
-                    className="text-danger-ink text-xs"
-                  >
-                    {fieldError("date")}
-                  </p>
-                ) : null}
               </div>
 
-              <div className="flex min-w-0 flex-1 flex-col gap-1">
-                <label
-                  htmlFor="start"
-                  className="text-text-secondary text-[11.5px] font-bold"
-                >
-                  {t("start")}
-                </label>
+              <div className="min-w-0 flex-1">
+                {/* Only durations the rules allow are listed at all, and each
+                    option says how long it makes the booking — that is what
+                    replaces dragging for anyone without a mouse. */}
                 <Select
                   id="start"
-                  value={startIndex}
-                  onChange={(event) => changeStart(Number(event.target.value))}
+                  label={t("start")}
+                  value={String(startIndex)}
+                  onChange={(value) => changeStart(Number(value))}
                   className="font-mono text-[13px]"
-                >
-                  {Array.from({ length: SLOT_COUNT }, (_, index) => (
-                    <option key={index} value={index}>
-                      {getSlotLabel(labelDay, index, timeZone)}
-                    </option>
-                  ))}
-                </Select>
+                  options={Array.from({ length: SLOT_COUNT }, (_, index) => ({
+                    value: String(index),
+                    label: getSlotLabel(labelDay, index, timeZone),
+                  }))}
+                />
               </div>
 
-              <div className="flex min-w-0 flex-1 flex-col gap-1">
-                <label
-                  htmlFor="end"
-                  className="text-text-secondary text-[11.5px] font-bold"
-                >
-                  {t("end")}
-                </label>
+              <div className="min-w-0 flex-1">
                 <Select
                   id="end"
-                  value={endIndex}
-                  onChange={(event) => setEndIndex(Number(event.target.value))}
+                  label={t("end")}
+                  value={String(endIndex)}
+                  onChange={(value) => setEndIndex(Number(value))}
+                  invalid={Boolean(generalError)}
                   className={`font-mono text-[13px] ${
                     generalError ? "border-danger" : ""
                   }`}
-                >
-                  {/* Only durations the rules allow are listed at all, and each
-                      option says how long it makes the booking — that is what
-                      replaces dragging for anyone without a mouse. */}
-                  {Array.from(
+                  options={Array.from(
                     { length: endBounds.max - endBounds.min + 1 },
                     (_, offset) => endBounds.min + offset,
-                  ).map((index) => (
-                    <option key={index} value={index}>
-                      {getSlotLabel(labelDay, index, timeZone)} ·{" "}
-                      {durationLabel(
-                        (index - startIndex) * SLOT_MINUTES,
-                        tDuration,
-                      )}
-                    </option>
-                  ))}
-                </Select>
+                  ).map((index) => ({
+                    value: String(index),
+                    label: `${getSlotLabel(labelDay, index, timeZone)} · ${durationLabel(
+                      (index - startIndex) * SLOT_MINUTES,
+                      tDuration,
+                    )}`,
+                  }))}
+                />
               </div>
             </div>
 
@@ -890,13 +941,10 @@ function BookingForm({
             />
 
             {booking ? null : (
-              // Two lines on a phone rather than one squeezed one: side by side,
-              // the label wrapped under its own checkbox and left the count
-              // crushed against the edge.
-              <div className="border-border-grid rounded-control flex flex-col gap-2.5 border p-3 sm:flex-row sm:items-center">
+              <div className="border-border-grid rounded-control flex items-center gap-2 border p-3">
                 <label
                   htmlFor="repeat"
-                  className="flex flex-1 items-center gap-2.5 text-[13px] font-semibold whitespace-nowrap"
+                  className="flex min-w-0 flex-1 items-center gap-2 text-[12.5px] font-semibold"
                 >
                   <input
                     id="repeat"
@@ -906,28 +954,24 @@ function BookingForm({
                     className="accent-accent-own-booking focus-ring size-[18px] shrink-0 rounded-[5px]"
                   />
                   <Repeat aria-hidden="true" className="size-3.5 shrink-0" />
-                  {t("repeat")}
+                  <span className="truncate">{t("repeat")}</span>
                 </label>
 
-                <div className="flex items-center gap-2 ps-[30px] sm:ps-0">
+                <div className="ml-auto flex shrink-0 items-center gap-1.5">
                   <Select
-                    value={repeatWeeks}
-                    onChange={(event) =>
-                      setRepeatWeeks(Number(event.target.value))
-                    }
+                    value={String(repeatWeeks)}
+                    onChange={(value) => setRepeatWeeks(Number(value))}
                     disabled={!repeat}
-                    aria-label={t("repeatCount")}
-                    className="min-h-11 font-mono text-[13px] sm:min-h-8 disabled:opacity-[0.45]"
-                  >
-                    {Array.from(
+                    ariaLabel={t("repeatCount")}
+                    className="min-h-10 w-[58px] font-mono text-[13px] sm:min-h-8 disabled:opacity-[0.45]"
+                    options={Array.from(
                       { length: MAX_OCCURRENCES - MIN_OCCURRENCES + 1 },
                       (_, offset) => MIN_OCCURRENCES + offset,
-                    ).map((count) => (
-                      <option key={count} value={count}>
-                        {count}
-                      </option>
-                    ))}
-                  </Select>
+                    ).map((count) => ({
+                      value: String(count),
+                      label: String(count),
+                    }))}
+                  />
                   <span className="text-text-tertiary text-xs">
                     {t("times")}
                   </span>

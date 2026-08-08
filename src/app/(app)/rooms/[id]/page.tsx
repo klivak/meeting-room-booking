@@ -245,7 +245,9 @@ async function ScheduleSkeleton() {
                 className="absolute right-[3px] left-[3px]"
                 style={{
                   top: rowSpan(10, DAY_ROW_H),
-                  height: rowSpan(3, DAY_ROW_H),
+                  // A compact half-hour block matches the loaded mobile grid;
+                  // three rows made the placeholder look much heavier.
+                  height: rowSpan(1, DAY_ROW_H),
                   animationDelay: "90ms",
                 }}
               />
@@ -513,7 +515,7 @@ export default async function RoomPage({
         className="animate-swap flex min-w-0 flex-1 flex-col gap-2.5"
       >
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex min-w-0 items-center gap-2.5">
+          <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:flex-none">
             <h1 className="truncate text-[22px] font-extrabold tracking-[-0.02em] sm:text-[24px]">
               {room.name}
             </h1>
@@ -545,7 +547,7 @@ export default async function RoomPage({
               seven days, so a second set of week arrows would be two
               navigations for one grid. Only "Today" survives, because that is
               the one jump the day arrows cannot make. */}
-          <div className="border-border-grid bg-surface-muted rounded-control flex items-center gap-0.5 border p-[3px]">
+          <div className="border-border-grid bg-surface-muted rounded-control ml-auto flex items-center gap-0.5 border p-[3px] sm:ml-0">
             <Link
               href={`/rooms/${room.id}?week=${previousWeek}`}
               // The arrow carries no words, so the label a screen reader gets is

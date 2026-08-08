@@ -1,6 +1,12 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Plus, X } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  GripHorizontal,
+  Plus,
+  X,
+} from "lucide-react";
 import { DateTime } from "luxon";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
@@ -256,6 +262,15 @@ export function Schedule({
     focusRow: number;
   } | null>(null);
 
+  // A tapped range is resized only from its explicit handle. The rest of the
+  // day column keeps its native vertical scroll and horizontal day swipe.
+  const [touchSelection, setTouchSelection] = useState<{
+    dayIndex: number;
+    rowStart: number;
+    rowEnd: number;
+  } | null>(null);
+  const touchSelectionRef = useRef<typeof touchSelection>(null);
+
   // The one cell that answers Tab. Everything else is reached with the arrow
   // keys, so the grid costs one stop instead of a hundred and forty.
   const [focusCell, setFocusCell] = useState({ column: 0, row: 0 });
@@ -362,6 +377,69 @@ export function Schedule({
       `/rooms/${roomId}?week=${weekParam}&slot=${encodeURIComponent(start)}&slotEnd=${encodeURIComponent(end)}`,
       { scroll: false },
     );
+  };
+
+  /** Starts resizing the end of a tapped range without turning the grid into a drag surface. */
+  const startTouchResize = (
+    targetDay: number,
+    rows: { rowStart: number; rowEnd: number },
+    event: React.PointerEvent<HTMLButtonElement>,
+  ) => {
+    if (event.pointerType === "mouse") {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    const next = { dayIndex: targetDay, ...rows };
+    touchSelectionRef.current = next;
+    setTouchSelection(next);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  /** Follows the row under the resize handle and clamps it to a legal duration. */
+  const moveTouchResize = (event: React.PointerEvent<HTMLButtonElement>) => {
+    const current = touchSelectionRef.current;
+    if (!current) {
+      return;
+    }
+
+    const column = event.currentTarget.closest<HTMLElement>("[data-day-index]");
+    if (!column || Number(column.dataset.dayIndex) !== current.dayIndex) {
+      return;
+    }
+
+    const rect = column.getBoundingClientRect();
+    const row = clamp(
+      Math.floor((event.clientY - rect.top) / (rect.height / SLOT_COUNT)),
+      0,
+      SLOT_COUNT - 1,
+    );
+    const next = {
+      ...current,
+      rowEnd: clamp(
+        row + 1,
+        current.rowStart + 1,
+        Math.min(SLOT_COUNT, current.rowStart + MAX_ROWS),
+      ),
+    };
+    touchSelectionRef.current = next;
+    setTouchSelection(next);
+  };
+
+  /** Commits the resized range to the URL so the form and grid share one value. */
+  const finishTouchResize = (event: React.PointerEvent<HTMLButtonElement>) => {
+    const current = touchSelectionRef.current;
+    touchSelectionRef.current = null;
+    setTouchSelection(null);
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
+    if (current) {
+      openForm(days[current.dayIndex], current.rowStart, current.rowEnd);
+    }
   };
 
   /**
@@ -871,6 +949,10 @@ export function Schedule({
   const selectionFor = (
     targetDay: number,
   ): { rowStart: number; rowEnd: number; overLimit?: boolean } | null => {
+    if (touchSelection) {
+      return touchSelection.dayIndex === targetDay ? touchSelection : null;
+    }
+
     if (drag) {
       if (drag.dayIndex !== targetDay) {
         return null;
@@ -939,6 +1021,7 @@ export function Schedule({
     targetDay: number,
     targetDate: DateTime,
     rowHeight: string,
+    touchResizable = false,
   ) => {
     const rows = selectionFor(targetDay);
     if (!rows) {
@@ -1020,6 +1103,19 @@ export function Schedule({
             </>
           )}
         </span>
+        {touchResizable ? (
+          <button
+            type="button"
+            aria-label={t("resizeSelection")}
+            onPointerDown={(event) => startTouchResize(targetDay, rows, event)}
+            onPointerMove={moveTouchResize}
+            onPointerUp={finishTouchResize}
+            onPointerCancel={finishTouchResize}
+            className="focus-ring border-border-control bg-surface text-accent-own-ink pointer-events-auto absolute -bottom-3 left-1/2 z-10 flex h-6 w-12 -translate-x-1/2 touch-none items-center justify-center rounded-full border shadow-sm"
+          >
+            <GripHorizontal aria-hidden="true" className="size-4" />
+          </button>
+        ) : null}
       </div>
     );
   };
@@ -1223,7 +1319,10 @@ export function Schedule({
               <div className="border-border-grid grid-rows-day-touch w-14 flex-none border-r">
                 {timeAxis(DAY_ROW_H)}
               </div>
-              <div className="grid-rows-day-touch relative min-w-0 flex-1">
+              <div
+                data-day-index={dayIndex}
+                className="grid-rows-day-touch relative min-w-0 flex-1"
+              >
                 {Array.from({ length: SLOT_COUNT }, (_, rowIndex) =>
                   renderCell({
                     cellDay: day,
@@ -1248,7 +1347,7 @@ export function Schedule({
                       false,
                     ),
                   )}
-                {renderSelection(dayIndex, day, DAY_ROW_H)}
+                {renderSelection(dayIndex, day, DAY_ROW_H, true)}
                 {emptyWeekNote}
                 {now !== null && nowMarker?.dayIndex === dayIndex ? (
                   <div

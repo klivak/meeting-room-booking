@@ -67,3 +67,17 @@ export async function goToNextWeek(page: Page) {
   // there is no load event to wait for.
   await expect(page).toHaveURL(/[?&]week=/);
 }
+
+/** Moves the phone day view forward and waits for the new day grid, not only its URL. */
+export async function goToNextDay(page: Page) {
+  const next = page.getByLabel("Наступний день");
+  const href = await next.getAttribute("href");
+  if (!href) {
+    throw new Error("The next-day link has no destination");
+  }
+
+  await next.click();
+  await expect(
+    page.locator(`a[aria-current="page"][href="${href}"]`),
+  ).toBeVisible();
+}
