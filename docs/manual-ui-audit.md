@@ -2,14 +2,22 @@
 
 Playwright audit baseline: production Docker build, Ukrainian and English, light and dark themes, 1366×768 desktop, 768×1024 tablet, and 360×780 phone.
 
-## Confirmed issue
+## Resolved regressions
 
-### Phone notification panel is clipped on the left
+### Phone notification panel stays inside the viewport
 
-- Reproduces at 360 px in both languages and both themes.
-- Open the bell from the room list. The panel width is safe, but it is positioned relative to the bell near the left side of the compact header, so its left edge lands outside the viewport.
-- Check the heading first: `Сповіщення` / `Notifications` starts off-screen.
-- Likely fix area: `src/components/NotificationBell.tsx`.
+- The panel is anchored to the phone viewport and becomes scrollable when its content is taller than the available space.
+- `e2e/screens.spec.ts` checks both horizontal bounds at desktop and phone widths.
+
+### Mobile booking sheet closes with its exit motion
+
+- The sheet remains mounted while the downward animation runs, then closes and restores the schedule.
+- `e2e/mobile-sheet.spec.ts` verifies the animation and final hidden state.
+
+### Booking selection keeps the weekly grid width stable
+
+- The selection label stays inside the Sunday column instead of widening the schedule.
+- `e2e/booking.spec.ts` verifies that the scroll width does not change after selecting a range.
 
 ## Product decisions to review manually
 

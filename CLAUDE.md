@@ -74,7 +74,7 @@ Codes (do not invent new ones without a real need): `EMAIL_TAKEN`, `INVALID_CRED
 
 ## Repository notes
 
-- `docs/prompt-plan-bronyuvannya-peregovornykh.md`, `TODO.md`, `DESIGN-PROMPT.md`, and the whole `docs/design/` directory (the handoff bundle exported from claude.ai/design) are local working documents. Never stage, commit or push them. `DESIGN-PROMPT.md` and `docs/design/` are deliberately NOT in `.gitignore` — they have to stay visible in the working tree — so watch for them when staging: `git add -A` and `git add .` will pick them up.
+- `TODO.md` is a local working document. Never stage, commit, or push it.
 - `CLAUDE.md` is tracked repository guidance. Keep its README synchronization rule and the Next.js-managed block below intact.
 - Commit history matters for grading: keep to "one stage = 1–2 commits", commit after each green checklist. One giant commit is penalized.
 
