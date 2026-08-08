@@ -62,3 +62,8 @@ next-env.d.ts
 
 # Lighthouse output: generated on demand, never part of the deliverable
 /lighthouse-report/
+
+# Remotion renders are reproducible and too large for the repository.
+/marketing/node_modules/
+/marketing/out/
+/marketing/public/app/*.png

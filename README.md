@@ -156,6 +156,17 @@ API error messages are localized because they are displayed directly. Luxon form
 
 Social previews use `public/og-uk.jpg` and `public/og-en.jpg`, selected by request locale. `SITE_URL` provides the absolute URL. Only `/login` and `/register` are public to crawlers; authenticated pages use `noindex` and `robots.txt` mirrors that policy.
 
+## Marketing Video
+
+`marketing/` is an isolated Remotion project for Ukrainian and English versions of a 36-second, 1920×1080 product promo. Each version uses localized Playwright captures and includes background music.
+
+```bash
+cd marketing
+npm install
+npm run studio  # interactive preview
+npm run render  # marketing/out/meeting-rooms-promo-{uk,en}.mp4
+```
+
 ## Structure
 
 | Directory              | Contents                                                                                    |
@@ -170,6 +181,7 @@ Social previews use `public/og-uk.jpg` and `public/og-en.jpg`, selected by reque
 | `e2e`                  | Playwright scenarios and screenshots                                                        |
 | `docs/demo.md`         | Project walkthrough                                                                         |
 | `docs/api-examples.md` | curl examples for manual API checks                                                         |
+| `marketing`            | Isolated Remotion promo with localized app captures and background music                    |
 
 ## Environment Variables
 

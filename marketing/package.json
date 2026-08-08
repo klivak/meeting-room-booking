@@ -1,0 +1,27 @@
+{
+  "name": "meeting-room-booking-marketing",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "capture:assets": "node scripts/capture-app-assets.mjs",
+    "render": "npm run render:uk && npm run render:en",
+    "render:uk": "remotion render src/index.ts MeetingRoomsPromoUk out/meeting-rooms-promo-uk.mp4 --codec=h264 --crf=16 --pixel-format=yuv420p",
+    "render:en": "remotion render src/index.ts MeetingRoomsPromoEn out/meeting-rooms-promo-en.mp4 --codec=h264 --crf=16 --pixel-format=yuv420p",
+    "still": "remotion still src/index.ts MeetingRoomsPromoUk out/cover.png --frame=1050",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.507",
+    "@remotion/google-fonts": "4.0.507",
+    "lucide-react": "^1.30.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "remotion": "4.0.507"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "typescript": "^6.0.3"
+  }
+}
