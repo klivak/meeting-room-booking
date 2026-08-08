@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-labelledby="title description">
+  <title id="title">Meeting Room Booking</title>
+  <desc id="description">Four white calendar tiles on a jade rounded square</desc>
+  <defs>
+    <linearGradient id="jade" x1="24" y1="16" x2="136" y2="144" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#20c89a" />
+      <stop offset="1" stop-color="#0d8f69" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#0d8f69" flood-opacity="0.24" />
+    </filter>
+  </defs>
+  <rect x="16" y="12" width="128" height="128" rx="36" fill="url(#jade)" filter="url(#shadow)" />
+  <rect x="52" y="48" width="22" height="22" rx="4" fill="#fff" />
+  <rect x="86" y="48" width="22" height="22" rx="4" fill="#fff" />
+  <rect x="52" y="82" width="22" height="22" rx="4" fill="#fff" />
+  <rect x="86" y="82" width="22" height="22" rx="4" fill="#fff" />
+</svg>

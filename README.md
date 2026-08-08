@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="public/logo.svg" width="104" height="104" alt="Meeting Room Booking logo">
+</p>
+
 # Meeting Room Booking
 
 [Українська версія](README.uk.md)
@@ -159,6 +163,8 @@ Social previews use `public/og-uk.jpg` and `public/og-en.jpg`, selected by reque
 ## Marketing Video
 
 `marketing/` is an isolated Remotion project for Ukrainian and English versions of a 36-second, 1920×1080 product promo. Each version uses localized Playwright captures and includes background music.
+
+https://github.com/user-attachments/assets/a9d2410d-f711-44d4-9f02-58e3a3f6bcd1
 
 ```bash
 cd marketing

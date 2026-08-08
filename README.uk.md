@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="public/logo.svg" width="104" height="104" alt="Логотип Meeting Room Booking">
+</p>
+
 # Бронювання переговорних
 
 [English version](README.md)
@@ -175,6 +179,8 @@ Playwright (`npm run e2e`) — не про коректність, а про «�
 ## Промо-відео
 
 `marketing/` — ізольований Remotion-проєкт з українською та англійською версіями 36-секундного промо 1920×1080. Кожна версія використовує локалізовані Playwright-скріншоти й містить фонову музику.
+
+https://github.com/user-attachments/assets/3556a1a8-688c-43ef-afe1-cd2bfbe577a8
 
 ```bash
 cd marketing
