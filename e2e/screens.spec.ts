@@ -117,6 +117,16 @@ for (const theme of ["light", "dark"] as const) {
 
       await expect(page.getByText("Сповіщення", { exact: true })).toBeVisible();
 
+      const panel = page.getByText("Сповіщення", { exact: true }).locator("..");
+      const bounds = await panel.boundingBox();
+      if (!bounds) {
+        throw new Error("The notifications panel has no box");
+      }
+      expect(bounds.x).toBeGreaterThanOrEqual(0);
+      expect(bounds.x + bounds.width).toBeLessThanOrEqual(
+        page.viewportSize()?.width ?? 0,
+      );
+
       await shot(page, testInfo, "notifications", { fullPage: false });
     });
 

@@ -409,6 +409,8 @@ export function Schedule({
       return;
     }
 
+    // Derive the row from the column geometry, not elementFromPoint(): the
+    // compact bottom sheet may cover the finger while pointer capture is active.
     const rect = column.getBoundingClientRect();
     const row = clamp(
       Math.floor((event.clientY - rect.top) / (rect.height / SLOT_COUNT)),
@@ -1080,9 +1082,9 @@ export function Schedule({
             a range one row tall has no middle, and the reading order of a
             calendar is downwards from the start. */}
         <span
-          className={`rounded-booking absolute -top-2.5 left-1.5 flex items-center gap-1 px-1.5 py-0.5 font-mono text-[11px] font-bold whitespace-nowrap text-white transition-colors sm:text-[10px] ${
-            refused ? "bg-danger-solid" : "bg-accent-own-ink"
-          }`}
+          className={`rounded-booking absolute -top-2.5 flex items-center gap-1 px-1.5 py-0.5 font-mono text-[11px] font-bold whitespace-nowrap text-white transition-colors sm:text-[10px] ${
+            targetDay === DAYS_IN_WEEK - 1 ? "right-1.5" : "left-1.5"
+          } ${refused ? "bg-danger-solid" : "bg-accent-own-ink"}`}
         >
           {refused ? (
             <>
@@ -1379,6 +1381,7 @@ export function Schedule({
       <div
         role="group"
         aria-label={t("weekGrid")}
+        data-testid="week-grid-scroll"
         className="bg-surface border-border-grid rounded-card shadow-rest hidden overflow-auto border sm:block"
       >
         {/* 64px of time axis plus seven 88px days. Wider than that and the week

@@ -154,11 +154,10 @@ export function NotificationBell() {
         ) : null}
       </button>
 
-      {/* 320px wherever there is room for it, and never wider than the screen it
-          hangs off: anchored to the right of a bell that sits near the right
-          edge, a fixed 320px panel ran off the left of a 360px phone. */}
+      {/* On a phone the panel belongs to the viewport, not to the bell: the menu
+          beside the bell means its right edge is not the screen's right edge. */}
       {open ? (
-        <div className="border-glass-edge bg-glass rounded-card shadow-panel animate-panel absolute right-0 z-40 mt-1.5 w-[min(20rem,calc(100vw-1.5rem))] overflow-hidden border backdrop-blur-xl">
+        <div className="border-glass-edge bg-glass rounded-card shadow-panel animate-panel fixed inset-x-3 top-[4.125rem] z-40 flex max-h-[calc(100dvh-4.875rem)] flex-col overflow-hidden border backdrop-blur-xl sm:absolute sm:inset-x-auto sm:top-auto sm:right-0 sm:mt-1.5 sm:w-80">
           <div className="border-border-grid flex items-center justify-between border-b px-4 py-3.5">
             <span className="text-sm font-extrabold">{t("title")}</span>
             {count > 0 ? (
@@ -193,7 +192,7 @@ export function NotificationBell() {
               </p>
             </div>
           ) : (
-            <ul className="flex flex-col">
+            <ul className="flex min-h-0 flex-col overflow-y-auto">
               {items.map((item) => (
                 <li
                   key={item.id}

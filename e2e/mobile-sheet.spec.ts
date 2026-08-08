@@ -93,4 +93,10 @@ test("resizes a tapped range before expanding the mobile sheet", async ({
     touchPoints: [],
   });
   await expect(expand).toHaveAttribute("aria-expanded", "false");
+
+  // Closing keeps the sheet mounted until its downward motion has finished.
+  await panel.getByRole("button", { name: "Закрити панель" }).click();
+  await expect(panel).toBeVisible();
+  await expect(panel).toHaveCSS("animation-name", "sheet-down");
+  await expect(panel).toBeHidden();
 });

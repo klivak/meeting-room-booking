@@ -44,6 +44,8 @@ export function DatePicker({
   onChange,
   error,
 }: DatePickerProps) {
+  // CalendarDate has no timezone, so selecting a date cannot move it to the
+  // previous day when the viewer and the office use different UTC offsets.
   const parsedValue = value ? parseDate(value) : null;
 
   return (

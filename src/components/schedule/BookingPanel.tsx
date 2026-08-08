@@ -185,7 +185,13 @@ function BookingForm({
   const [collapsed, setCollapsed] = useState(!booking);
   const formRef = useRef<HTMLFormElement>(null);
   const sheetTouchStart = useRef<number | null>(null);
+  // Browsers emit a click after touchend; a completed swipe must not immediately
+  // run the tap handler and reverse the state it just chose.
   const suppressSheetClick = useRef(false);
+  const [closeIntent, setCloseIntent] = useState<{
+    targetRoomId: string;
+    saved: boolean;
+  } | null>(null);
 
   // Where the panel was dragged to; null means it sits where CSS put it.
   const [position, setPosition] = useState<{ x: number; y: number } | null>(
@@ -352,7 +358,7 @@ function BookingForm({
   // `saved` is what decides whether the page is refetched. Dismissing the panel
   // changed nothing on the server, and refreshing anyway made the close wait on
   // a full re-render of the room page before the panel went away.
-  const close = (targetRoomId: string, saved = false) => {
+  const finishClose = (targetRoomId: string, saved = false) => {
     router.replace(`/rooms/${targetRoomId}?week=${weekParam}`);
 
     if (saved) {
@@ -364,6 +370,15 @@ function BookingForm({
     // the page. It goes back to the grid the booking is on instead.
     const schedule = document.getElementById(SCHEDULE_ANCHOR_ID);
     schedule?.focus();
+  };
+
+  const close = (targetRoomId: string, saved = false) => {
+    if (!isWide) {
+      setCloseIntent((current) => current ?? { targetRoomId, saved });
+      return;
+    }
+
+    finishClose(targetRoomId, saved);
   };
 
   /**
@@ -651,8 +666,8 @@ function BookingForm({
     <div
       // The collapsed phone sheet has no backdrop and lets the schedule keep
       // receiving touches. Expanded, it becomes the focused editing surface.
-      className={`fixed z-50 flex items-end justify-center sm:pointer-events-none sm:inset-auto sm:top-24 sm:right-8 sm:block sm:bg-transparent sm:backdrop-blur-none ${
-        collapsed
+      className={`fixed z-50 flex items-end justify-center transition-[background-color,backdrop-filter] duration-300 sm:pointer-events-none sm:inset-auto sm:top-24 sm:right-8 sm:block sm:bg-transparent sm:backdrop-blur-none ${
+        collapsed || closeIntent
           ? "pointer-events-none inset-x-0 bottom-0"
           : "inset-0 bg-[rgb(14_22_20/0.45)] backdrop-blur-[2px]"
       }`}
@@ -673,7 +688,16 @@ function BookingForm({
         // is that the week stays readable underneath. On a phone it covers the
         // screen and there is nothing to see through, so it stays solid.
         // The sheet scrolls instead of pushing its buttons out of reach.
-        className="rounded-sheet bg-surface border-border-grid shadow-modal animate-sheet pointer-events-auto flex max-h-[92vh] w-full flex-col overflow-hidden rounded-b-none border sm:animate-panel sm:pointer-events-auto sm:max-h-[85vh] sm:w-[364px] sm:rounded-b-[18px] sm:border-glass-edge sm:bg-glass sm:backdrop-blur-xl"
+        className={`rounded-sheet bg-surface border-border-grid shadow-modal pointer-events-auto flex max-h-[92vh] w-full flex-col overflow-hidden rounded-b-none border sm:animate-panel sm:pointer-events-auto sm:max-h-[85vh] sm:w-[364px] sm:rounded-b-[18px] sm:border-glass-edge sm:bg-glass sm:backdrop-blur-xl ${
+          closeIntent ? "animate-sheet-down" : "animate-sheet"
+        }`}
+        onAnimationEnd={(event) => {
+          if (event.currentTarget !== event.target || !closeIntent) {
+            return;
+          }
+
+          finishClose(closeIntent.targetRoomId, closeIntent.saved);
+        }}
         // Escape means "Close" here as much as it does in the cancel dialog. The
         // panel is not modal, so it only answers when the focus is inside it —
         // which it is, the title field takes it as the panel opens.

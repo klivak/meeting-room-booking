@@ -80,6 +80,8 @@ export function Select({
       <Popover
         placement="bottom start"
         offset={6}
+        // React Aria exposes the trigger width and remaining viewport height;
+        // using both keeps the list aligned without letting it leave the screen.
         className="bg-surface border-border-grid shadow-modal rounded-control z-100 max-h-[min(18rem,var(--available-height))] w-[var(--trigger-width)] min-w-[12rem] overflow-hidden border outline-none"
       >
         <ListBox className="max-h-[min(18rem,var(--available-height))] overflow-y-auto p-1.5 outline-none">

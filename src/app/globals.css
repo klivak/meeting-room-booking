@@ -131,7 +131,8 @@
   --animate-now: now-draw 600ms var(--ease-out-soft) both;
   --animate-pop: pop 240ms var(--ease-spring) both;
   --animate-swap: swap-in 220ms var(--ease-out-soft) both;
-  --animate-sheet: sheet-up 300ms var(--ease-out-soft) both;
+  --animate-sheet: sheet-up 420ms var(--ease-out-soft) both;
+  --animate-sheet-down: sheet-down 320ms var(--ease-in-out-soft) both;
   --animate-badge: badge-pop 220ms var(--ease-spring) both;
 }
 
@@ -472,6 +473,15 @@
   }
   to {
     transform: none;
+  }
+}
+
+@keyframes sheet-down {
+  from {
+    transform: none;
+  }
+  to {
+    transform: translateY(100%);
   }
 }
 

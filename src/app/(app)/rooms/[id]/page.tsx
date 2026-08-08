@@ -205,10 +205,13 @@ async function ScheduleSkeleton() {
       </p>
 
       <div aria-hidden className="flex flex-col gap-2 sm:hidden">
-        <div className="bg-surface border-border-grid rounded-card flex items-center gap-2 border p-2">
-          <Skeleton className="h-11 w-11 shrink-0" />
-          <Skeleton className="h-8 flex-1" />
-          <Skeleton className="h-11 w-11 shrink-0" />
+        <div className="flex h-10 items-center justify-between gap-2">
+          <Skeleton className="h-10 w-10 shrink-0" />
+          <span className="flex flex-1 flex-col items-center gap-1.5">
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-2.5 w-16" />
+          </span>
+          <Skeleton className="h-10 w-10 shrink-0" />
         </div>
 
         <div className="flex gap-1">

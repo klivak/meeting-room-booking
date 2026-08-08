@@ -86,8 +86,17 @@ test("books a dragged range, refuses to double-book it, then cancels it", async 
   // Next week, so every slot is in the future whatever day it is today.
   await goToNextWeek(page);
 
+  const weekGrid = page.getByTestId("week-grid-scroll");
+  const scrollWidthBeforeSelection = await weekGrid.evaluate(
+    (element) => element.scrollWidth,
+  );
+
   // Sunday, 13:00 to 14:30: three rows the seed never touches.
   await dragOver(page, cell(page, 6, 8), cell(page, 6, 10));
+
+  await expect
+    .poll(() => weekGrid.evaluate((element) => element.scrollWidth))
+    .toBe(scrollWidthBeforeSelection);
 
   const panel = page.getByRole("dialog", { name: "Нове бронювання" });
   await expect(panel).toBeVisible();
